@@ -176,12 +176,205 @@ Learn about Docker networking by connecting multiple containers.
 
 ---
 
-### 3. Volumes Practice (Coming Soon)
-Learn about Docker volumes and data persistence.
+### 3. Volumes Practice
+Learn about Docker volumes and data persistence by ensuring our Redis data survives container restarts.
 
-#### What You'll Learn
-- Creating and managing volumes
-- Data persistence
-- Volume inspection
-- Backup and restore
-- Volume security 
+#### How to Run
+1. **Create a volume for Redis data:**
+   ```bash
+   docker volume create redis-data
+   ```
+
+2. **Stop and remove existing containers:**
+   ```bash
+   docker stop hello-redis-app redis
+   docker rm hello-redis-app redis
+   ```
+
+3. **Run Redis with volume:**
+   ```bash
+   docker run -d \
+     --name redis \
+     --network app-network \
+     -v redis-data:/data \
+     redis:7-alpine \
+     redis-server --appendonly yes
+   ```
+   Note: `--appendonly yes` enables Redis persistence
+
+4. **Run the Flask app:**
+   ```bash
+   docker run -d \
+     --name hello-redis-app \
+     --network app-network \
+     -p 5000:5000 \
+     hello-redis
+   ```
+
+5. **Test the application:**
+   ```bash
+   # Make some visits
+   curl http://localhost:5000
+   curl http://localhost:5000
+   curl http://localhost:5000
+   ```
+
+6. **View running containers:**
+   ```bash
+   docker ps
+   ```
+
+7. **View container logs:**
+   ```bash
+   docker logs hello-redis-app
+   docker logs redis
+   ```
+
+8. **Inspect the volume:**
+   ```bash
+   docker volume inspect redis-data
+   ```
+   This will show you:
+   - Volume name
+   - Driver
+   - Mount point
+   - Creation date
+   - Labels
+
+9. **Test data persistence:**
+   ```bash
+   # Stop and remove containers
+   docker stop hello-redis-app redis
+   docker rm hello-redis-app redis
+   
+   # Start Redis with same volume
+   docker run -d \
+     --name redis \
+     --network app-network \
+     -v redis-data:/data \
+     redis:7-alpine \
+     redis-server --appendonly yes
+   
+   # Start Flask app
+   docker run -d \
+     --name hello-redis-app \
+     --network app-network \
+     -p 5000:5000 \
+     hello-redis
+   
+   # Check if counter persists
+   curl http://localhost:5000
+   ```
+
+10. **Clean up:**
+    ```bash
+    # Stop and remove containers
+    docker stop hello-redis-app redis
+    docker rm hello-redis-app redis
+    
+    # Remove volume
+    docker volume rm redis-data
+    ```
+
+#### Troubleshooting and Experimentation
+1. **Test Without Volume:**
+   ```bash
+   # Run Redis without volume
+   docker run -d --name test-redis --network app-network redis:7-alpine
+   docker run -d --name test-app --network app-network -p 5001:5000 hello-redis
+   
+   # Make some visits
+   curl http://localhost:5001
+   
+   # Stop and restart containers
+   docker stop test-redis test-app
+   docker start test-redis test-app
+   
+   # Check counter (should reset)
+   curl http://localhost:5001
+   ```
+
+2. **Test Volume Persistence:**
+   ```bash
+   # Run with volume
+   docker run -d --name vol-redis --network app-network -v redis-data:/data redis:7-alpine redis-server --appendonly yes
+   docker run -d --name vol-app --network app-network -p 5000:5000 hello-redis
+   
+   # Make visits
+   curl http://localhost:5000
+   
+   # Stop and restart
+   docker stop vol-redis vol-app
+   docker start vol-redis vol-app
+   
+   # Check counter (should persist)
+   curl http://localhost:5000
+   ```
+
+3. **Test Volume Cleanup:**
+   ```bash
+   # Try removing volume while container is running
+   docker volume rm redis-data  # Should fail
+   
+   # Remove volume after stopping container
+   docker stop vol-redis
+   docker volume rm redis-data  # Should succeed
+   ```
+
+#### Verification
+After following the steps above, you should see the visit counter continue from where you left off, even after removing and recreating the containers. For example:
+
+1. Make several requests to the Flask app:
+   ```bash
+   curl http://localhost:5000
+   # ...repeat a few times
+   ```
+   The counter should increment (e.g., 1, 2, 3, ...).
+
+2. Stop and remove both containers:
+   ```bash
+   docker stop hello-redis-app redis
+   docker rm hello-redis-app redis
+   ```
+
+3. Start both containers again with the same volume:
+   ```bash
+   docker run -d --name redis --network app-network -v redis-data:/data redis:7-alpine redis-server --appendonly yes
+   docker run -d --name hello-redis-app --network app-network -p 5000:5000 hello-redis
+   ```
+
+4. Make another request:
+   ```bash
+   curl http://localhost:5000
+   ```
+   The counter should continue from the previous value (not reset to 1).
+
+This demonstrates that Docker volumes persist data independently of the container lifecycle.
+
+#### Summary
+- Docker volumes are essential for data persistence in stateful services like databases.
+- Without a volume, Redis data would be lost when the container is removed.
+- With a named volume, data is safe and can be reused by new containers.
+- Always use named volumes for important data.
+- Experiment by running Redis without a volume to see the difference in persistence.
+
+#### Best Practices
+1. **Volume Usage:**
+   - Use named volumes for persistent data
+   - Use bind mounts for development
+   - Use tmpfs for sensitive data
+   - Implement proper permissions
+
+2. **Data Management:**
+   - Regular backups
+   - Volume naming conventions
+   - Proper cleanup
+   - Monitor volume usage
+   - Implement data retention policies
+
+3. **Security:**
+   - Use read-only mounts when possible
+   - Implement proper permissions
+   - Regular security audits
+   - Backup sensitive data
+   - Use tmpfs for temporary data 
