@@ -1,306 +1,287 @@
 # Docker Compose Practice Project
 
-This project demonstrates a practical implementation of Docker Compose with a Flask application, Redis, and Nginx. It serves as a learning resource for understanding container orchestration, service communication, and best practices in Docker Compose.
+This project demonstrates a **production-ready Flask application** with Redis and Nginx using Docker Compose. It serves as a comprehensive learning resource for understanding container orchestration, service communication, and Docker Compose best practices.
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Docker Engine (version 20.10.0 or later)
 - Docker Compose (version 2.0.0 or later)
-- Make (optional, for using Makefile)
-- Python 3.11 (for local development)
-
-### Environment Setup
-
-1. **Initial Setup**
-```bash
-# Clone the repository
-git clone <repository-url>
-cd docker-compose-practice
-
-# Set up environment files
-make setup-env
-
-# This will create:
-# - config/local/.env
-# - config/dev/.env
-# - config/prod/.env
-```
-
-2. **Configure Environment Variables**
-```bash
-# Edit environment files as needed
-vim config/local/.env  # For local development
-vim config/dev/.env    # For development environment
-vim config/prod/.env   # For production environment
-```
+- Make (optional, for using Makefile commands)
 
 ### Running the Project
 
-1. **Development Environment**
 ```bash
-# First time setup
-make setup-dev
+# Clone and navigate to the project
+cd docker-compose-practice
 
-# Start all services in development mode
+# Start development environment (recommended for first-time)
 make dev
 
-# Or using docker-compose directly
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-```
-
-2. **Production Environment**
-```bash
-# First time setup
-make setup-prod
-
-# Start all services in production mode
+# Or start production environment
 make prod
-
-# Or using docker-compose directly
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-3. **Access the Application**
-- Development: http://localhost:8080
-- Production: http://localhost:80
-- Health Check: http://localhost:8080/health
+### Access the Application
+- **Main Application**: http://localhost/
+- **Health Check**: http://localhost/health
+- **Visit Counter**: Each request to `/` increments the Redis counter
 
-## Project Structure
+## 📚 Complete Documentation
 
+This project includes comprehensive documentation for all skill levels:
+
+### 🚀 Quick Guides
+- **[Quick Start Guide](docs/quick-start.md)** - Get running in 5 minutes
+- **[Documentation Index](docs/README.md)** - Complete documentation overview
+
+### 🏗️ Technical Details  
+- **[Architecture Documentation](docs/architecture.md)** - System design and patterns
+- **[API Documentation](docs/api.md)** - Complete endpoint reference
+- **[Project Verification](docs/PROJECT_VERIFICATION.md)** - Working status and metrics
+
+### 📖 Choose Your Path
+| **If you want to...** | **Start with...** |
+|----------------------|-------------------|
+| Get it running quickly | [Quick Start Guide](docs/quick-start.md) |
+| Understand the architecture | [Architecture Documentation](docs/architecture.md) |
+| Learn the API | [API Documentation](docs/api.md) |
+| See current working state | [Project Verification](docs/PROJECT_VERIFICATION.md) |
+| Browse all documentation | [Documentation Index](docs/README.md) |
+
+## 📁 Project Architecture
+
+### Directory Structure
 ```
 docker-compose-practice/
-├── src/                    # Application source code
-│   ├── app/               # Flask application
-│   │   ├── __init__.py    # App factory
-│   │   └── routes.py      # API endpoints
-│   ├── tests/            # Test files
-│   └── requirements/     # Python dependencies
+├── src/                           # Application source code
+│   ├── main.py                   # Flask application entrypoint
+│   ├── app/                      # Flask application package
+│   │   ├── __init__.py          # App factory
+│   │   ├── routes.py            # API endpoints
+│   │   └── config/              # Configuration management
+│   ├── requirements/            # Python dependencies by environment
+│   ├── static/                  # Static files
+│   └── tests/                   # Test files
 │
-├── deploy/               # Deployment configurations
-│   ├── docker/          # Docker related files
-│   │   ├── app/        # App-specific Docker files
-│   │   │   └── Dockerfile
-│   │   └── nginx/      # Nginx Docker files
-│   │       └── Dockerfile
-│   ├── nginx/          # Nginx configurations
-│   │   ├── nginx.conf
-│   │   └── conf.d/
-│   └── scripts/        # Deployment scripts
+├── deploy/                       # Deployment configurations
+│   ├── docker/                  # Dockerfiles
+│   │   ├── app/Dockerfile       # Flask app container
+│   │   └── nginx/Dockerfile     # Nginx container
+│   ├── nginx/                   # Nginx configurations
+│   │   ├── nginx.conf           # Main Nginx config
+│   │   └── conf.d/default.conf  # Site configuration
+│   └── scripts/                 # Deployment scripts
+│       └── entrypoint.sh        # App startup script
 │
-├── docker-compose/      # Docker Compose files
-│   ├── docker-compose.yml        # Base configuration
-│   ├── docker-compose.dev.yml    # Development overrides
-│   └── docker-compose.prod.yml   # Production overrides
+├── config/                      # Environment configurations
+│   ├── local/.env.example       # Local development
+│   ├── dev/.env.example         # Development environment  
+│   └── prod/.env.example        # Production environment
 │
-└── docs/               # Documentation
-    ├── architecture.md
-    └── api.md
+├── docs/                        # Comprehensive Documentation
+│   ├── README.md                # Documentation index
+│   ├── quick-start.md           # 5-minute setup guide
+│   ├── architecture.md          # System architecture
+│   ├── api.md                   # API documentation
+│   └── PROJECT_VERIFICATION.md  # Working status report
+│
+├── docker-compose.yml           # Base Docker Compose config
+├── docker-compose.dev.yml       # Development overrides
+├── docker-compose.prod.yml      # Production overrides
+├── Makefile                     # Common commands
+└── README.md                    # This file
 ```
 
-## Docker Compose Features Demonstrated
-
-### 1. Service Definition
-- Multi-service architecture
-- Service dependencies
-- Health checks
-- Resource limits
-- Environment variables
-
-### 2. Networking
-- Custom network creation
-- Service discovery
-- Port mapping
-- Network isolation
-
-### 3. Volumes
-- Persistent data storage
-- Configuration mounting
-- Development code mounting
-- Read-only volumes
-
-### 4. Environment Management
-- Development/Production environments
-- Environment-specific configurations
-- Secret management
-- Variable substitution
-
-## Common Commands
-
-### Development
-```bash
-# Start development environment
-make dev
-
-# View logs
-make logs
-
-# Access Flask shell
-make shell
-
-# Run tests
-make test
-
-# Format code
-make format
+### Service Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│     Client      │    │      Nginx      │    │   Flask App     │
+│   (Browser)     │◄──►│  (Reverse Proxy │◄──►│  (Python API)   │
+│                 │    │   Load Balancer)│    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │     Redis       │
+                                              │ (Cache/Session) │
+                                              └─────────────────┘
 ```
 
-### Production
+## 🛠️ What We Built
+
+### 1. Multi-Service Docker Application
+- **Flask API** - Python web application with Redis integration
+- **Redis** - In-memory database for visit counting and caching
+- **Nginx** - Reverse proxy for production-ready setup
+
+### 2. Docker Compose Features Demonstrated
+- **Service Dependencies**: App waits for Redis to be healthy
+- **Health Checks**: All services monitor their own health
+- **Environment Management**: Separate configs for dev/prod
+- **Volume Management**: Persistent Redis data storage
+- **Network Isolation**: Services communicate on private network
+- **Multi-stage Builds**: Optimized Docker images
+
+### 3. Development Best Practices
+- **Environment Variables**: Configurable through .env files
+- **Code Quality**: Pre-commit hooks, linting, formatting
+- **Modern Python**: pyproject.toml, type hints, factory pattern
+- **Documentation**: Comprehensive README and API docs
+
+## 🔧 Common Commands
+
+### Development Workflow
 ```bash
-# Start production environment
-make prod
+# Environment setup (first time only)
+make setup-env          # Create environment files
+make setup-dev          # Set up local development environment
 
-# View logs
-make logs
+# Daily development
+make dev               # Start development environment
+make logs              # View container logs
+make clean             # Stop and clean up containers
 
-# Stop all services
-make down
+# Code quality
+make format            # Format code with Ruff
+make lint             # Run linters
+make pre-commit       # Run pre-commit hooks
+make test             # Run tests
 ```
 
-### Maintenance
+### Docker Commands
 ```bash
-# Clean up containers and volumes
-make clean
+# Manual Docker Compose usage
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# Rebuild images
-make build
+# Service management
+docker-compose ps                    # Check service status
+docker-compose logs app             # View app logs
+docker-compose exec app /bin/sh     # Access app container
+docker-compose down -v              # Stop and remove everything
+```
 
-# Check service status
+## 🧪 Testing the Application
+
+### API Endpoints
+```bash
+# Main endpoint (increments visit counter)
+curl http://localhost/
+# Response: {"message": "Welcome to Docker Compose Practice", "visits": 1}
+
+# Health check endpoint
+curl http://localhost/health  
+# Response: {"status": "UP", "redis": "connected"}
+
+# Test multiple visits
+curl http://localhost/ && curl http://localhost/
+# Visit counter increments: visits: 2, then visits: 3
+```
+
+### Service Health
+```bash
+# Check all services
 docker-compose ps
+
+# Individual service health
+docker-compose exec app curl http://localhost:5000/health
+docker-compose exec redis redis-cli ping
+docker-compose exec nginx nginx -t
 ```
 
-## Key Docker Compose Concepts Demonstrated
+## 🐛 Troubleshooting
 
-1. **Service Dependencies**
-```yaml
-services:
-  app:
-    depends_on:
-      redis:
-        condition: service_healthy
-```
+### Common Issues and Solutions
 
-2. **Health Checks**
-```yaml
-services:
-  app:
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
+1. **Port Already in Use**
+   ```bash
+   # Check what's using the port
+   sudo lsof -i :80
+   sudo lsof -i :5000
+   
+   # Stop conflicting services
+   sudo systemctl stop apache2  # or nginx
+   ```
 
-3. **Volume Management**
-```yaml
-services:
-  redis:
-    volumes:
-      - redis-data:/data
-```
+2. **Container Build Failures**
+   ```bash
+   # Clean rebuild
+   make clean
+   docker-compose build --no-cache
+   ```
 
-4. **Environment Configuration**
-```yaml
-services:
-  app:
-    env_file:
-      - ../config/${ENV:-dev}/.env
-```
+3. **Permission Issues**
+   ```bash
+   # Fix file permissions
+   sudo chown -R $USER:$USER .
+   chmod +x deploy/scripts/entrypoint.sh
+   ```
 
-## Best Practices Implemented
+4. **Redis Connection Issues**
+   ```bash
+   # Check Redis is running
+   docker-compose logs redis
+   
+   # Test Redis connection
+   docker-compose exec redis redis-cli ping
+   ```
 
-1. **Development**
-   - Hot-reloading
-   - Debug mode
-   - Development tools
-   - Code quality checks
+## 📚 Key Learning Outcomes
 
-2. **Production**
-   - Multi-stage builds
-   - Resource limits
-   - Health monitoring
-   - Log management
+### Docker Compose Concepts Mastered
+1. **Service Orchestration**: Multi-container application coordination
+2. **Environment Management**: Development vs Production configurations  
+3. **Health Monitoring**: Container health checks and dependencies
+4. **Volume Management**: Data persistence and sharing
+5. **Network Security**: Service isolation and communication
+6. **Load Balancing**: Nginx as reverse proxy
 
-3. **Security**
-   - Non-root users
-   - Read-only filesystems
-   - Network isolation
-   - Security headers
+### Best Practices Implemented
+1. **Multi-stage Builds**: Optimized container images
+2. **Non-root Users**: Security best practices
+3. **Environment Variables**: Configuration management
+4. **Health Checks**: Application monitoring
+5. **Development Workflow**: Hot-reloading and debugging
+6. **Production Ready**: Resource limits and logging
 
-## Troubleshooting
+## 🔄 Development vs Production
 
-### Common Issues
+### Development Mode (`make dev`)
+- Hot-reloading enabled
+- Debug mode active
+- Development dependencies installed
+- Exposed ports for debugging
+- Volume mounts for live code changes
 
-1. **Port Conflicts**
-```bash
-# Check if ports are in use
-sudo lsof -i :80
-sudo lsof -i :5000
-```
+### Production Mode (`make prod`)
+- Optimized builds
+- Security hardening
+- Resource limits enforced
+- Health monitoring enabled
+- Log management configured
 
-2. **Container Issues**
-```bash
-# View container logs
-docker-compose logs app
+## 📖 Further Reading
 
-# Check container status
-docker-compose ps
-```
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Flask Best Practices](https://flask.palletsprojects.com/en/2.3.x/)
+- [Nginx Configuration Guide](https://nginx.org/en/docs/)
+- [Redis Configuration](https://redis.io/documentation)
 
-3. **Network Issues**
-```bash
-# Inspect network
-docker network inspect docker-compose-practice_app-network
-```
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests and linting (`make test && make lint`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-## License
-MIT License
+## 📝 License
 
-## Environment Configuration
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Environment Files Structure
-```
-config/
-├── local/              # Local development
-│   └── .env.example   # Local environment template
-├── dev/               # Development environment
-│   └── .env.example   # Development environment template
-└── prod/              # Production environment
-    └── .env.example   # Production environment template
-```
+---
 
-### Key Environment Variables
-
-1. **Flask Configuration**
-```env
-FLASK_APP=app:create_app
-FLASK_ENV=development|production
-FLASK_DEBUG=1|0
-```
-
-2. **Redis Configuration**
-```env
-REDIS_HOST=localhost|redis
-REDIS_PORT=6379
-```
-
-3. **Application Configuration**
-```env
-APP_PORT=5000
-APP_HOST=0.0.0.0
-```
-
-4. **Production Settings**
-```env
-GUNICORN_WORKERS=4
-GUNICORN_THREADS=2
-GUNICORN_TIMEOUT=30
-``` 
+**Made with ❤️ for learning Docker Compose** 
