@@ -1,391 +1,241 @@
 # API Documentation
 
-## Overview
-
-This document describes the REST API endpoints provided by the Docker Compose Practice Flask application. The API demonstrates Redis integration, health monitoring, and container-to-container communication within a Docker Compose environment.
+This document describes the available API endpoints in the Docker Compose Practice project.
 
 ## Base URL
 
-- **Development**: `http://localhost/` (via Nginx proxy)
-- **Direct Access**: `http://localhost:5000/` (Flask development server)
-- **Production**: `http://localhost/` (via Nginx proxy)
-
-## Authentication
-
-Currently, this API does not require authentication. This is designed for learning purposes and should not be used in production without proper authentication mechanisms.
+All API endpoints are available at:
+- Development: `http://localhost/`
+- Production: `https://your-domain.com/` (when configured)
 
 ## Endpoints
 
-### 1. Welcome Endpoint
+### 1. Main Endpoint
 
-**Get Welcome Message with Visit Counter**
+Returns a welcome message and the current visit count.
 
 ```http
 GET /
 ```
 
-#### Description
-Returns a welcome message along with the current visit count. Each request increments the visit counter stored in Redis.
-
 #### Response
-
-**Success Response**
-- **Code**: `200 OK`
-- **Content Type**: `application/json`
 
 ```json
 {
   "message": "Welcome to Docker Compose Practice",
-  "visits": 1
+  "visits": n,
+  "served_by": {
+    "hostname": "app-1",
+    "container_id": "abc123",
+    "instance": "app-1"
+  }
 }
 ```
 
-#### Example Usage
+#### Description
+- Increments the visit counter in Redis
+- Returns the current visit count
+- Includes instance information for load balancing verification
 
-```bash
-# First visit
-curl http://localhost/
-# Response: {"message": "Welcome to Docker Compose Practice", "visits": 1}
+### 2. Health Check
 
-# Second visit
-curl http://localhost/
-# Response: {"message": "Welcome to Docker Compose Practice", "visits": 2}
-```
-
-#### Implementation Details
-- Uses Redis `INCR` command for atomic counter increment
-- Counter persists across container restarts (with Redis volume)
-- Thread-safe for concurrent requests
-- Redis key: `visit_count`
-
----
-
-### 2. Health Check Endpoint
-
-**Check Application and Dependencies Health**
+Returns the health status of the application and its dependencies.
 
 ```http
 GET /health
 ```
 
-#### Description
-Provides health status information for the application and its dependencies. Used by Docker health checks and monitoring systems.
-
 #### Response
-
-**Success Response**
-- **Code**: `200 OK`
-- **Content Type**: `application/json`
 
 ```json
 {
   "status": "UP",
-  "redis": "connected"
+  "redis": "connected",
+  "instance": {
+    "container_id": "abc123",
+    "hostname": "app-1",
+    "service": "app-1"
+  }
 }
 ```
 
-**Error Response (Redis Unavailable)**
-- **Code**: `503 Service Unavailable`
-- **Content Type**: `application/json`
+#### Description
+- Checks application status
+- Verifies Redis connection
+- Returns instance information
+- Used by Docker health checks
+
+### 3. Visit Counter
+
+Returns the current visit count without incrementing.
+
+```http
+GET /visits
+```
+
+#### Response
 
 ```json
 {
-  "status": "DOWN",
-  "redis": "disconnected",
-  "error": "Redis connection failed"
+  "visits": n
 }
 ```
 
-#### Example Usage
+#### Description
+- Reads the current visit count from Redis
+- Does not increment the counter
+- Useful for monitoring
 
-```bash
-# Healthy system
-curl http://localhost/health
-# Response: {"status": "UP", "redis": "connected"}
+## Error Responses
 
-# When Redis is down
-curl http://localhost/health
-# Response: {"status": "DOWN", "redis": "disconnected", "error": "..."}
-```
-
-#### Health Check Criteria
-- **UP**: Application is running and Redis is accessible
-- **DOWN**: Application is running but Redis is inaccessible
-- **No Response**: Application container is not running
-
----
-
-## Error Handling
-
-### Standard Error Response Format
+### 400 Bad Request
 
 ```json
 {
-  "error": "Error description",
-  "status": "error_type",
-  "timestamp": "2024-01-15T10:30:00Z"
+  "error": "Bad Request",
+  "message": "Invalid request parameters"
 }
 ```
 
-### Common HTTP Status Codes
+### 404 Not Found
 
-| Status Code | Description | When It Occurs |
-|-------------|-------------|----------------|
-| `200` | OK | Successful request |
-| `404` | Not Found | Invalid endpoint |
-| `500` | Internal Server Error | Application error |
-| `503` | Service Unavailable | Redis connection failed |
-
----
-
-## Redis Integration Details
-
-### Data Storage
-
-The application uses Redis for the following purposes:
-
-1. **Visit Counter**: 
-   - Key: `visit_count`
-   - Type: Integer
-   - Operation: `INCR visit_count`
-
-2. **Future Enhancements** (not implemented):
-   - Session storage
-   - Caching layer
-   - Rate limiting counters
-
-### Redis Connection
-
-```python
-import redis
-
-# Connection configuration
-redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'localhost'),
-    port=int(os.getenv('REDIS_PORT', 6379)),
-    db=0,
-    decode_responses=True
-)
+```json
+{
+  "error": "Not Found",
+  "message": "The requested resource was not found"
+}
 ```
 
-### Error Handling
+### 500 Internal Server Error
 
-The application handles Redis connection errors gracefully:
-- Connection timeouts
-- Redis server unavailable
-- Network issues between containers
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
 
----
+## Rate Limiting
 
-## Docker Compose Integration
-
-### Service Communication
-
-The API demonstrates several Docker Compose concepts:
-
-1. **Service Discovery**: Flask connects to Redis using service name `redis`
-2. **Network Isolation**: Services communicate on internal network
-3. **Health Checks**: Docker monitors application health via `/health` endpoint
-4. **Load Balancing**: Nginx proxies requests to Flask backend
-
-### Environment Variables
-
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `REDIS_HOST` | Redis server hostname | `localhost` | `redis` |
-| `REDIS_PORT` | Redis server port | `6379` | `6379` |
-| `FLASK_ENV` | Flask environment | `development` | `production` |
-| `FLASK_DEBUG` | Debug mode | `False` | `True` |
-
----
+Currently, there is no rate limiting implemented. Future versions may include:
+- Per-IP rate limiting
+- Per-endpoint rate limiting
+- Rate limit headers in responses
 
 ## Testing the API
 
-### Manual Testing
+### Using curl
 
 ```bash
-# Test welcome endpoint
-curl -X GET http://localhost/
+# Test main endpoint
+curl http://localhost/
 
-# Test health endpoint
-curl -X GET http://localhost/health
+# Test health check
+curl http://localhost/health
 
-# Test with verbose output
-curl -v http://localhost/
-
-# Test response headers
-curl -I http://localhost/
+# Test visit counter
+curl http://localhost/visits
 ```
 
-### Automated Testing
+### Using Python requests
 
-```bash
-# Using HTTPie
-http GET localhost/
-http GET localhost/health
-
-# Using wget
-wget -qO- http://localhost/
-wget -qO- http://localhost/health
-
-# Using Python requests
-python3 -c "
+```python
 import requests
+
+# Test main endpoint
 response = requests.get('http://localhost/')
 print(response.json())
-"
+
+# Test health check
+response = requests.get('http://localhost/health')
+print(response.json())
+
+# Test visit counter
+response = requests.get('http://localhost/visits')
+print(response.json())
 ```
 
-### Load Testing
+## Monitoring
 
-```bash
-# Simple load test with curl
-for i in {1..10}; do
-  curl -s http://localhost/ | jq .visits
-done
+### Health Check Integration
 
-# Using Apache Bench (if installed)
-ab -n 100 -c 10 http://localhost/
+The `/health` endpoint is used by Docker's health check system:
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
 ```
 
----
+### Metrics
 
-## Development and Debugging
+Future versions may include:
+- Prometheus metrics endpoint
+- Request timing information
+- Resource usage statistics
 
-### Logging
+## Security
 
-The application provides logging for debugging:
+### Headers
 
-```bash
-# View application logs
-docker-compose logs app
-
-# Follow logs in real-time
-docker-compose logs -f app
-
-# View all service logs
-docker-compose logs
-```
-
-### Direct Container Access
-
-```bash
-# Access Flask app container
-docker-compose exec app /bin/sh
-
-# Test internal endpoints
-docker-compose exec app curl http://localhost:5000/health
-
-# Access Redis container
-docker-compose exec redis redis-cli
-
-# Check Redis data
-docker-compose exec redis redis-cli GET visit_count
-```
-
-### Redis Debugging
-
-```bash
-# Monitor Redis commands
-docker-compose exec redis redis-cli monitor
-
-# Check Redis info
-docker-compose exec redis redis-cli info
-
-# List all keys
-docker-compose exec redis redis-cli keys "*"
-```
-
----
-
-## Performance Considerations
-
-### Response Times
-- **Welcome Endpoint**: ~5-10ms (Redis operation)
-- **Health Check**: ~2-5ms (Redis ping)
-
-### Throughput
-- **Concurrent Users**: Scales with Gunicorn workers
-- **Redis Performance**: Handles thousands of operations/second
-- **Nginx**: Efficient static content serving
-
-### Caching Headers
-
-Nginx adds appropriate caching headers for static content:
+The API is served through Nginx with the following security headers:
 
 ```nginx
-# Static files
-location /static/ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-
-# API responses (no cache)
-location / {
-    add_header Cache-Control "no-cache, no-store, must-revalidate";
-}
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "no-referrer-when-downgrade" always;
+add_header Content-Security-Policy "default-src 'self'" always;
 ```
 
----
+### Authentication
 
-## Security Considerations
+Currently, there is no authentication required. Future versions may include:
+- API key authentication
+- JWT token support
+- OAuth2 integration
 
-### Current Security Measures
-- Internal network isolation
-- No sensitive data exposure
-- Basic security headers via Nginx
+## Versioning
 
-### Production Recommendations
-- Add authentication/authorization
-- Implement rate limiting
-- Add input validation
-- Use HTTPS with SSL certificates
-- Implement CORS policies
-- Add request logging and monitoring
+The API is currently at version 1. Future versions will be available at:
+- `http://localhost/v2/`
+- `http://localhost/v3/`
 
----
+## Future Endpoints
 
-## API Versioning
+Planned endpoints for future versions:
 
-Currently, this is a single-version API. For production applications, consider:
-
-```http
-# Version in URL
-GET /api/v1/health
-
-# Version in headers
-GET /health
-Accept: application/vnd.api+json;version=1
-```
-
----
-
-## Future Enhancements
-
-Potential API improvements for learning purposes:
-
-1. **User Sessions**
+1. **Metrics**
    ```http
-   POST /sessions
-   DELETE /sessions/{id}
+   GET /metrics
    ```
 
-2. **Visit Analytics**
+2. **Status**
    ```http
-   GET /analytics/visits
-   GET /analytics/visits/daily
+   GET /status
    ```
 
 3. **Configuration**
    ```http
    GET /config
-   PUT /config
    ```
 
-4. **Cache Management**
-   ```http
-   DELETE /cache
-   POST /cache/clear
-   ```
+## Best Practices
 
-This API serves as a foundation for understanding Docker Compose, Redis integration, and containerized application development. 
+1. **Error Handling**
+   - Consistent error format
+   - Descriptive error messages
+   - Appropriate HTTP status codes
+
+2. **Response Format**
+   - JSON responses
+   - Consistent structure
+   - Clear field names
+
+3. **Documentation**
+   - OpenAPI/Swagger support (planned)
+   - Example requests/responses
+   - Clear endpoint descriptions 

@@ -1,361 +1,260 @@
 # Architecture Documentation
 
+This document describes the architecture of the Docker Compose Practice project, a production-ready Flask application with Redis and Nginx.
+
 ## System Overview
 
-This Docker Compose practice project demonstrates a **production-ready microservices architecture** with Flask, Redis, and Nginx. The application showcases container orchestration, service communication, and Docker Compose best practices.
+The application consists of three main services:
 
-## 🏗️ Architecture Diagram
+1. **Flask Application** (`app`)
+   - Python web application serving the API
+   - Handles business logic and Redis integration
+   - Runs on port 5000 internally
+
+2. **Redis** (`redis`)
+   - In-memory database for visit counting
+   - Persists data using AOF (Append Only File)
+   - Runs on port 6379 internally
+
+3. **Nginx** (`nginx`)
+   - Reverse proxy and load balancer
+   - Serves static files
+   - Exposes port 80 externally
+
+## Network Architecture
 
 ```
-                          ┌─────────────────────────────┐
-                          │          Client             │
-                          │        (Browser)            │
-                          └─────────────┬───────────────┘
-                                        │
-                                        │ HTTP Requests
-                                        │ Port 80
-                                        ▼
-                          ┌─────────────────────────────┐
-                          │          Nginx              │
-                          │     (Reverse Proxy)         │
-                          │   ┌─────────────────────┐   │
-                          │   │ • Load Balancing    │   │
-                          │   │ • SSL Termination   │   │
-                          │   │ • Static Files      │   │
-                          │   │ • Security Headers  │   │
-                          │   └─────────────────────┘   │
-                          └─────────────┬───────────────┘
-                                        │
-                                        │ Proxy Pass
-                                        │ Port 5000
-                                        ▼
-                          ┌─────────────────────────────┐
-                          │         Flask App           │
-                          │      (Python API)           │
-                          │   ┌─────────────────────┐   │
-                          │   │ • REST API          │   │
-                          │   │ • Business Logic    │   │
-                          │   │ • Session Management│   │
-                          │   │ • Health Checks     │   │
-                          │   └─────────────────────┘   │
-                          └─────────────┬───────────────┘
-                                        │
-                                        │ Redis Protocol
-                                        │ Port 6379
-                                        ▼
-                          ┌─────────────────────────────┐
-                          │          Redis              │
-                          │     (Cache/Database)        │
-                          │   ┌─────────────────────┐   │
-                          │   │ • Visit Counter     │   │
-                          │   │ • Session Storage   │   │
-                          │   │ • Caching Layer     │   │
-                          │   │ • Pub/Sub Messaging │   │
-                          │   └─────────────────────┘   │
-                          └─────────────────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│     Client      │    │      Nginx      │    │   Flask App     │
+│   (Browser)     │◄──►│  (Reverse Proxy │◄──►│  (Python API)   │
+│                 │    │   Load Balancer)│    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │     Redis       │
+                                              │ (Cache/Session) │
+                                              └─────────────────┘
 ```
 
-## 🐳 Container Architecture
+### Network Details
 
-### Service Breakdown
+- **Network Name**: `app-network`
+- **Driver**: bridge
+- **Subnet**: 172.18.0.0/16
+- **Services**: All containers communicate internally using service names
 
-#### 1. Nginx Container (`nginx`)
-- **Purpose**: Reverse proxy and load balancer
-- **Base Image**: `nginx:alpine`
-- **Ports**: 
-  - `80:80` (HTTP traffic)
-- **Key Features**:
-  - Routes requests to Flask backend
-  - Serves static files efficiently
-  - Implements security headers
-  - Handles SSL termination (in production)
-  - Provides load balancing for multiple Flask instances
+## Service Configuration
 
-#### 2. Flask Application Container (`app`)
-- **Purpose**: Python web application and API server
-- **Base Image**: `python:3.11-slim`
-- **Ports**: 
-  - `5000` (internal only, accessed via Nginx)
-- **Key Features**:
-  - RESTful API endpoints
-  - Redis integration for data persistence
-  - Health monitoring endpoints
-  - Environment-based configuration
-  - Multi-stage build for optimization
+### Flask Application
 
-#### 3. Redis Container (`redis`)
-- **Purpose**: In-memory database and cache
-- **Base Image**: `redis:alpine`
-- **Ports**: 
-  - `6379` (internal only)
-- **Key Features**:
-  - Visit counter storage
-  - Session management
-  - High-performance caching
-  - Data persistence with RDB snapshots
-
-## 🔗 Service Communication
-
-### Network Architecture
-```
-┌─────────────────────────────────────────────────────────┐
-│                  Docker Network                         │
-│                (app-network)                            │
-│                                                         │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
-│  │    nginx    │    │     app     │    │    redis    │  │
-│  │   :80       │◄──►│   :5000     │◄──►│   :6379     │  │
-│  └─────────────┘    └─────────────┘    └─────────────┘  │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Communication Flow
-1. **Client → Nginx** (HTTP/HTTPS)
-   - Client sends request to `http://localhost/`
-   - Nginx receives on port 80
-
-2. **Nginx → Flask** (HTTP Proxy)
-   - Nginx forwards to `http://app:5000/`
-   - Load balancing across Flask instances
-
-3. **Flask → Redis** (Redis Protocol)
-   - Flask connects to `redis:6379`
-   - Stores/retrieves visit counter data
-
-## 📦 Data Flow
-
-### Request Lifecycle
-```
-1. Browser Request
-   │
-   ├─► GET / HTTP/1.1
-   │   Host: localhost
-   │
-2. Nginx Processing
-   │
-   ├─► proxy_pass http://app:5000/
-   │   + Add security headers
-   │   + Log request
-   │
-3. Flask Processing
-   │
-   ├─► Route: @app.route('/')
-   │   │
-   │   ├─► Redis INCR visits
-   │   │   │
-   │   │   └─► visits = redis.incr('visit_count')
-   │   │
-   │   └─► Return JSON response
-   │
-4. Response Chain
-   │
-   ├─► Flask: {"message": "...", "visits": N}
-   │   │
-   │   ├─► Nginx: Add headers, forward response
-   │   │
-   │   └─► Browser: Display result
-```
-
-## 🔧 Configuration Management
-
-### Environment Strategy
-```
-config/
-├── local/     # Local development (Docker Desktop)
-├── dev/       # Development server (CI/CD)
-└── prod/      # Production server (deployment)
-```
-
-### Configuration Hierarchy
-1. **Default Values** (in Python code)
-2. **Environment Files** (.env)
-3. **Environment Variables** (override .env)
-4. **Command Line Arguments** (highest priority)
-
-### Key Configuration Areas
-- **Flask Settings**: Debug mode, secret keys, database URLs
-- **Redis Settings**: Host, port, database selection, TTL
-- **Nginx Settings**: Upstream servers, SSL, caching rules
-- **Docker Settings**: Resource limits, health checks, networks
-
-## 🚀 Deployment Architecture
-
-### Multi-Environment Setup
-
-#### Development Environment
 ```yaml
-# docker-compose.dev.yml
-services:
-  app:
-    volumes:
-      - ./src:/app  # Live code reload
-    environment:
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
-    ports:
-      - "5000:5000"  # Direct access for debugging
+app:
+  build:
+    context: ./src
+    dockerfile: ../deploy/docker/app/Dockerfile
+  volumes:
+    - ./src:/app
+  env_file:
+    - ./config/${ENV:-dev}/.env
+  depends_on:
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+  networks:
+    - app-network
 ```
 
-#### Production Environment
+### Redis
+
 ```yaml
-# docker-compose.prod.yml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
-    environment:
-      - FLASK_ENV=production
-      - GUNICORN_WORKERS=4
+redis:
+  image: redis:7-alpine
+  command: redis-server --appendonly yes
+  volumes:
+    - redis-data:/data
+  env_file:
+    - ./config/${ENV:-dev}/.env
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 10s
+    timeout: 5s
+    retries: 3
+  networks:
+    - app-network
 ```
 
-## 🛡️ Security Architecture
+### Nginx
 
-### Security Layers
-1. **Container Security**
-   - Non-root users in containers
-   - Read-only file systems where possible
-   - Minimal base images (Alpine Linux)
-   - No unnecessary packages
-
-2. **Network Security**
-   - Internal network isolation
-   - Only necessary ports exposed
-   - Service-to-service authentication
-
-3. **Application Security**
-   - Environment variable secrets
-   - Request validation
-   - Security headers (via Nginx)
-   - Rate limiting capabilities
-
-### Security Headers (Nginx)
-```nginx
-add_header X-Frame-Options "SAMEORIGIN" always;
-add_header X-XSS-Protection "1; mode=block" always;
-add_header X-Content-Type-Options "nosniff" always;
-add_header Referrer-Policy "no-referrer-when-downgrade" always;
-add_header Content-Security-Policy "default-src 'self'" always;
-```
-
-## 📊 Monitoring & Health Checks
-
-### Health Check Strategy
 ```yaml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 40s
+nginx:
+  build:
+    context: ./deploy/nginx
+    dockerfile: ../docker/nginx/Dockerfile
+  ports:
+    - "80:80"
+  volumes:
+    - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+    - ./src/static:/app/static:ro
+  env_file:
+    - ./config/${ENV:-dev}/.env
+  depends_on:
+    - app
+  networks:
+    - app-network
 ```
 
-### Health Check Endpoints
-- **Flask App**: `GET /health`
-  - Checks Redis connectivity
-  - Returns service status
-  - Response time monitoring
+## Environment Configuration
 
-- **Nginx**: Default nginx status
-  - Process health check
-  - Upstream server status
+The application supports multiple environments through environment files:
 
-- **Redis**: Redis PING command
-  - Memory usage check
-  - Connection availability
+- **Development** (`config/dev/.env`)
+  - Debug mode enabled
+  - Development-specific settings
+  - Local development configuration
 
-## 🔄 Scaling Considerations
+- **Production** (`config/prod/.env`)
+  - Debug mode disabled
+  - Production-specific settings
+  - Secure configuration
 
-### Horizontal Scaling
-```yaml
-services:
-  app:
-    deploy:
-      replicas: 3  # Multiple Flask instances
-```
+## Health Checks
 
-### Load Balancing (Nginx)
-```nginx
-upstream flask_app {
-    least_conn;
-    server app_1:5000;
-    server app_2:5000;
-    server app_3:5000;
-}
-```
+Each service implements health checks:
 
-### Session Management
-- **Stateless Design**: Sessions stored in Redis
-- **Sticky Sessions**: Not required due to Redis backend
-- **Session Replication**: Redis handles persistence
+1. **Flask App**
+   - Endpoint: `/health`
+   - Checks: Application status and Redis connection
+   - Interval: 30s
 
-## 🏗️ Build Architecture
+2. **Redis**
+   - Command: `redis-cli ping`
+   - Checks: Redis server availability
+   - Interval: 10s
 
-### Multi-Stage Docker Build
-```dockerfile
-# Stage 1: Builder
-FROM python:3.11-slim AS builder
-COPY requirements/ requirements/
-RUN pip install -r requirements/prod.txt
+3. **Nginx**
+   - Command: `nginx -t`
+   - Checks: Configuration validity
+   - Interval: 30s
 
-# Stage 2: Final
-FROM python:3.11-slim AS final
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-```
+## Data Persistence
 
-### Benefits
-- **Smaller Images**: Only runtime dependencies
-- **Security**: No build tools in final image
-- **Performance**: Faster container startup
-- **Caching**: Efficient layer caching
+- **Redis Data**
+  - Volume: `redis-data`
+  - Persistence: AOF (Append Only File)
+  - Location: `/data` in container
 
-## 📈 Performance Optimizations
+## Security Considerations
 
-### Docker Optimizations
-- Multi-stage builds reduce image size
-- Alpine Linux base images
-- Efficient layer caching
-- Volume mounts for development
+1. **Network Isolation**
+   - Services communicate on private network
+   - Only Nginx exposed to host
+   - Internal services not directly accessible
 
-### Application Optimizations
-- Redis connection pooling
-- Gunicorn with multiple workers
-- Nginx static file serving
-- HTTP/2 support ready
+2. **Environment Variables**
+   - Sensitive data in .env files
+   - Different configurations per environment
+   - No hardcoded secrets
 
-### Development Optimizations
-- Live code reloading
-- Debug mode for development
-- Hot-reload for CSS/JS
-- Efficient build caching
+3. **File Permissions**
+   - Read-only volume mounts where possible
+   - Minimal file access in containers
+   - Proper user permissions
 
-## 🔍 Troubleshooting Architecture
+## Scaling Considerations
 
-### Common Issues & Solutions
-1. **Service Discovery**: Use service names in Docker network
-2. **Port Conflicts**: Map to different host ports
-3. **Volume Permissions**: Use proper user mapping
-4. **Health Check Failures**: Verify endpoint accessibility
+The architecture supports horizontal scaling:
 
-### Debugging Tools
-```bash
-# Network inspection
-docker network inspect app-network
+1. **Flask App**
+   - Stateless design
+   - Can be scaled horizontally
+   - Load balanced by Nginx
 
-# Service logs
-docker-compose logs -f app
+2. **Redis**
+   - Single instance for simplicity
+   - Can be clustered for production
+   - Data persistence enabled
 
-# Container access
-docker-compose exec app /bin/sh
+3. **Nginx**
+   - Handles load balancing
+   - Static file serving
+   - SSL termination (if configured)
 
-# Redis debugging
-docker-compose exec redis redis-cli monitor
-```
+## Monitoring and Logging
 
-This architecture provides a solid foundation for learning Docker Compose while demonstrating real-world patterns and best practices.
+1. **Health Checks**
+   - Service-level health monitoring
+   - Automatic container restart
+   - Dependency management
+
+2. **Logging**
+   - Container logs
+   - Application logs
+   - Nginx access/error logs
+
+## Development Workflow
+
+1. **Local Development**
+   - Hot-reload enabled
+   - Source code mounted
+   - Debug mode active
+
+2. **Testing**
+   - Unit tests in `src/tests`
+   - Integration tests
+   - End-to-end testing
+
+3. **Deployment**
+   - Docker Compose for orchestration
+   - Environment-specific configs
+   - Production optimizations
+
+## Best Practices Implemented
+
+1. **Container Design**
+   - Single responsibility
+   - Minimal base images
+   - Proper health checks
+
+2. **Configuration**
+   - Environment variables
+   - Separate configs
+   - No hardcoded values
+
+3. **Networking**
+   - Private network
+   - Service discovery
+   - Port mapping
+
+4. **Security**
+   - Read-only volumes
+   - Minimal permissions
+   - Secure defaults
+
+## Future Improvements
+
+1. **Scaling**
+   - Redis clustering
+   - Multiple Nginx instances
+   - Service mesh integration
+
+2. **Monitoring**
+   - Prometheus metrics
+   - Grafana dashboards
+   - Alerting system
+
+3. **Security**
+   - SSL/TLS configuration
+   - Authentication system
+   - Rate limiting
+
+4. **CI/CD**
+   - Automated testing
+   - Deployment pipeline
+   - Version management
