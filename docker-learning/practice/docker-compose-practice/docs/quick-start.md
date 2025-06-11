@@ -33,6 +33,10 @@ cd docker-learning/practice/docker-compose-practice
 # Verify you're in the right place
 ls -la
 # You should see: docker-compose.yml, Makefile, src/, deploy/, etc.
+
+# ⚠️ Important: All Make commands must be run from this directory
+pwd
+# Should show: .../docker-compose-practice
 ```
 
 ## Step 2: Quick Start
@@ -43,12 +47,32 @@ Choose your preferred method:
 ```bash
 # Start development environment
 make dev
+
+# Or start production environment
+make prod
+
+# Or test horizontal scaling (first time)
+make clean && make scale-test
+
+# Or scale up/down (after initial setup)
+make scale-up    # Scale up to 5 instances
+make scale-down  # Scale down to 1 instance
 ```
 
 ### Option B: Using Docker Compose Directly
 ```bash
 # Start with development configuration
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Or start with production configuration
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Or test scaling (first time)
+docker-compose down -v && docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=3 -d
+
+# Or scale up/down (after initial setup)
+docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=5 -d  # Scale up
+docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=1 -d  # Scale down
 ```
 
 ### Option C: Background Mode
@@ -63,17 +87,33 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 ### Test the Application
 ```bash
-# Test main endpoint (should show visit counter)
+# Test main endpoint (should show visit counter and instance info)
 curl http://localhost/
 
 # Expected response:
-# {"message": "Welcome to Docker Compose Practice", "visits": N}
+# {
+#   "message": "Welcome to Docker Compose Practice",
+#   "visits": N,
+#   "served_by": {
+#     "hostname": "xxx",
+#     "container_id": "xxx",
+#     "instance": "app-xxx"
+#   }
+# }
 
 # Test health check
 curl http://localhost/health
 
 # Expected response:
-# {"status": "UP", "redis": "connected"}
+# {
+#   "status": "UP",
+#   "redis": "connected",
+#   "instance": {
+#     "container_id": "xxx",
+#     "hostname": "xxx",
+#     "service": "app-xxx"
+#   }
+# }
 ```
 
 ### Check Container Status
@@ -104,14 +144,14 @@ docker network inspect app-network
 ### Visit in Browser
 Open your browser and go to: http://localhost/
 
-You should see a JSON response with a welcome message and visit counter.
+You should see a JSON response with a welcome message, visit counter, and instance information.
 
 ### Test Multiple Visits
 ```bash
-# Visit multiple times to see counter increment
-for i in {1..5}; do curl -s http://localhost/ | jq .visits; done
+# Visit multiple times to see counter increment and load balancing
+for i in {1..5}; do curl -s http://localhost/ | jq -r '.served_by.instance'; done
 
-# Should show incrementing numbers: 1, 2, 3, 4, 5
+# Should show different app instances handling requests
 ```
 
 ### Test Service Communication
@@ -122,6 +162,9 @@ docker-compose exec app ping nginx
 
 # Check Redis data directly
 docker-compose exec redis redis-cli get visit_count
+
+# Check Nginx status
+curl -s http://localhost/nginx-status
 ```
 
 ## Step 5: Check Logs (Optional)
@@ -165,6 +208,9 @@ make dev-bg
 # Start production
 make prod
 
+# Test scaling
+make scale-test
+
 # View logs
 make logs
 
@@ -189,6 +235,9 @@ docker-compose exec redis redis-cli get visit_count
 # Test Nginx configuration
 docker-compose exec nginx nginx -t
 
+# Check Nginx status
+curl -s http://localhost/nginx-status
+
 # Inspect network
 docker network inspect app-network
 ```
@@ -200,6 +249,7 @@ You now have running:
 1. **Flask Web Application** - Python API server with Redis integration
 2. **Redis Database** - In-memory database storing visit counts
 3. **Nginx Reverse Proxy** - Web server routing requests to Flask
+4. **Load Balancing** - Automatic distribution of requests across instances
 
 The architecture demonstrates:
 - Container orchestration with Docker Compose
@@ -207,6 +257,7 @@ The architecture demonstrates:
 - Health checks and monitoring
 - Environment configuration management
 - Multi-service communication
+- Horizontal scaling capabilities
 
 ### Network Details
 - **Network Name**: `app-network`
@@ -224,6 +275,7 @@ cat src/app/routes.py
 
 # Check Docker configurations
 cat docker-compose.yml
+cat docker-compose.scale.yml
 cat deploy/docker/app/Dockerfile
 
 # View network configuration
@@ -245,10 +297,10 @@ make prod
 ### Experiment with Scaling
 ```bash
 # Scale the Flask app to multiple instances
-docker-compose up --scale app=3
+make scale-test
 
 # Test load balancing
-for i in {1..10}; do curl -s http://localhost/ | jq .visits; done
+for i in {1..10}; do curl -s http://localhost/ | jq -r '.served_by.instance'; done
 ```
 
 ### Monitor Resources
@@ -343,6 +395,7 @@ docker inspect $(docker-compose ps -q app) | jq '.[0].State.Health'
 - **[README.md](../README.md)** - Complete project documentation
 - **[docs/architecture.md](architecture.md)** - System architecture details
 - **[docs/api.md](api.md)** - API endpoint documentation
+- **[docs/SCALING_GUIDE.md](SCALING_GUIDE.md)** - Horizontal scaling guide
 - **[docs/PROJECT_VERIFICATION.md](PROJECT_VERIFICATION.md)** - Current working status
 - **[Makefile](../Makefile)** - All available commands
 
@@ -356,13 +409,15 @@ You've successfully set up a multi-container Docker application with:
 - ✅ Health monitoring
 - ✅ Development/Production environments
 - ✅ Service networking on `app-network`
+- ✅ Horizontal scaling capabilities
 
 This project demonstrates real-world Docker Compose patterns you'll use in production applications!
 
 ## 🚀 What's Next?
 
-- Try scaling services: `docker-compose up --scale app=3`
+- Try scaling services: `make scale-test`
 - Explore the production configuration: `make prod`
 - Study the network architecture: `docker network inspect app-network`
 - Learn about health checks: `docker-compose ps`
 - Read the full documentation to understand the architecture
+ 
