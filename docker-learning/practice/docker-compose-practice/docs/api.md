@@ -10,12 +10,12 @@ All API endpoints are available at:
 
 ## Endpoints
 
-### 1. Main Endpoint
+### 1. Visit Counter
 
-Returns a welcome message and the current visit count.
+Returns a welcome message and increments the visit counter.
 
 ```http
-GET /
+GET /visits
 ```
 
 #### Response
@@ -65,26 +65,36 @@ GET /health
 - Returns instance information
 - Used by Docker health checks
 
-### 3. Visit Counter
+### 3. Load Test
 
-Returns the current visit count without incrementing.
+Endpoint for testing load balancing functionality.
 
 ```http
-GET /visits
+GET /load-test
 ```
 
 #### Response
 
 ```json
 {
-  "visits": n
+  "message": "Load balancing test endpoint",
+  "total_visits": n,
+  "instance_requests": n,
+  "processing_time": 0.234,
+  "served_by": {
+    "hostname": "app-1",
+    "container_id": "abc123",
+    "instance": "app-1"
+  },
+  "timestamp": 1234567890.123
 }
 ```
 
 #### Description
-- Reads the current visit count from Redis
-- Does not increment the counter
-- Useful for monitoring
+- Simulates processing time
+- Tracks requests per instance
+- Shows total visit count
+- Useful for load balancing verification
 
 ## Error Responses
 
@@ -115,26 +125,19 @@ GET /visits
 }
 ```
 
-## Rate Limiting
-
-Currently, there is no rate limiting implemented. Future versions may include:
-- Per-IP rate limiting
-- Per-endpoint rate limiting
-- Rate limit headers in responses
-
 ## Testing the API
 
 ### Using curl
 
 ```bash
-# Test main endpoint
-curl http://localhost/
+# Test visit counter
+curl http://localhost/visits
 
 # Test health check
 curl http://localhost/health
 
-# Test visit counter
-curl http://localhost/visits
+# Test load balancing
+curl http://localhost/load-test
 ```
 
 ### Using Python requests
@@ -142,16 +145,16 @@ curl http://localhost/visits
 ```python
 import requests
 
-# Test main endpoint
-response = requests.get('http://localhost/')
+# Test visit counter
+response = requests.get('http://localhost/visits')
 print(response.json())
 
 # Test health check
 response = requests.get('http://localhost/health')
 print(response.json())
 
-# Test visit counter
-response = requests.get('http://localhost/visits')
+# Test load balancing
+response = requests.get('http://localhost/load-test')
 print(response.json())
 ```
 

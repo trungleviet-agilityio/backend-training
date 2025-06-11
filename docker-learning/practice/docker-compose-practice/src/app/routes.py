@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, current_app
 main = Blueprint("main", __name__)
 
 
-@main.route("/")
+@main.route("/visits")
 def index():
     try:
         visits = current_app.redis.incr("visits")

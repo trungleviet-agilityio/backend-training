@@ -82,18 +82,21 @@ This guide will help you get the Docker Compose Practice project up and running 
    # Check if services are running
    docker-compose ps
 
-   # Test the main endpoint
-   curl http://localhost/
+   # Test the visit counter endpoint
+   curl http://localhost/visits
 
    # Test the health endpoint
    curl http://localhost/health
+
+   # Test load balancing
+   curl http://localhost/load-test
    ```
 
 ## Accessing the Application
 
-- **Main Application**: http://localhost/
+- **Visit Counter**: http://localhost/visits
 - **Health Check**: http://localhost/health
-- **Visit Counter**: Each request to `/` increments the Redis counter
+- **Load Test**: http://localhost/load-test
 
 ## Common Issues and Solutions
 
