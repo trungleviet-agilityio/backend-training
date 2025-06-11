@@ -51,10 +51,10 @@ echo "Redis is ready!"\n\
 export PYTHONPATH=/app\n\
 if [ "$FLASK_ENV" = "development" ]; then\n\
     echo "Starting development server..."\n\
-    python app.py\n\
+    python main.py\n\
 else\n\
     echo "Starting production server..."\n\
-    gunicorn --bind 0.0.0.0:5000 --workers ${GUNICORN_WORKERS:-4} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-30} "app:app"\n\
+    gunicorn --bind 0.0.0.0:5000 --workers ${GUNICORN_WORKERS:-4} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-30} "main:app"\n\
 fi' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Create non-root user and switch
