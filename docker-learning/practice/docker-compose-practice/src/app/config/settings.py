@@ -31,7 +31,9 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-jwt-secret-key-here")
 
 # Logging settings
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
-LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+LOG_FORMAT = os.getenv(
+    "LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 # Monitoring settings
 SENTRY_DSN = os.getenv("SENTRY_DSN")
@@ -51,6 +53,7 @@ RATELIMIT_DEFAULT = os.getenv("RATELIMIT_DEFAULT", "200/hour")
 GUNICORN_WORKERS = int(os.getenv("GUNICORN_WORKERS", "4"))
 GUNICORN_THREADS = int(os.getenv("GUNICORN_THREADS", "2"))
 GUNICORN_TIMEOUT = int(os.getenv("GUNICORN_TIMEOUT", "30"))
+
 
 def get_settings() -> Dict[str, Any]:
     """Get all settings as a dictionary."""
