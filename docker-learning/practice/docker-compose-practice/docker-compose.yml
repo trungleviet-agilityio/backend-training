@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: ../deploy/docker/app/Dockerfile
+      args:
+        - ENV=${ENV:-development}
+    volumes:
+      - ./src:/app
+    env_file:
+      - ./config/${ENV:-dev}/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    env_file:
+      - ./config/${ENV:-dev}/.env
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./deploy/nginx
+      dockerfile: ../docker/nginx/Dockerfile
+      args:
+        - ENV=${ENV:-development}
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./src/static:/app/static:ro
+    env_file:
+      - ./config/${ENV:-dev}/.env
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+

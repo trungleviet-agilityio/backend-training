@@ -1,0 +1,55 @@
+version: '3.8'
+
+# Override configuration for testing horizontal scaling
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=3
+
+services:
+  app:
+    # Remove port mappings to allow multiple instances
+    ports: []
+    
+    # Use production-like settings for scaling test
+    environment:
+      - FLASK_ENV=production
+      - GUNICORN_WORKERS=2
+      - GUNICORN_THREADS=2
+    
+    # Remove volume mounts for production-like behavior
+    volumes: []
+    
+    # Optimize for scaling
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Ensure all instances connect to same network
+    networks:
+      - app-network
+
+  redis:
+    # Remove port mapping for security
+    ports: []
+
+  nginx:
+    # Keep only the main port for external access
+    ports:
+      - "80:80"
+    
+    # Add environment variables for scaling awareness
+    environment:
+      - NGINX_WORKER_PROCESSES=auto
+      - NGINX_WORKER_CONNECTIONS=1024
+    
+    # Depends on all app instances (Docker Compose handles this automatically)
+    depends_on:
+      - app
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
