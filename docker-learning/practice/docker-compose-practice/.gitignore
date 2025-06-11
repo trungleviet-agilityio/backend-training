@@ -46,3 +46,7 @@ logs/
 # Local development
 .DS_Store
 Thumbs.db 
+
+# Test Coverage
+.coverage
+htmlcov/

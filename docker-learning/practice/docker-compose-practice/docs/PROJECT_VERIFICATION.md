@@ -46,9 +46,30 @@ This document verifies the working status and metrics of the Docker Compose Prac
 make test
 
 # Results
-test_health_check ... ok
-test_visit_counter ... ok
-test_redis_connection ... ok
+========================================== test session starts ==========================================
+platform linux -- Python 3.11.13, pytest-7.4.3, pluggy-1.6.0 -- /usr/local/bin/python3.11
+cachedir: .pytest_cache
+rootdir: /app
+plugins: cov-4.1.0
+collected 3 items
+
+tests/test_app.py::test_visits_route PASSED
+tests/test_app.py::test_health_route PASSED
+tests/test_app.py::test_load_test_route PASSED
+
+---------- coverage: platform linux, python 3.11.13-final-0 ----------
+Name                     Stmts   Miss  Cover
+--------------------------------------------
+app/__init__.py             11      0   100%
+app/config/__init__.py       2      2     0%
+app/config/settings.py      31     31     0%
+app/routes.py               40      8    80%
+main.py                      4      4     0%
+tests/test_app.py           40      0   100%
+--------------------------------------------
+TOTAL                      128     45    65%
+
+=========================================== 3 passed in 0.86s ===========================================
 ```
 
 ### Integration Tests

@@ -30,21 +30,21 @@ prod: setup-env
 
 # Testing
 test:
-	pytest src/tests/ -v --cov=src
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec -e PYTHONPATH=/app app pytest tests/ -v --cov=.
 
 # Linting
 lint:
-	ruff check src/
-	ruff format --check src/
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec app ruff check .
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec app ruff format --check .
 
 # Format code
 format:
-	ruff format src/
-	ruff check --fix src/
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec app ruff format .
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec app ruff check --fix .
 
 # Pre-commit
 pre-commit:
-	pre-commit run --all-files
+	docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec app pre-commit run --all-files
 
 # Clean up
 clean:
