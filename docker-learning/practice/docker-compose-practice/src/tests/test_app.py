@@ -1,17 +1,22 @@
 import pytest
 from app import create_app
 
+
 @pytest.fixture
 def app():
     app = create_app()
-    app.config.update({
-        "TESTING": True,
-    })
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
     return app
+
 
 @pytest.fixture
 def client(app):
     return app.test_client()
+
 
 def test_index_route(client):
     response = client.get("/")
@@ -19,6 +24,7 @@ def test_index_route(client):
     data = response.get_json()
     assert "message" in data
     assert "visits" in data
+
 
 def test_health_route(client):
     response = client.get("/health")
