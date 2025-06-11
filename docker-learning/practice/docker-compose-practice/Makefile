@@ -1,4 +1,4 @@
-.PHONY: setup-dev setup-prod dev prod test lint clean format pre-commit
+.PHONY: setup-dev setup-prod dev prod test lint clean format pre-commit scale-test scale-up scale-down scale-status load-test
 
 # Environment setup
 setup-env:
@@ -93,3 +93,38 @@ help:
 	@echo "  make pre-commit - Run pre-commit hooks"
 	@echo "  make logs       - View logs"
 	@echo "  make shell      - Access Flask shell"
+
+# Scaling commands
+scale-test: ## Test horizontal scaling with 3 app instances
+	@echo "🚀 Starting scaled deployment (3 app instances)..."
+	docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=3 -d
+	@echo "⏳ Waiting for services to be ready..."
+	@sleep 10
+	@echo "✅ Testing load balancing..."
+	@for i in 1 2 3 4 5; do \
+		echo "Request $$i: $$(curl -s http://localhost/ | jq -r '.served_by.instance')"; \
+	done
+	@echo "🎯 Load balancing test complete!"
+
+scale-up: ## Scale app to 5 instances  
+	@echo "📈 Scaling up to 5 app instances..."
+	docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=5 -d
+	
+scale-down: ## Scale app down to 1 instance
+	@echo "📉 Scaling down to 1 app instance..."
+	docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=1 -d
+
+scale-status: ## Show current scaling status
+	@echo "📊 Current scaling status:"
+	@docker-compose ps | grep app
+	@echo "\n🌐 Network configuration:"
+	@docker network inspect app-network | jq '.[0].Containers | to_entries | map({name: .value.Name, ip: .value.IPv4Address}) | map(select(.name | contains("app"))) | sort_by(.name)'
+
+load-test: ## Run comprehensive load balancing test
+	@echo "🧪 Running comprehensive load balancing test..."
+	@echo "Making 20 requests to /load-test endpoint..."
+	@for i in $$(seq 1 20); do \
+		curl -s http://localhost/load-test | jq -r '.served_by.instance + " (req #" + (.instance_requests | tostring) + ")"'; \
+		sleep 0.1; \
+	done
+	@echo "🏁 Load test complete!"
