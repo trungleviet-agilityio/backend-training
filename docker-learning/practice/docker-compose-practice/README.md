@@ -6,8 +6,9 @@ This project demonstrates a **production-ready Flask application** with Redis an
 
 ### Prerequisites
 - Docker Engine (version 20.10.0 or later)
-- Docker Compose (version 2.0.0 or later)
+- Docker Compose (version 2.0.0 or later) 
 - Make (optional, for using Makefile commands)
+- curl and jq (for testing endpoints)
 
 ### Running the Project
 
@@ -26,6 +27,7 @@ make prod
 - **Main Application**: http://localhost/
 - **Health Check**: http://localhost/health
 - **Visit Counter**: Each request to `/` increments the Redis counter
+- **Network**: Services communicate on `app-network` (internal Docker network)
 
 ## 📚 Complete Documentation
 
@@ -108,6 +110,8 @@ docker-compose-practice/
                                               └─────────────────┘
 ```
 
+**Network**: All services communicate on Docker network `app-network` (172.18.0.0/16)
+
 ## 🛠️ What We Built
 
 ### 1. Multi-Service Docker Application
@@ -120,7 +124,7 @@ docker-compose-practice/
 - **Health Checks**: All services monitor their own health
 - **Environment Management**: Separate configs for dev/prod
 - **Volume Management**: Persistent Redis data storage
-- **Network Isolation**: Services communicate on private network
+- **Network Isolation**: Services communicate on private network (`app-network`)
 - **Multi-stage Builds**: Optimized Docker images
 
 ### 3. Development Best Practices
@@ -139,6 +143,7 @@ make setup-dev          # Set up local development environment
 
 # Daily development
 make dev               # Start development environment
+make dev-bg            # Start development in background
 make logs              # View container logs
 make clean             # Stop and clean up containers
 
@@ -147,6 +152,11 @@ make format            # Format code with Ruff
 make lint             # Run linters
 make pre-commit       # Run pre-commit hooks
 make test             # Run tests
+
+# Debugging and inspection
+make shell             # Access app container shell
+make redis-cli         # Access Redis CLI
+make nginx-test        # Test Nginx configuration
 ```
 
 ### Docker Commands
@@ -160,6 +170,10 @@ docker-compose ps                    # Check service status
 docker-compose logs app             # View app logs
 docker-compose exec app /bin/sh     # Access app container
 docker-compose down -v              # Stop and remove everything
+
+# Network inspection
+docker network ls                   # List all networks
+docker network inspect app-network  # Inspect our network
 ```
 
 ## 🧪 Testing the Application
@@ -168,15 +182,15 @@ docker-compose down -v              # Stop and remove everything
 ```bash
 # Main endpoint (increments visit counter)
 curl http://localhost/
-# Response: {"message": "Welcome to Docker Compose Practice", "visits": 1}
+# Expected: {"message": "Welcome to Docker Compose Practice", "visits": N}
 
 # Health check endpoint
 curl http://localhost/health  
-# Response: {"status": "UP", "redis": "connected"}
+# Expected: {"status": "UP", "redis": "connected"}
 
 # Test multiple visits
-curl http://localhost/ && curl http://localhost/
-# Visit counter increments: visits: 2, then visits: 3
+for i in {1..5}; do curl -s http://localhost/ | jq .visits; done
+# Should show incrementing visit counter
 ```
 
 ### Service Health
@@ -188,6 +202,10 @@ docker-compose ps
 docker-compose exec app curl http://localhost:5000/health
 docker-compose exec redis redis-cli ping
 docker-compose exec nginx nginx -t
+
+# Network connectivity
+docker-compose exec app ping redis
+docker-compose exec nginx ping app
 ```
 
 ## 🐛 Troubleshooting
@@ -209,6 +227,10 @@ docker-compose exec nginx nginx -t
    # Clean rebuild
    make clean
    docker-compose build --no-cache
+   
+   # Check Docker space
+   docker system df
+   docker system prune
    ```
 
 3. **Permission Issues**
@@ -225,6 +247,28 @@ docker-compose exec nginx nginx -t
    
    # Test Redis connection
    docker-compose exec redis redis-cli ping
+   
+   # Check network connectivity
+   docker-compose exec app ping redis
+   ```
+
+5. **Network Issues**
+   ```bash
+   # Inspect the network
+   docker network inspect app-network
+   
+   # Check container network connectivity
+   docker-compose exec app nslookup redis
+   docker-compose exec app nslookup nginx
+   ```
+
+6. **Health Check Failures**
+   ```bash
+   # Check health status
+   docker-compose ps
+   
+   # View health check logs
+   docker inspect $(docker-compose ps -q app) | jq '.[0].State.Health'
    ```
 
 ## 📚 Key Learning Outcomes
@@ -234,7 +278,7 @@ docker-compose exec nginx nginx -t
 2. **Environment Management**: Development vs Production configurations  
 3. **Health Monitoring**: Container health checks and dependencies
 4. **Volume Management**: Data persistence and sharing
-5. **Network Security**: Service isolation and communication
+5. **Network Security**: Service isolation and communication on `app-network`
 6. **Load Balancing**: Nginx as reverse proxy
 
 ### Best Practices Implemented
@@ -251,15 +295,48 @@ docker-compose exec nginx nginx -t
 - Hot-reloading enabled
 - Debug mode active
 - Development dependencies installed
-- Exposed ports for debugging
+- Exposed ports for debugging (Flask on :5000)
 - Volume mounts for live code changes
 
 ### Production Mode (`make prod`)
-- Optimized builds
+- Optimized builds with Gunicorn
 - Security hardening
 - Resource limits enforced
 - Health monitoring enabled
 - Log management configured
+
+## 🚀 Advanced Usage
+
+### Scaling Services
+```bash
+# Scale Flask app instances
+docker-compose up --scale app=3
+
+# Check load balancing
+curl http://localhost/ && curl http://localhost/
+```
+
+### Environment Configuration
+```bash
+# Create environment files
+make setup-env
+
+# Edit configurations
+vim config/dev/.env
+vim config/prod/.env
+```
+
+### Monitoring and Debugging
+```bash
+# Real-time resource monitoring
+docker stats
+
+# Container inspection
+docker inspect $(docker-compose ps -q app)
+
+# Network debugging
+docker network inspect app-network
+```
 
 ## 📖 Further Reading
 
@@ -284,4 +361,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for learning Docker Compose** 
+**Made with ❤️ for learning Docker Compose**

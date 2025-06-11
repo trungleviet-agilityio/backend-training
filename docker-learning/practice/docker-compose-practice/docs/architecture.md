@@ -346,7 +346,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 ### Debugging Tools
 ```bash
 # Network inspection
-docker network inspect docker-compose-practice_app-network
+docker network inspect app-network
 
 # Service logs
 docker-compose logs -f app

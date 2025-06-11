@@ -17,6 +17,9 @@ docker-compose --version
 
 # Optional: Check if Make is available
 make --version
+
+# Useful tools for testing
+curl --version && jq --version
 ```
 
 If you don't have Docker installed, visit: https://docs.docker.com/get-docker/
@@ -64,7 +67,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 curl http://localhost/
 
 # Expected response:
-# {"message": "Welcome to Docker Compose Practice", "visits": 1}
+# {"message": "Welcome to Docker Compose Practice", "visits": N}
 
 # Test health check
 curl http://localhost/health
@@ -85,6 +88,17 @@ docker-compose ps
 # redis_1                Up (healthy)   6379/tcp
 ```
 
+### Verify Network Setup
+```bash
+# Check the Docker network
+docker network ls | grep app-network
+
+# Inspect network details
+docker network inspect app-network
+
+# Should show app-network with 3 connected containers
+```
+
 ## Step 4: Explore the Application
 
 ### Visit in Browser
@@ -95,11 +109,19 @@ You should see a JSON response with a welcome message and visit counter.
 ### Test Multiple Visits
 ```bash
 # Visit multiple times to see counter increment
-curl http://localhost/ && echo
-curl http://localhost/ && echo
-curl http://localhost/ && echo
+for i in {1..5}; do curl -s http://localhost/ | jq .visits; done
 
-# Responses should show visits: 1, 2, 3, etc.
+# Should show incrementing numbers: 1, 2, 3, 4, 5
+```
+
+### Test Service Communication
+```bash
+# Test internal connectivity
+docker-compose exec app ping redis
+docker-compose exec app ping nginx
+
+# Check Redis data directly
+docker-compose exec redis redis-cli get visit_count
 ```
 
 ## Step 5: Check Logs (Optional)
@@ -137,6 +159,9 @@ docker-compose down -v
 # Start development
 make dev
 
+# Start development in background
+make dev-bg
+
 # Start production
 make prod
 
@@ -146,7 +171,7 @@ make logs
 # Stop services
 make down
 
-# Clean everything
+# Clean everything (including volumes)
 make clean
 
 # Check status
@@ -155,8 +180,17 @@ docker-compose ps
 # Access app container
 docker-compose exec app /bin/sh
 
+# Access Redis CLI
+docker-compose exec redis redis-cli
+
 # Check Redis data
 docker-compose exec redis redis-cli get visit_count
+
+# Test Nginx configuration
+docker-compose exec nginx nginx -t
+
+# Inspect network
+docker network inspect app-network
 ```
 
 ## 🎯 What You Just Built
@@ -169,9 +203,15 @@ You now have running:
 
 The architecture demonstrates:
 - Container orchestration with Docker Compose
-- Service discovery and networking
+- Service discovery and networking on `app-network`
 - Health checks and monitoring
 - Environment configuration management
+- Multi-service communication
+
+### Network Details
+- **Network Name**: `app-network`
+- **Subnet**: `172.18.0.0/16`
+- **Services**: All containers communicate internally using service names
 
 ## 🔧 Next Steps
 
@@ -185,6 +225,9 @@ cat src/app/routes.py
 # Check Docker configurations
 cat docker-compose.yml
 cat deploy/docker/app/Dockerfile
+
+# View network configuration
+grep -A 5 "networks:" docker-compose.yml
 ```
 
 ### Try Different Environments
@@ -203,6 +246,9 @@ make prod
 ```bash
 # Scale the Flask app to multiple instances
 docker-compose up --scale app=3
+
+# Test load balancing
+for i in {1..10}; do curl -s http://localhost/ | jq .visits; done
 ```
 
 ### Monitor Resources
@@ -213,6 +259,9 @@ docker stats
 # View detailed container info
 docker-compose exec app ps aux
 docker-compose exec app df -h
+
+# Monitor network traffic
+docker-compose exec app netstat -tlnp
 ```
 
 ## 🐛 Troubleshooting
@@ -243,14 +292,32 @@ docker-compose logs app
 
 # Rebuild images
 docker-compose build --no-cache
+
+# Check system resources
+docker system df
 ```
 
 **Redis connection failed:**
 ```bash
 # Check Redis is running
 docker-compose exec redis redis-cli ping
-
 # Should respond: PONG
+
+# Test network connectivity
+docker-compose exec app ping redis
+```
+
+**Network issues:**
+```bash
+# Check if network exists
+docker network ls | grep app-network
+
+# Inspect network configuration
+docker network inspect app-network
+
+# Test DNS resolution
+docker-compose exec app nslookup redis
+docker-compose exec app nslookup nginx
 ```
 
 ### Getting Help
@@ -263,14 +330,21 @@ curl http://localhost/health
 docker-compose exec app curl http://localhost:5000/
 docker-compose exec redis redis-cli ping
 docker-compose exec nginx nginx -t
+
+# View health check status
+docker-compose ps
+
+# Inspect container health
+docker inspect $(docker-compose ps -q app) | jq '.[0].State.Health'
 ```
 
 ## 📚 Learn More
 
-- **README.md** - Complete project documentation
-- **docs/architecture.md** - System architecture details
-- **docs/api.md** - API endpoint documentation
-- **Makefile** - All available commands
+- **[README.md](../README.md)** - Complete project documentation
+- **[docs/architecture.md](architecture.md)** - System architecture details
+- **[docs/api.md](api.md)** - API endpoint documentation
+- **[docs/PROJECT_VERIFICATION.md](PROJECT_VERIFICATION.md)** - Current working status
+- **[Makefile](../Makefile)** - All available commands
 
 ## 🎉 Congratulations!
 
@@ -281,5 +355,14 @@ You've successfully set up a multi-container Docker application with:
 - ✅ Docker Compose orchestration
 - ✅ Health monitoring
 - ✅ Development/Production environments
+- ✅ Service networking on `app-network`
 
-This project demonstrates real-world Docker Compose patterns you'll use in production applications! 
+This project demonstrates real-world Docker Compose patterns you'll use in production applications!
+
+## 🚀 What's Next?
+
+- Try scaling services: `docker-compose up --scale app=3`
+- Explore the production configuration: `make prod`
+- Study the network architecture: `docker network inspect app-network`
+- Learn about health checks: `docker-compose ps`
+- Read the full documentation to understand the architecture
