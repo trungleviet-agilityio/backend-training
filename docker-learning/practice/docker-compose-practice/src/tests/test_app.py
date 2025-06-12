@@ -46,7 +46,7 @@ def test_health_route_success(client):
     assert "service" in data["instance"]
 
 
-def test_load_test_route_success(client):
+def test_load_test_route_success_with_mock_redis(client):
     response = client.get("/load-test")
     assert response.status_code == 200
     data = response.get_json()
