@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock
 
 from app import create_app
 
@@ -6,11 +7,13 @@ from app import create_app
 @pytest.fixture
 def app():
     app = create_app()
-    app.config.update(
-        {
-            "TESTING": True,
-        }
-    )
+    app.config.update({"TESTING": True})
+    # Mock Redis for all tests
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = b"0"
+    mock_redis.incr.return_value = 1
+    mock_redis.ping.return_value = True
+    app.redis = mock_redis
     return app
 
 

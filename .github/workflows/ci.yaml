@@ -48,7 +48,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: Run tests
-        run: cd docker-learning/practice/docker-compose-practice && pytest --cov=src tests/ -v
+        run: cd docker-learning/practice/docker-compose-practice && PYTHONPATH=src pytest --cov=src src/tests/ -v
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
