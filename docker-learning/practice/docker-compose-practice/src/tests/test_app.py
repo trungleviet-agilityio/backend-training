@@ -22,7 +22,7 @@ def client(app):
     return app.test_client()
 
 
-def test_visits_route(client):
+def test_visits_route_success(client):
     response = client.get("/visits")
     assert response.status_code == 200
     data = response.get_json()
@@ -34,7 +34,7 @@ def test_visits_route(client):
     assert "instance" in data["served_by"]
 
 
-def test_health_route(client):
+def test_health_route_success(client):
     response = client.get("/health")
     assert response.status_code == 200
     data = response.get_json()
