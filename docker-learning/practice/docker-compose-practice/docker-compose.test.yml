@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: ../deploy/docker/app/Dockerfile
+      target: development
+    environment:
+      - FLASK_ENV=test
+      - FLASK_DEBUG=1
+    volumes:
+      - ./src:/app
+    env_file:
+      - ./config/test/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - test-network
+    command: pytest --cov=src tests/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    env_file:
+      - ./config/test/.env
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - test-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  test-network:
+    name: test-network
+    driver: bridge
+
+volumes:
+  redis-test-data:
+    driver: local
