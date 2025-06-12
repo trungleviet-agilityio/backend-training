@@ -1,0 +1,33 @@
+name: Hello World
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  hello:
+    name: Say Hello
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: List files
+        run: |
+          echo "📁 Repository contents:"
+          tree -L 2
+
+      - name: Say Hello
+        run: |
+          echo "👋 Hello, World!"
+          echo "🌍 Running on: ${{ runner.os }}"
+          echo "📦 Node version: $(node --version)"
+          echo "🐍 Python version: $(python --version)"
+
+      - name: Show environment
+        run: |
+          echo "🔧 Environment variables:"
+          env | sort
