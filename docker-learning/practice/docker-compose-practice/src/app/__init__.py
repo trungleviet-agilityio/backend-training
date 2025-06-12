@@ -1,6 +1,7 @@
-from flask import Flask
-import redis
 import os
+
+import redis
+from flask import Flask
 
 
 def create_app():

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

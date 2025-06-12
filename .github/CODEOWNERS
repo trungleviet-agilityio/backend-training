@@ -1,0 +1,5 @@
+# Require review from Trung Le for all changes
+* @trungleviet-agilityio
+
+# Require review for only the docker-compose-practice directory
+/docker-learning/practice/docker-compose-practice/ @trungleviet-agilityio

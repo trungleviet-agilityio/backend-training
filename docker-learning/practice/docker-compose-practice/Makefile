@@ -1,4 +1,4 @@
-.PHONY: setup-dev setup-prod dev prod test lint clean format pre-commit scale-test scale-up scale-down scale-status load-test
+.PHONY: setup-dev setup-prod dev prod test lint clean format pre-commit scale-test scale-up scale-down scale-status load-test venv activate clean-venv
 
 # Environment setup
 setup-env:
@@ -128,3 +128,20 @@ load-test: ## Run comprehensive load balancing test
 		sleep 0.1; \
 	done
 	@echo "🏁 Load test complete!"
+
+PYTHON_VERSION := $(shell cat .python-version)
+VENV_DIR := .venv
+
+venv:
+	@echo "Creating virtual environment with Python $(PYTHON_VERSION)"
+	pyenv install -s $(PYTHON_VERSION)
+	pyenv local $(PYTHON_VERSION)
+	python -m venv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install --upgrade pip
+
+activate:
+	@echo "To activate the virtual environment, run:"
+	@echo "source $(VENV_DIR)/bin/activate"
+
+clean-venv:
+	rm -rf $(VENV_DIR)

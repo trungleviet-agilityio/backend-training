@@ -1,6 +1,7 @@
 import os
 import socket
-from flask import Blueprint, jsonify, current_app
+
+from flask import Blueprint, current_app, jsonify
 
 main = Blueprint("main", __name__)
 
@@ -71,8 +72,8 @@ def health():
 @main.route("/load-test")
 def load_test():
     """Endpoint specifically for testing load balancing"""
-    import time
     import random
+    import time
 
     # Simulate some processing time
     processing_time = random.uniform(0.1, 0.5)
