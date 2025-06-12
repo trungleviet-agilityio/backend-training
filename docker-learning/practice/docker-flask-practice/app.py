@@ -1,6 +1,7 @@
-from flask import Flask, jsonify
-import redis
 import os
+
+import redis
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
