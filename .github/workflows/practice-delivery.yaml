@@ -1,0 +1,313 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker-practice/**'
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: docker-practice-cluster
+  ECS_SERVICE: docker-practice-service
+  ECS_TASK_DEFINITION: docker-practice-task
+  CONTAINER_NAME: docker-practice-app
+  IMAGE_NAME: docker-practice-app
+
+jobs:
+  pre-deployment-check:
+    name: Pre-deployment Check
+    runs-on: ubuntu-latest
+    outputs:
+      deploy-ready: ${{ steps.check.outputs.ready }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate deployment readiness
+        id: check
+        run: |
+          echo "Checking deployment readiness..."
+
+          # Check if this is a valid main branch push
+          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
+            echo "❌ Not a main branch push"
+            echo "ready=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Validate required secrets are available
+          if [[ -z "${{ secrets.DOCKER_USERNAME }}" ]]; then
+            echo "❌ Docker username not configured"
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]]; then
+            echo "❌ AWS credentials not configured"
+            exit 1
+          fi
+
+          echo "✅ Pre-deployment checks passed"
+          echo "ready=true" >> $GITHUB_OUTPUT
+
+  docker-build-production:
+    name: Build Production Images
+    runs-on: ubuntu-latest
+    needs: pre-deployment-check
+    if: needs.pre-deployment-check.outputs.deploy-ready == 'true'
+    defaults:
+      run:
+        working-directory: docker-practice
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=prod-{{date 'YYYYMMDD'}}-
+
+      - name: Build PostgreSQL image
+        run: |
+          echo "Building production PostgreSQL image..."
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest ./scripts/docker/postgres
+          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
+          echo "✅ PostgreSQL image built and pushed successfully!"
+
+      - name: Build and push Django application
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker-practice
+          file: ./docker-practice/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Test production images
+        run: |
+          echo "Testing production images..."
+
+          # Test Django image
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest python --version
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest python manage.py check --deploy
+
+          echo "✅ Production images tested successfully!"
+
+  deploy:
+    name: Deploy to AWS ECS
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-check, docker-build-production]
+    if: needs.pre-deployment-check.outputs.deploy-ready == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull and push images to ECR
+        run: |
+          echo "Copying images from Docker Hub to ECR..."
+
+          # Pull from Docker Hub
+          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
+
+          # Tag for ECR
+          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest \
+            ${{ steps.login-ecr.outputs.registry }}/docker-practice-postgres:latest
+
+          # Push to ECR
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/docker-practice-postgres:latest
+
+          echo "✅ Images pushed to ECR successfully"
+
+      - name: Prepare task definition
+        run: |
+          echo "Preparing ECS task definition..."
+
+          # Download current task definition
+          aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > task-definition.json
+
+          # Update image URI in task definition
+          jq --arg IMAGE_URI "${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest" \
+            '.containerDefinitions[0].image = $IMAGE_URI' task-definition.json > new-task-def.json
+
+          # Register new task definition
+          aws ecs register-task-definition --cli-input-json file://new-task-def.json
+
+          echo "✅ Task definition updated"
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations..."
+
+          # Create one-time task for migrations
+          aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "${{ env.CONTAINER_NAME }}",
+                "command": ["python", "manage.py", "migrate", "--no-input"]
+              }]
+            }' \
+            --launch-type FARGATE \
+            --network-configuration '{
+              "awsvpcConfiguration": {
+                "subnets": ["'${{ secrets.SUBNET_IDS }}'"],
+                "securityGroups": ["'${{ secrets.SECURITY_GROUP_ID }}'"],
+                "assignPublicIp": "ENABLED"
+              }
+            }'
+
+          echo "✅ Database migrations initiated"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DJANGO_SETTINGS_MODULE: core.settings
+
+      - name: Update ECS service
+        run: |
+          echo "Updating ECS service..."
+
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --force-new-deployment
+
+          echo "✅ ECS service update initiated"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to complete..."
+
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }}
+
+          echo "✅ Deployment completed successfully"
+
+  deployment-validation:
+    name: Validate Deployment
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-check, docker-build-production, deploy]
+    if: always()
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check service health
+        run: |
+          echo "Validating deployment health..."
+
+          # Get service status
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].status' --output text)
+
+          if [[ "$SERVICE_STATUS" != "ACTIVE" ]]; then
+            echo "❌ Service is not active: $SERVICE_STATUS"
+            exit 1
+          fi
+
+          # Check running task count
+          RUNNING_COUNT=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].runningCount' --output text)
+
+          DESIRED_COUNT=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].desiredCount' --output text)
+
+          if [[ "$RUNNING_COUNT" != "$DESIRED_COUNT" ]]; then
+            echo "❌ Task count mismatch. Running: $RUNNING_COUNT, Desired: $DESIRED_COUNT"
+            exit 1
+          fi
+
+          echo "✅ Deployment validation passed"
+          echo "- Service Status: $SERVICE_STATUS"
+          echo "- Running Tasks: $RUNNING_COUNT/$DESIRED_COUNT"
+
+  deployment-status:
+    name: Deployment Status
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-check, docker-build-production, deploy, deployment-validation]
+    if: always()
+    steps:
+      - name: Report deployment status
+        run: |
+          echo "Production Deployment Status Report:"
+          echo "==================================="
+
+          if [[ "${{ needs.pre-deployment-check.result }}" != "success" ]]; then
+            echo "❌ Pre-deployment checks failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.docker-build-production.result }}" != "success" ]]; then
+            echo "❌ Docker build failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.deploy.result }}" != "success" ]]; then
+            echo "❌ Deployment failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.deployment-validation.result }}" != "success" ]]; then
+            echo "❌ Deployment validation failed"
+            exit 1
+          fi
+
+          echo "✅ Production deployment completed successfully!"
+          echo "::notice::Application deployed to production"
+
+          # Summary
+          echo ""
+          echo "Deployment Summary:"
+          echo "- Pre-checks: ✅"
+          echo "- Docker Build: ✅"
+          echo "- AWS Deployment: ✅"
+          echo "- Health Validation: ✅"

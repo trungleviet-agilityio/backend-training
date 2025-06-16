@@ -1,0 +1,100 @@
+name: PR to Main - CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docker-practice/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker-practice/**'
+
+jobs:
+  ci:
+    name: CI/CD Pipeline
+    uses: ./.github/workflows/shared-ci-jobs.yml
+    with:
+      target-branch: main
+      skip-on-no-changes: false
+      run-docker-compose: true
+
+  merge-ready:
+    name: Ready to Merge
+    runs-on: ubuntu-latest
+    needs: ci
+    if: always() && github.event_name == 'pull_request'
+    steps:
+      - name: Check pipeline status
+        run: |
+          echo "🔍 Checking CI/CD pipeline status for PR to main..."
+          echo "================================================="
+
+          CI_STATUS="${{ needs.ci.result }}"
+
+          echo "📊 Results:"
+          echo "- CI/CD Pipeline: $CI_STATUS"
+          echo ""
+
+          if [[ "$CI_STATUS" == "success" ]]; then
+            echo "✅ ALL CHECKS PASSED! PR is ready to merge to main."
+            echo "🟢 Merge button is now ENABLED"
+            echo "::notice::Production quality gates passed - can merge to main"
+          else
+            echo "❌ MERGE BLOCKED - CI/CD pipeline failed"
+            echo "🔴 Fix issues before merging to production"
+            echo "::error::Cannot merge to main - CI/CD checks failed"
+            exit 1
+          fi
+
+  docker-push:
+    name: Push to Registry
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: docker-practice
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push application image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker-practice
+          file: ./docker-practice/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push PostgreSQL image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest ./scripts/docker/postgres
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }} ./scripts/docker/postgres
+          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }}
+
+      - name: Deployment ready
+        run: |
+          echo "✅ Docker images pushed successfully!"
+          echo "🚀 Images available:"
+          echo "   - App: ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:latest"
+          echo "   - App: ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:${{ github.sha }}"
+          echo "   - DB: ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest"
+          echo "   - DB: ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }}"
+          echo "::notice::Images ready for deployment"

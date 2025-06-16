@@ -37,10 +37,6 @@ htmlcov/
 .coverage
 .tox/
 
-# Migrations
-**/migrations/*
-!**/migrations/__init__.py
-
 # System
 Thumbs.db
 
