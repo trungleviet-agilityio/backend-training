@@ -1,19 +1,16 @@
 """
-Views for the books app
+Views for the books app using proper serializer separation.
 """
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    OpenApiExample,
     OpenApiParameter,
     extend_schema,
-    extend_schema_view,
 )
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from books.models.book import Book
 from books.serializers.book_request_serializers import (
     BookCreateRequestSerializer,
     BookUpdateRequestSerializer,
@@ -22,13 +19,51 @@ from books.serializers.book_response_serializers import (
     BookDetailResponseSerializer,
     BookListResponseSerializer,
 )
-from books.serializers.book_serializers import BookSerializer
+from books.services.book_services import BookService
+from books.utils import success_response
+from core_commons.response_mixins import ServiceAndUserAuthenticationMixin
 
 
-@extend_schema_view(
-    list=extend_schema(
+class BookViewSet(ServiceAndUserAuthenticationMixin, viewsets.ModelViewSet):
+    """
+    API endpoint for managing books.
+    Uses proper request/response serializer separation.
+    """
+
+    lookup_field = "id"
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ["author", "categories"]
+    search_fields = ["title", "isbn", "author__name"]
+    ordering_fields = ["title", "price", "created_at"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """Get queryset using service layer."""
+        return BookService.get_all_books()
+
+    def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on the action.
+        Uses request serializers for input, response serializers for output.
+        """
+        if self.action in ["create"]:
+            return BookCreateRequestSerializer
+        elif self.action in ["update", "partial_update"]:
+            return BookUpdateRequestSerializer
+        elif self.action == "list":
+            return BookListResponseSerializer
+        elif self.action == "retrieve":
+            return BookDetailResponseSerializer
+        # Default fallback
+        return BookDetailResponseSerializer
+
+    @extend_schema(
         summary="List all books",
-        description="Returns a list of all books with basic information.",
+        description="Returns a paginated list of all books with basic information.",
         parameters=[
             OpenApiParameter(
                 name="author", type=int, description="Filter by author ID"
@@ -47,138 +82,98 @@ from books.serializers.book_serializers import BookSerializer
                 description="Order by field (prefix with '-' for descending)",
             ),
         ],
-        examples=[
-            OpenApiExample(
-                "Success Response",
-                value={
-                    "count": 1,
-                    "next": None,
-                    "previous": None,
-                    "results": [
-                        {
-                            "id": 1,
-                            "title": "Sample Book",
-                            "isbn": "9781234567890",
-                            "price": "29.99",
-                            "author_name": "John Doe",
-                            "category_names": ["Fiction", "Mystery"],
-                            "created_at": "2024-03-20T10:00:00Z",
-                        }
-                    ],
-                },
-            )
-        ],
-    ),
-    retrieve=extend_schema(
+        responses={200: BookListResponseSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        """Return a list of all books with basic information."""
+        # Let DRF handle pagination automatically
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
         summary="Get book details",
-        description="Returns detailed information about a specific book.",
-    ),
-    create=extend_schema(
+        description="Returns detailed information about a specific book including author and categories.",
+        responses={200: BookDetailResponseSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """Return detailed information about a specific book."""
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
         summary="Create a new book",
         description="Creates a new book with the provided information.",
-    ),
-    update=extend_schema(
-        summary="Update a book", description="Updates all fields of an existing book."
-    ),
-    partial_update=extend_schema(
+        request=BookCreateRequestSerializer,
+        responses={201: BookDetailResponseSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        """Create a new book using service layer."""
+        # Use request serializer for validation
+        serializer = BookCreateRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Use service layer for business logic
+        book = BookService.create_book(serializer.validated_data)
+
+        # Use response serializer for output
+        response_serializer = BookDetailResponseSerializer(
+            book, context={"request": request}
+        )
+
+        return success_response(
+            data=response_serializer.data,
+            message="Book created successfully",
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(
+        summary="Update a book",
+        description="Updates all fields of an existing book.",
+        request=BookUpdateRequestSerializer,
+        responses={200: BookDetailResponseSerializer},
+    )
+    def update(self, request, *args, **kwargs):
+        """Update a book using service layer."""
+        partial = kwargs.pop("partial", False)
+
+        # Use request serializer for validation
+        serializer = BookUpdateRequestSerializer(data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Use service layer for business logic
+        book = BookService.update_book(self.kwargs["id"], serializer.validated_data)
+
+        # Use response serializer for output
+        response_serializer = BookDetailResponseSerializer(
+            book, context={"request": request}
+        )
+
+        return success_response(
+            data=response_serializer.data, message="Book updated successfully"
+        )
+
+    @extend_schema(
         summary="Partially update a book",
         description="Updates specific fields of an existing book.",
-    ),
-    destroy=extend_schema(
-        summary="Delete a book", description="Deletes an existing book."
-    ),
-)
-class BookViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing books.
-
-    list:
-    Return a list of all books with basic information.
-
-    retrieve:
-    Return detailed information about a specific book.
-
-    create:
-    Create a new book.
-
-    update:
-    Update all fields of a book.
-
-    partial_update:
-    Update specific fields of a book.
-
-    destroy:
-    Delete a book.
-    """
-
-    queryset = (
-        Book.objects.select_related("author").prefetch_related("categories").all()
+        request=BookUpdateRequestSerializer,
+        responses={200: BookDetailResponseSerializer},
     )
-    serializer_class = BookSerializer
-    lookup_field = "id"
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
-    filterset_fields = ["author", "categories"]
-    search_fields = ["title", "isbn", "author__name"]
-    ordering_fields = ["title", "price", "created_at"]
-    ordering = ["-created_at"]
+    def partial_update(self, request, *args, **kwargs):
+        """Partially update a book using service layer."""
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
-    def get_queryset(self):
-        """
-        Optimize queryset based on the action.
-        """
-        queryset = super().get_queryset()
-
-        if self.action == "list":
-            # For list action, we only need basic information
-            return queryset.only(
-                "id", "title", "isbn", "price", "created_at", "author__name"
-            )
-
-        return queryset
-
-    def get_serializer_class(self):
-        """
-        Return appropriate serializer class based on the action.
-        """
-        if self.action == "list":
-            return BookListResponseSerializer
-        elif self.action == "retrieve":
-            return BookDetailResponseSerializer
-        elif self.action == "create":
-            return BookCreateRequestSerializer
-        elif self.action in ["update", "partial_update"]:
-            return BookUpdateRequestSerializer
-        return self.serializer_class
-
-    def create(self, request, *args, **kwargs):
-        """
-        Create a new book with proper response format.
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        book = serializer.save()
-
-        # Use detail serializer for response
-        response_serializer = BookDetailResponseSerializer(book)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, *args, **kwargs):
-        """
-        Update a book with proper response format.
-        """
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        book = serializer.save()
-
-        # Use detail serializer for response
-        response_serializer = BookDetailResponseSerializer(book)
-        return Response(response_serializer.data)
+    @extend_schema(
+        summary="Delete a book",
+        description="Deletes an existing book.",
+        responses={204: None},
+    )
+    def destroy(self, request, *args, **kwargs):
+        """Delete a book using service layer."""
+        BookService.delete_book(self.kwargs["id"])
+        return success_response(
+            data=None,
+            message="Book deleted successfully",
+            status_code=status.HTTP_204_NO_CONTENT,
+        )
 
     @extend_schema(
         summary="Add a category to a book",
@@ -195,24 +190,26 @@ class BookViewSet(viewsets.ModelViewSet):
                 "required": ["category_id"],
             }
         },
-        responses={200: BookDetailResponseSerializer, 400: None, 404: None},
+        responses={200: BookDetailResponseSerializer},
     )
     @action(detail=True, methods=["post"])
-    def add_category(self, request, pk=None):
-        """
-        Add a category to a book.
-        """
-        book = self.get_object()
+    def add_category(self, request, id=None):
+        """Add a category to a book."""
         category_id = request.data.get("category_id")
-
         if not category_id:
             return Response(
-                {"error": "category_id is required"}, status=status.HTTP_400_BAD_REQUEST
+                {"category_id": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        book.categories.add(category_id)
-        response_serializer = BookDetailResponseSerializer(book)
-        return Response(response_serializer.data)
+        book = BookService.add_category_to_book(id, category_id)
+        response_serializer = BookDetailResponseSerializer(
+            book, context={"request": request}
+        )
+
+        return success_response(
+            data=response_serializer.data, message="Category added to book successfully"
+        )
 
     @extend_schema(
         summary="Remove a category from a book",
@@ -229,21 +226,24 @@ class BookViewSet(viewsets.ModelViewSet):
                 "required": ["category_id"],
             }
         },
-        responses={200: BookDetailResponseSerializer, 400: None, 404: None},
+        responses={200: BookDetailResponseSerializer},
     )
     @action(detail=True, methods=["post"])
-    def remove_category(self, request, pk=None):
-        """
-        Remove a category from a book.
-        """
-        book = self.get_object()
+    def remove_category(self, request, id=None):
+        """Remove a category from a book."""
         category_id = request.data.get("category_id")
-
         if not category_id:
             return Response(
-                {"error": "category_id is required"}, status=status.HTTP_400_BAD_REQUEST
+                {"category_id": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        book.categories.remove(category_id)
-        response_serializer = BookDetailResponseSerializer(book)
-        return Response(response_serializer.data)
+        book = BookService.remove_category_from_book(id, category_id)
+        response_serializer = BookDetailResponseSerializer(
+            book, context={"request": request}
+        )
+
+        return success_response(
+            data=response_serializer.data,
+            message="Category removed from book successfully",
+        )
