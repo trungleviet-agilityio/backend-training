@@ -65,7 +65,72 @@ pre-commit run --all-files
 - **Django-upgrade**: Automatically upgrade Django syntax
 - **Security checks**: Various security-related checks
 
-### 6. Running the Development Server
+### 6. Git Commit Signing Setup
+This project requires signed commits for all changes. Follow these steps to set up commit signing:
+
+#### Check Existing GPG Keys
+```bash
+# List existing GPG keys
+gpg --list-secret-keys --keyid-format LONG
+```
+
+#### Generate New GPG Key (if needed)
+```bash
+# Generate new GPG key
+gpg --full-generate-key
+
+# Follow the prompts:
+# 1. Select key type (RSA and RSA)
+# 2. Select key size (4096 bits)
+# 3. Select key validity (0 = key does not expire)
+# 4. Enter your name and email
+# 5. Enter a secure passphrase
+```
+
+#### Configure Git for Signing
+```bash
+# Get your GPG key ID
+gpg --list-secret-keys --keyid-format LONG
+
+# Configure Git to use your key
+git config --global user.signingkey YOUR_KEY_ID
+
+# Enable automatic commit signing
+git config --global commit.gpgsign true
+```
+
+#### Export and Add GPG Key to GitHub
+```bash
+# Export your public key
+gpg --armor --export YOUR_KEY_ID
+
+# Copy the output and add it to GitHub:
+# 1. Go to GitHub Settings
+# 2. Click "SSH and GPG keys"
+# 3. Click "New GPG key"
+# 4. Paste your public key
+```
+
+#### Verify Setup
+```bash
+# Make a test commit
+git commit -m "test: verify commit signing"
+
+# Check the signature
+git log -1 --show-signature
+```
+
+#### Troubleshooting
+If you encounter signing issues:
+```bash
+# Start GPG agent
+gpgconf --launch gpg-agent
+
+# Set GPG TTY
+export GPG_TTY=$(tty)
+```
+
+### 7. Running the Development Server
 ```bash
 # Start the Django development server
 python manage.py runserver
@@ -133,11 +198,16 @@ docker-compose exec web python manage.py createsuperuser
 2. **Virtual environment not activated**: Make sure you see `(docker-practice)` in your terminal prompt
 3. **Pre-commit hooks failing**: Run `pre-commit run --all-files` to see detailed error messages
 4. **Package installation issues**: Make sure `uv` is installed and up to date
+5. **Commit signing issues**:
+   - Check if GPG agent is running
+   - Verify GPG key is properly configured
+   - Ensure GitHub has your public GPG key
 
 ### Getting Help
 - Check the project README.md for additional information
 - Review Django documentation for Django-specific issues
 - Check pre-commit documentation for hook-related issues
+- Review GitHub's GPG documentation for signing issues
 
 ## Project Structure
 ```
