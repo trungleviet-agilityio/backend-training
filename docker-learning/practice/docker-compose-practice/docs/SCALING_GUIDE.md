@@ -6,11 +6,11 @@ This guide demonstrates how to implement and test **horizontal scaling** with Do
 
 ## 🎯 What We Achieved
 
-✅ **Successfully implemented Docker Compose scaling**  
-✅ **Load balancing across multiple Flask instances**  
-✅ **Real-time verification of request distribution**  
-✅ **Production-ready scaling configuration**  
-✅ **Enhanced monitoring and health checks**  
+✅ **Successfully implemented Docker Compose scaling**
+✅ **Load balancing across multiple Flask instances**
+✅ **Real-time verification of request distribution**
+✅ **Production-ready scaling configuration**
+✅ **Enhanced monitoring and health checks**
 ✅ **Optimized resource management**
 
 ## 🏗️ Architecture for Scaling
@@ -23,7 +23,7 @@ Client → Nginx → Flask App → Redis
 ### Scaled Architecture (3+ Instances)
 ```
 Client → Nginx → Load Balancer → Flask App 1 → Redis
-                                ├─ Flask App 2 → Redis  
+                                ├─ Flask App 2 → Redis
                                 └─ Flask App 3 → Redis
 ```
 
@@ -120,7 +120,7 @@ Added instance identification and request tracking:
   "visits": 42,
   "served_by": {
     "hostname": "07ef452d3d91",
-    "container_id": "07ef452d3d91", 
+    "container_id": "07ef452d3d91",
     "instance": "app-07ef452d3d91"
   }
 }
@@ -148,7 +148,7 @@ docker-compose ps
 
 # Expected output:
 # app_1    Up (healthy)    5000/tcp
-# app_2    Up (healthy)    5000/tcp  
+# app_2    Up (healthy)    5000/tcp
 # app_3    Up (healthy)    5000/tcp
 # nginx_1  Up (healthy)    0.0.0.0:80->80/tcp
 # redis_1  Up (healthy)    6379/tcp
@@ -157,7 +157,7 @@ docker-compose ps
 ### Test Request Distribution
 ```bash
 # Make multiple requests and see different instances
-for i in {1..10}; do 
+for i in {1..10}; do
   curl -s http://localhost/ | jq -r '.served_by.instance'
 done
 
@@ -196,7 +196,7 @@ docker network inspect app-network | jq '.[0].Containers | to_entries | map({nam
 ```json
 [
   {"name": "docker-compose-practice_app_1", "ip": "172.18.0.4/16"},
-  {"name": "docker-compose-practice_app_2", "ip": "172.18.0.3/16"}, 
+  {"name": "docker-compose-practice_app_2", "ip": "172.18.0.3/16"},
   {"name": "docker-compose-practice_app_3", "ip": "172.18.0.5/16"},
   {"name": "docker-compose-practice_nginx_1", "ip": "172.18.0.6/16"},
   {"name": "docker-compose-practice_redis_1", "ip": "172.18.0.2/16"}
@@ -246,12 +246,12 @@ services:
 docker stats
 
 # Expected output:
-# CONTAINER CPU % MEM USAGE / LIMIT   
-# app_1     2.34%  120MiB / 256MiB    
-# app_2     1.87%  115MiB / 256MiB    
-# app_3     2.12%  118MiB / 256MiB    
-# nginx_1   0.15%  10MiB / 3.7GiB     
-# redis_1   0.25%  15MiB / 3.7GiB     
+# CONTAINER CPU % MEM USAGE / LIMIT
+# app_1     2.34%  120MiB / 256MiB
+# app_2     1.87%  115MiB / 256MiB
+# app_3     2.12%  118MiB / 256MiB
+# nginx_1   0.15%  10MiB / 3.7GiB
+# redis_1   0.25%  15MiB / 3.7GiB
 ```
 
 ### Load Distribution Analysis
@@ -270,7 +270,7 @@ docker-compose exec redis redis-cli mget $(docker-compose exec redis redis-cli -
 
 ### 2. **Use Production Settings**
 - Disable debug mode when scaling
-- Use Gunicorn instead of Flask dev server  
+- Use Gunicorn instead of Flask dev server
 - Set appropriate resource limits
 
 ### 3. **Monitor Health Checks**
@@ -286,7 +286,7 @@ deploy:
       cpus: '0.5'
       memory: 256M
     reservations:
-      cpus: '0.25'  
+      cpus: '0.25'
       memory: 128M
 ```
 
@@ -320,41 +320,41 @@ done
 # Use Apache Bench for performance testing
 ab -n 1000 -c 10 http://localhost/
 
-# Use wrk for modern load testing  
+# Use wrk for modern load testing
 wrk -t4 -c100 -d30s http://localhost/
 ```
 
 ## 📚 Key Learning Outcomes
 
 ### Docker Compose Scaling Mastery
-✅ **Service Scaling**: Successfully scale services with `--scale` flag  
-✅ **Port Management**: Understand port conflicts and resolution  
-✅ **Network Discovery**: Master Docker's service discovery mechanism  
-✅ **Configuration Overrides**: Use multiple compose files for scaling  
+✅ **Service Scaling**: Successfully scale services with `--scale` flag
+✅ **Port Management**: Understand port conflicts and resolution
+✅ **Network Discovery**: Master Docker's service discovery mechanism
+✅ **Configuration Overrides**: Use multiple compose files for scaling
 
-### Load Balancing Understanding  
-✅ **Nginx Configuration**: Set up upstream servers and load balancing  
-✅ **Health Monitoring**: Implement health checks for scaled services  
-✅ **Request Distribution**: Verify and monitor load distribution  
-✅ **Performance Optimization**: Optimize for horizontal scaling  
+### Load Balancing Understanding
+✅ **Nginx Configuration**: Set up upstream servers and load balancing
+✅ **Health Monitoring**: Implement health checks for scaled services
+✅ **Request Distribution**: Verify and monitor load distribution
+✅ **Performance Optimization**: Optimize for horizontal scaling
 
 ### Production Readiness
-✅ **Resource Limits**: Set appropriate CPU and memory limits  
-✅ **Security**: Remove unnecessary port exposures  
-✅ **Monitoring**: Implement comprehensive monitoring and logging  
-✅ **Reliability**: Handle instance failures gracefully  
+✅ **Resource Limits**: Set appropriate CPU and memory limits
+✅ **Security**: Remove unnecessary port exposures
+✅ **Monitoring**: Implement comprehensive monitoring and logging
+✅ **Reliability**: Handle instance failures gracefully
 
 ## 🏆 Achievement Summary
 
 **What We Implemented:**
 
-🔧 **Scaling Configuration**: Complete scaling setup with load balancing  
-🚀 **Result**: Successfully running 3+ Flask instances with automatic load distribution  
-📊 **Verification**: Real-time load balancing verification and monitoring  
+🔧 **Scaling Configuration**: Complete scaling setup with load balancing
+🚀 **Result**: Successfully running 3+ Flask instances with automatic load distribution
+📊 **Verification**: Real-time load balancing verification and monitoring
 
 **Performance Results:**
 - ⚡ **Load Balancing**: ✅ Working perfectly across all instances
-- 🌐 **Network**: ✅ All instances properly networked (172.18.0.x/16)  
+- 🌐 **Network**: ✅ All instances properly networked (172.18.0.x/16)
 - 🔄 **Request Distribution**: ✅ Even distribution across instances
 - 📈 **Scalability**: ✅ Can scale from 1 to 5+ instances seamlessly
 - 🧪 **Testing**: ✅ Comprehensive testing tools implemented
@@ -363,6 +363,6 @@ This scaling implementation demonstrates production-ready Docker Compose pattern
 
 ---
 
-**Status**: ✅ **Horizontal Scaling Successfully Implemented and Verified**  
-**Load Balancing**: 🎯 **Working Perfectly**  
-**Recommendation**: Ready for production use and further scaling experiments! 
+**Status**: ✅ **Horizontal Scaling Successfully Implemented and Verified**
+**Load Balancing**: 🎯 **Working Perfectly**
+**Recommendation**: Ready for production use and further scaling experiments!

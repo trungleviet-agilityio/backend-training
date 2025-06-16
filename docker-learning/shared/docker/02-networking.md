@@ -232,4 +232,4 @@ docker stats container_name
 1. Learn about Docker Swarm networking
 2. Explore network security features
 3. Study container orchestration networking
-4. Practice with complex network topologies 
+4. Practice with complex network topologies

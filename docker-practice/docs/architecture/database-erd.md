@@ -13,7 +13,7 @@ classDiagram
         +created_at: datetime
         +updated_at: datetime
     }
-    
+
     class Author {
         +id: int
         +name: string
@@ -22,7 +22,7 @@ classDiagram
         +created_at: datetime
         +updated_at: datetime
     }
-    
+
     class Category {
         +id: int
         +name: string
@@ -37,7 +37,7 @@ classDiagram
         +category_id: int
         +created_at: datetime
     }
-    
+
     Book "1" -- "1" Author : has
     Book "1" -- "n" BookCategory : has
     Category "1" -- "n" BookCategory : has

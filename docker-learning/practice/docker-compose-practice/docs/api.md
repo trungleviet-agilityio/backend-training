@@ -241,4 +241,4 @@ Planned endpoints for future versions:
 3. **Documentation**
    - OpenAPI/Swagger support (planned)
    - Example requests/responses
-   - Clear endpoint descriptions 
+   - Clear endpoint descriptions
