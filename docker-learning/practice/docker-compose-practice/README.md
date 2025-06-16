@@ -6,7 +6,7 @@ This project demonstrates a **production-ready Flask application** with Redis an
 
 ### Prerequisites
 - Docker Engine (version 20.10.0 or later)
-- Docker Compose (version 2.0.0 or later) 
+- Docker Compose (version 2.0.0 or later)
 - Make (optional, for using Makefile commands)
 - curl and jq (for testing endpoints)
 
@@ -37,7 +37,7 @@ This project includes comprehensive documentation for all skill levels:
 - **[Quick Start Guide](docs/quick-start.md)** - Get running in 5 minutes
 - **[Documentation Index](docs/README.md)** - Complete documentation overview
 
-### 🏗️ Technical Details  
+### 🏗️ Technical Details
 - **[Architecture Documentation](docs/architecture.md)** - System design and patterns
 - **[API Documentation](docs/api.md)** - Complete endpoint reference
 - **[Project Verification](docs/PROJECT_VERIFICATION.md)** - Working status and metrics
@@ -78,7 +78,7 @@ docker-compose-practice/
 │
 ├── config/                      # Environment configurations
 │   ├── local/.env.example       # Local development
-│   ├── dev/.env.example         # Development environment  
+│   ├── dev/.env.example         # Development environment
 │   └── prod/.env.example        # Production environment
 │
 ├── docs/                        # Comprehensive Documentation
@@ -185,7 +185,7 @@ curl http://localhost/
 # Expected: {"message": "Welcome to Docker Compose Practice", "visits": N}
 
 # Health check endpoint
-curl http://localhost/health  
+curl http://localhost/health
 # Expected: {"status": "UP", "redis": "connected"}
 
 # Test multiple visits
@@ -217,7 +217,7 @@ docker-compose exec nginx ping app
    # Check what's using the port
    sudo lsof -i :80
    sudo lsof -i :5000
-   
+
    # Stop conflicting services
    sudo systemctl stop apache2  # or nginx
    ```
@@ -227,7 +227,7 @@ docker-compose exec nginx ping app
    # Clean rebuild
    make clean
    docker-compose build --no-cache
-   
+
    # Check Docker space
    docker system df
    docker system prune
@@ -244,10 +244,10 @@ docker-compose exec nginx ping app
    ```bash
    # Check Redis is running
    docker-compose logs redis
-   
+
    # Test Redis connection
    docker-compose exec redis redis-cli ping
-   
+
    # Check network connectivity
    docker-compose exec app ping redis
    ```
@@ -256,7 +256,7 @@ docker-compose exec nginx ping app
    ```bash
    # Inspect the network
    docker network inspect app-network
-   
+
    # Check container network connectivity
    docker-compose exec app nslookup redis
    docker-compose exec app nslookup nginx
@@ -266,7 +266,7 @@ docker-compose exec nginx ping app
    ```bash
    # Check health status
    docker-compose ps
-   
+
    # View health check logs
    docker inspect $(docker-compose ps -q app) | jq '.[0].State.Health'
    ```
@@ -275,7 +275,7 @@ docker-compose exec nginx ping app
 
 ### Docker Compose Concepts Mastered
 1. **Service Orchestration**: Multi-container application coordination
-2. **Environment Management**: Development vs Production configurations  
+2. **Environment Management**: Development vs Production configurations
 3. **Health Monitoring**: Container health checks and dependencies
 4. **Volume Management**: Data persistence and sharing
 5. **Network Security**: Service isolation and communication on `app-network`

@@ -15,4 +15,4 @@ isort==5.12.0
 
 # Debugging
 ipython==8.14.0
-debugpy==1.8.0 
+debugpy==1.8.0

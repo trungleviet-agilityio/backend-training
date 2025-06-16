@@ -221,4 +221,4 @@ docker run --rm -v my-data:/data alpine ls -l /data
 1. Learn about volume drivers
 2. Explore volume plugins
 3. Study backup strategies
-4. Practice with complex volume setups 
+4. Practice with complex volume setups

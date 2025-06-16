@@ -158,7 +158,7 @@ Docker Desktop provides a graphical interface and additional features like Kuber
    - Navigate to Docker Desktop in your Desktop environment
    - Select Docker Desktop to start
    - Accept the Docker Subscription Service Agreement
-   
+
    Or via terminal:
    ```bash
    systemctl --user start docker-desktop
@@ -256,7 +256,7 @@ If you see the error "Cannot connect to the Docker daemon":
    ```bash
    # Check if Docker daemon is running
    sudo systemctl status docker
-   
+
    # If not running, start it
    sudo systemctl start docker
    ```
@@ -265,10 +265,10 @@ If you see the error "Cannot connect to the Docker daemon":
    ```bash
    # Check Docker Desktop status
    systemctl --user status docker-desktop
-   
+
    # Start Docker Desktop
    systemctl --user start docker-desktop
-   
+
    # View logs
    journalctl --user -u docker-desktop
    ```
@@ -376,4 +376,4 @@ docker pull myapp:1.0
 1. Learn about Docker networking
 2. Understand Docker volumes
 3. Explore Docker Compose
-4. Study container orchestration 
+4. Study container orchestration
