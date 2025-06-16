@@ -1,11 +1,12 @@
 # Django and DRF
-django==5.2.3
-djangorestframework==3.16.0
+django==5.0.2
+djangorestframework==3.14.0
 
 # Django Extensions
-django-cors-headers==4.7.0
-django-filter==25.1
+django-cors-headers==4.3.1
+django-filter==24.1
 drf-yasg==1.21.10
+drf-spectacular==0.27.2
 
 # Testing
 pytest==8.3.4
@@ -39,3 +40,6 @@ pre-commit==3.5.0
 
 # Internal Packages here (Will have to be added later)
 # - None
+
+# Added from the code block
+django-debug-toolbar==4.3.0
