@@ -6,6 +6,7 @@ Welcome to the Django Docker Practice documentation. This documentation is organ
 
 ### Getting Started
 - [Local Setup Guide](how_to_guide/local_setup.md) - Complete guide to setting up your development environment
+- [Pre-commit Setup Guide](how_to_guide/precommit_setup.md) - Code quality automation and hooks setup
 - [Quick Start Guide](../README.md#-quick-start) - Quick setup instructions
 
 ### Architecture
