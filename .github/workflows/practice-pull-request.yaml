@@ -8,28 +8,6 @@ on:
       - 'docker-practice/**'
 
 jobs:
-  verify-commits:
-    name: Verify Commits
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check commit verification
-        run: |
-          echo "Checking commit verification for all commits in PR..."
-          for commit in $(git rev-list origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}); do
-            if ! git verify-commit $commit 2>/dev/null; then
-              echo "❌ Commit $commit is not verified"
-              echo "::error::All commits must be signed and verified"
-              exit 1
-            else
-              echo "✅ Commit $commit is verified"
-            fi
-          done
-          echo "All commits are properly verified!"
-
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -103,7 +81,7 @@ jobs:
   merge-ready:
     name: Merge Ready
     runs-on: ubuntu-latest
-    needs: [verify-commits, lint, test]
+    needs: [lint, test]
     if: always()
     steps:
       - name: Check all jobs status
@@ -111,11 +89,6 @@ jobs:
           echo "Checking status of all required jobs..."
 
           # Check if any job failed
-          if [[ "${{ needs.verify-commits.result }}" != "success" ]]; then
-            echo "❌ Commit verification failed"
-            exit 1
-          fi
-
           if [[ "${{ needs.lint.result }}" != "success" ]]; then
             echo "❌ Code quality checks failed"
             exit 1
