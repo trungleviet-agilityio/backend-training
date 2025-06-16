@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: PR to Main - CI/CD
 
 on:
   pull_request:
@@ -6,213 +6,57 @@ on:
       - main
     paths:
       - 'docker-practice/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker-practice/**'
 
 jobs:
-  lint:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docker-practice
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run linting
-        run: |
-          echo "Running code quality checks..."
-          ruff check . --output-format=github
-          black --check --diff .
-          echo "✅ Code quality checks passed!"
-
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docker-practice
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run tests
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-          DJANGO_SETTINGS_MODULE: core.settings.test
-        run: |
-          echo "Running unit tests..."
-          python manage.py migrate --no-input
-          pytest -v --tb=short
-          echo "✅ All tests passed!"
-
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    defaults:
-      run:
-        working-directory: docker-practice
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build PostgreSQL image
-        run: |
-          echo "Building PostgreSQL Docker image..."
-          docker build -t docker-practice-postgres:test ./scripts/docker/postgres
-          echo "✅ PostgreSQL image built successfully!"
-
-      - name: Build Django application image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./docker-practice
-          file: ./docker-practice/Dockerfile
-          push: false
-          tags: docker-practice-app:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Test Docker images
-        run: |
-          echo "Testing Docker images functionality..."
-
-          # Test Django image
-          docker run --rm docker-practice-app:test python --version
-          docker run --rm docker-practice-app:test python manage.py check
-
-          # Test PostgreSQL image
-          docker run --rm -d --name test-postgres docker-practice-postgres:test
-          sleep 5
-          docker logs test-postgres
-          docker stop test-postgres
-          docker rm test-postgres
-
-          echo "✅ Docker images tested successfully!"
-
-      - name: Test Docker Compose setup
-        run: |
-          echo "Testing Docker Compose configuration..."
-
-          # Validate docker-compose file
-          docker-compose config
-
-          # Build services
-          docker-compose build
-
-          # Start services
-          docker-compose up -d
-
-          # Wait for services to be ready
-          timeout 60 bash -c 'until docker-compose ps | grep "Up"; do sleep 2; done'
-
-          # Test connectivity
-          docker-compose exec -T web python manage.py check || echo "Service check completed"
-
-          # Check logs
-          docker-compose logs web
-
-          # Cleanup
-          docker-compose down
-
-          echo "✅ Docker Compose setup tested successfully!"
+  ci:
+    name: CI/CD Pipeline
+    uses: ./.github/workflows/shared-jobs.yml
+    with:
+      target-branch: main
+      skip-on-no-changes: false
+      run-docker-compose: true
 
   merge-ready:
-    name: All Checks Passed
+    name: Ready to Merge
     runs-on: ubuntu-latest
-    needs: [lint, test, docker-build]
+    needs: ci
     if: always() && github.event_name == 'pull_request'
     steps:
-      - name: Check all required jobs status
+      - name: Check pipeline status
         run: |
-          echo "🔍 Checking status of all required jobs for PR merge..."
-          echo "=================================================="
+          echo "🔍 Checking CI/CD pipeline status for PR to main..."
+          echo "================================================="
 
-          # Initialize status variables
-          LINT_STATUS="${{ needs.lint.result }}"
-          TEST_STATUS="${{ needs.test.result }}"
-          DOCKER_STATUS="${{ needs.docker-build.result }}"
+          CI_STATUS="${{ needs.ci.result }}"
 
-          echo "📊 Job Results:"
-          echo "- Code Quality (lint): $LINT_STATUS"
-          echo "- Unit Tests: $TEST_STATUS"
-          echo "- Docker Build: $DOCKER_STATUS"
+          echo "📊 Results:"
+          echo "- CI/CD Pipeline: $CI_STATUS"
           echo ""
 
-          # Check each job result
-          FAILED_JOBS=()
-
-          if [[ "$LINT_STATUS" != "success" ]]; then
-            echo "❌ Code quality checks failed"
-            FAILED_JOBS+=("Code Quality")
-          fi
-
-          if [[ "$TEST_STATUS" != "success" ]]; then
-            echo "❌ Unit tests failed"
-            FAILED_JOBS+=("Unit Tests")
-          fi
-
-          if [[ "$DOCKER_STATUS" != "success" ]]; then
-            echo "❌ Docker build failed"
-            FAILED_JOBS+=("Docker Build")
-          fi
-
-          # Report final status
-          if [ ${#FAILED_JOBS[@]} -eq 0 ]; then
-            echo ""
+          if [[ "$CI_STATUS" == "success" ]]; then
             echo "✅ ALL CHECKS PASSED! PR is ready to merge to main."
             echo "🟢 Merge button is now ENABLED"
-            echo "::notice::All quality gates passed - PR can be merged safely"
+            echo "::notice::Production quality gates passed - can merge to main"
           else
-            echo ""
-            echo "❌ MERGE BLOCKED - The following checks failed:"
-            printf '   - %s\n' "${FAILED_JOBS[@]}"
-            echo ""
-            echo "🔴 Merge button is DISABLED until all checks pass"
-            echo "::error::Cannot merge - fix failing checks first"
+            echo "❌ MERGE BLOCKED - CI/CD pipeline failed"
+            echo "🔴 Fix issues before merging to production"
+            echo "::error::Cannot merge to main - CI/CD checks failed"
             exit 1
           fi
 
   docker-push:
-    name: Push to Docker Hub
+    name: Push to Registry
     runs-on: ubuntu-latest
-    needs: [lint, test, docker-build]
+    needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: docker-practice
 
     steps:
       - uses: actions/checkout@v4
@@ -226,15 +70,31 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push
+      - name: Build and push application image
         uses: docker/build-push-action@v5
         with:
           context: ./docker-practice
           file: ./docker-practice/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push PostgreSQL image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest ./scripts/docker/postgres
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }} ./scripts/docker/postgres
+          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }}
 
       - name: Deployment ready
         run: |
-          echo "✅ Docker image pushed successfully!"
-          echo "::notice::Image ready for deployment"
+          echo "✅ Docker images pushed successfully!"
+          echo "🚀 Images available:"
+          echo "   - App: ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:latest"
+          echo "   - App: ${{ secrets.DOCKER_USERNAME }}/docker-practice-app:${{ github.sha }}"
+          echo "   - DB: ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest"
+          echo "   - DB: ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:${{ github.sha }}"
+          echo "::notice::Images ready for deployment"
