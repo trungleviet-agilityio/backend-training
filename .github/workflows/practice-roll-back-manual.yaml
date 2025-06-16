@@ -1,0 +1,273 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "ROLLBACK" to confirm'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: docker-practice-cluster
+  ECS_SERVICE: docker-practice-service
+
+jobs:
+  validate-rollback:
+    name: Validate Rollback
+    runs-on: ubuntu-latest
+    outputs:
+      confirmed: ${{ steps.validate.outputs.confirmed }}
+      reason: ${{ steps.validate.outputs.reason }}
+
+    steps:
+      - name: Validate rollback request
+        id: validate
+        run: |
+          echo "Validating rollback request..."
+
+          # Check confirmation
+          if [[ "${{ github.event.inputs.confirm }}" != "ROLLBACK" ]]; then
+            echo "❌ Rollback not confirmed. Must type 'ROLLBACK' to proceed."
+            exit 1
+          fi
+
+          # Validate reason
+          REASON="${{ github.event.inputs.reason }}"
+          if [[ ${#REASON} -lt 10 ]]; then
+            echo "❌ Rollback reason must be at least 10 characters"
+            exit 1
+          fi
+
+          echo "confirmed=true" >> $GITHUB_OUTPUT
+          echo "reason=$REASON" >> $GITHUB_OUTPUT
+          echo "✅ Rollback validation passed"
+
+  get-previous-image:
+    name: Get Previous Image
+    runs-on: ubuntu-latest
+    needs: validate-rollback
+    if: needs.validate-rollback.outputs.confirmed == 'true'
+    outputs:
+      previous-image: ${{ steps.get-image.outputs.image }}
+      previous-tag: ${{ steps.get-image.outputs.tag }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get previous stable image
+        id: get-image
+        run: |
+          echo "Finding previous stable Docker image..."
+
+          # Get current task definition
+          CURRENT_TASK_DEF=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].taskDefinition' --output text)
+
+          echo "Current task definition: $CURRENT_TASK_DEF"
+
+          # Get current image
+          CURRENT_IMAGE=$(aws ecs describe-task-definition \
+            --task-definition $CURRENT_TASK_DEF \
+            --query 'taskDefinition.containerDefinitions[0].image' --output text)
+
+          echo "Current image: $CURRENT_IMAGE"
+
+          # For rollback, we'll use the previous production image
+          # This assumes we have a tagging strategy like prod-YYYYMMDD-SHA
+          PREVIOUS_IMAGE="${{ secrets.DOCKER_USERNAME }}/docker-practice-app:prod-$(date -d '1 day ago' '+%Y%m%d')-*"
+
+          # Get the most recent previous image from Docker Hub
+          docker run --rm lumir/docker-registry-frontend:v2 \
+            curl -s "https://registry.hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/docker-practice-app/tags/" \
+            | jq -r '.results[] | select(.name | startswith("prod-")) | .name' \
+            | head -2 | tail -1 > previous_tag.txt
+
+          PREVIOUS_TAG=$(cat previous_tag.txt)
+          PREVIOUS_IMAGE="${{ secrets.DOCKER_USERNAME }}/docker-practice-app:$PREVIOUS_TAG"
+
+          echo "Previous image for rollback: $PREVIOUS_IMAGE"
+          echo "image=$PREVIOUS_IMAGE" >> $GITHUB_OUTPUT
+          echo "tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+  rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: [validate-rollback, get-previous-image]
+    if: needs.validate-rollback.outputs.confirmed == 'true'
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS connection
+        run: |
+          echo "Verifying AWS connection..."
+          aws sts get-caller-identity
+          aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }}
+          echo "✅ AWS connection verified"
+
+      - name: Prepare rollback images
+        run: |
+          echo "Preparing rollback images..."
+
+          # Login to ECR
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+            docker login --username AWS --password-stdin \
+            $(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+          # Login to Docker Hub
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+          # Pull previous image from Docker Hub
+          docker pull ${{ needs.get-previous-image.outputs.previous-image }}
+
+          # Tag and push to ECR for rollback
+          ECR_REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          docker tag ${{ needs.get-previous-image.outputs.previous-image }} \
+            $ECR_REGISTRY/docker-practice-app:rollback-$(date +%Y%m%d-%H%M%S)
+          docker push $ECR_REGISTRY/docker-practice-app:rollback-$(date +%Y%m%d-%H%M%S)
+
+          echo "ROLLBACK_IMAGE=$ECR_REGISTRY/docker-practice-app:rollback-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+          echo "✅ Rollback images prepared"
+
+      - name: Update task definition for rollback
+        run: |
+          echo "Updating task definition for rollback..."
+
+          # Get current task definition
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > current-task-def.json
+
+          # Update image URI for rollback
+          jq --arg IMAGE_URI "$ROLLBACK_IMAGE" \
+            '.containerDefinitions[0].image = $IMAGE_URI' current-task-def.json > rollback-task-def.json
+
+          # Remove unnecessary fields and register new task definition
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' \
+            rollback-task-def.json > clean-rollback-task-def.json
+
+          # Register rollback task definition
+          aws ecs register-task-definition --cli-input-json file://clean-rollback-task-def.json
+
+          echo "✅ Rollback task definition registered"
+
+      - name: Execute rollback
+        run: |
+          echo "🔄 Executing Emergency Rollback"
+          echo "================================"
+          echo "Reason: ${{ needs.validate-rollback.outputs.reason }}"
+          echo "Initiated by: ${{ github.actor }}"
+          echo "Cluster: ${{ env.ECS_CLUSTER }}"
+          echo "Service: ${{ env.ECS_SERVICE }}"
+          echo "Rolling back to: ${{ needs.get-previous-image.outputs.previous-tag }}"
+
+          # Update service with rollback task definition
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --force-new-deployment
+
+          echo "🔄 Rollback deployment initiated successfully"
+
+      - name: Wait for rollback completion
+        run: |
+          echo "Waiting for rollback to complete..."
+
+          # Wait for service to stabilize
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }}
+
+          echo "✅ Rollback completed successfully"
+
+      - name: Validate rollback
+        run: |
+          echo "Validating rollback..."
+
+          # Check service status
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].status' --output text)
+
+          RUNNING_COUNT=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].runningCount' --output text)
+
+          DESIRED_COUNT=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].desiredCount' --output text)
+
+          if [[ "$SERVICE_STATUS" == "ACTIVE" && "$RUNNING_COUNT" == "$DESIRED_COUNT" ]]; then
+            echo "✅ Rollback validation passed"
+            echo "- Service Status: $SERVICE_STATUS"
+            echo "- Running Tasks: $RUNNING_COUNT/$DESIRED_COUNT"
+          else
+            echo "❌ Rollback validation failed"
+            echo "- Service Status: $SERVICE_STATUS"
+            echo "- Running Tasks: $RUNNING_COUNT/$DESIRED_COUNT"
+            exit 1
+          fi
+
+  rollback-status:
+    name: Rollback Status
+    runs-on: ubuntu-latest
+    needs: [validate-rollback, get-previous-image, rollback]
+    if: always()
+
+    steps:
+      - name: Report rollback status
+        run: |
+          echo "Emergency Rollback Status Report:"
+          echo "================================="
+
+          if [[ "${{ needs.validate-rollback.result }}" != "success" ]]; then
+            echo "❌ Rollback validation failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.get-previous-image.result }}" != "success" ]]; then
+            echo "❌ Previous image retrieval failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rollback.result }}" != "success" ]]; then
+            echo "❌ Rollback execution failed"
+            exit 1
+          fi
+
+          echo "🔄 Emergency rollback completed successfully!"
+          echo "- Reason: ${{ needs.validate-rollback.outputs.reason }}"
+          echo "- Executed by: ${{ github.actor }}"
+          echo "- Rolled back to: ${{ needs.get-previous-image.outputs.previous-tag }}"
+          echo "::warning::Emergency rollback executed - investigate and fix issues"
+
+          # Summary
+          echo ""
+          echo "Rollback Summary:"
+          echo "- Validation: ✅"
+          echo "- Image Preparation: ✅"
+          echo "- Rollback Execution: ✅"
+          echo "- Service Validation: ✅"
