@@ -112,8 +112,12 @@ jobs:
           DJANGO_SETTINGS_MODULE: core.settings.test
         run: |
           echo "Running unit tests..."
+          echo "🔍 Discovering tests..."
+          pytest --collect-only -q || echo "❌ Test discovery failed"
+          echo ""
+          echo "🧪 Running tests..."
           python manage.py migrate --no-input
-          pytest -v --tb=short
+          pytest -v --tb=short --cov-report=term
           echo "✅ All tests passed!"
 
   docker-build:
