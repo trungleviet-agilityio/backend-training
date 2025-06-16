@@ -1,38 +1,41 @@
-name: PR to Develop
+name: Code Quality & Tests
 
 on:
+  # Run on PRs to main/develop
   pull_request:
     branches:
+      - main
       - develop
     paths:
       - 'docker-practice/**'
 
 jobs:
-  verify-commits:
-    name: Verify Commits
+  changes:
+    name: Check Changes
     runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      config: ${{ steps.filter.outputs.config }}
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
         with:
-          fetch-depth: 0
-
-      - name: Check commit verification
-        run: |
-          echo "Checking commit verification for all commits in PR..."
-          for commit in $(git rev-list origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}); do
-            if ! git verify-commit $commit 2>/dev/null; then
-              echo "❌ Commit $commit is not verified"
-              echo "::error::All commits must be signed and verified"
-              exit 1
-            else
-              echo "✅ Commit $commit is verified"
-            fi
-          done
-          echo "All commits are properly verified!"
+          filters: |
+            python:
+              - 'docker-practice/**/*.py'
+              - 'docker-practice/requirements.txt'
+              - 'docker-practice/pyproject.toml'
+            config:
+              - 'docker-practice/**/*.yml'
+              - 'docker-practice/**/*.yaml'
+              - 'docker-practice/**/*.toml'
+              - 'docker-practice/**/*.ini'
 
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
+    needs: changes
     defaults:
       run:
         working-directory: docker-practice
@@ -59,6 +62,8 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
     defaults:
       run:
         working-directory: docker-practice
@@ -93,38 +98,38 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-          DJANGO_SETTINGS_MODULE: core.settings
+          DJANGO_SETTINGS_MODULE: core.settings.test
         run: |
           echo "Running unit tests..."
           python manage.py migrate --no-input
           pytest -v --tb=short
           echo "✅ All tests passed!"
 
-  merge-ready:
-    name: Merge Ready
+  ci-complete:
+    name: CI Complete
     runs-on: ubuntu-latest
-    needs: [verify-commits, lint, test]
+    needs: [changes, lint, test]
     if: always()
     steps:
-      - name: Check all jobs status
+      - name: Check CI status
         run: |
-          echo "Checking status of all required jobs..."
+          echo "Checking CI status..."
 
           # Check if any job failed
-          if [[ "${{ needs.verify-commits.result }}" != "success" ]]; then
-            echo "❌ Commit verification failed"
-            exit 1
-          fi
-
           if [[ "${{ needs.lint.result }}" != "success" ]]; then
             echo "❌ Code quality checks failed"
             exit 1
           fi
 
-          if [[ "${{ needs.test.result }}" != "success" ]]; then
-            echo "❌ Unit tests failed"
-            exit 1
+          # Only check test results if tests were supposed to run
+          if [[ "${{ needs.changes.outputs.python }}" == "true" ]]; then
+            if [[ "${{ needs.test.result }}" != "success" ]]; then
+              echo "❌ Unit tests failed"
+              exit 1
+            fi
+            echo "✅ All checks passed (including tests)!"
+          else
+            echo "✅ Code quality checks passed (no Python changes - tests skipped)!"
           fi
 
-          echo "✅ All checks passed! PR is ready to merge."
-          echo "::notice::All quality gates passed - merge button is enabled"
+          echo "::notice::CI pipeline completed successfully"

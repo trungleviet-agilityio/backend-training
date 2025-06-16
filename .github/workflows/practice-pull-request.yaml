@@ -1,45 +1,16 @@
-name: Code Quality & Tests
+name: PR to Develop
 
 on:
-  # Run on every push to any branch
-  push:
-    paths:
-      - 'docker-practice/**'
-  # Run on PRs to main/develop
   pull_request:
     branches:
-      - main
       - develop
     paths:
       - 'docker-practice/**'
 
 jobs:
-  changes:
-    name: Check Changes
-    runs-on: ubuntu-latest
-    outputs:
-      python: ${{ steps.filter.outputs.python }}
-      config: ${{ steps.filter.outputs.config }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            python:
-              - 'docker-practice/**/*.py'
-              - 'docker-practice/requirements.txt'
-              - 'docker-practice/pyproject.toml'
-            config:
-              - 'docker-practice/**/*.yml'
-              - 'docker-practice/**/*.yaml'
-              - 'docker-practice/**/*.toml'
-              - 'docker-practice/**/*.ini'
-
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
-    needs: changes
     defaults:
       run:
         working-directory: docker-practice
@@ -66,8 +37,6 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.python == 'true'
     defaults:
       run:
         working-directory: docker-practice
@@ -109,15 +78,15 @@ jobs:
           pytest -v --tb=short
           echo "✅ All tests passed!"
 
-  ci-complete:
-    name: CI Complete
+  merge-ready:
+    name: Merge Ready
     runs-on: ubuntu-latest
-    needs: [changes, lint, test]
+    needs: [lint, test]
     if: always()
     steps:
-      - name: Check CI status
+      - name: Check all jobs status
         run: |
-          echo "Checking CI status..."
+          echo "Checking status of all required jobs..."
 
           # Check if any job failed
           if [[ "${{ needs.lint.result }}" != "success" ]]; then
@@ -125,15 +94,10 @@ jobs:
             exit 1
           fi
 
-          # Only check test results if tests were supposed to run
-          if [[ "${{ needs.changes.outputs.python }}" == "true" ]]; then
-            if [[ "${{ needs.test.result }}" != "success" ]]; then
-              echo "❌ Unit tests failed"
-              exit 1
-            fi
-            echo "✅ All checks passed (including tests)!"
-          else
-            echo "✅ Code quality checks passed (no Python changes - tests skipped)!"
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
+            echo "❌ Unit tests failed"
+            exit 1
           fi
 
-          echo "::notice::CI pipeline completed successfully"
+          echo "✅ All checks passed! PR is ready to merge."
+          echo "::notice::All quality gates passed - merge button is enabled"

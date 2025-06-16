@@ -6,11 +6,6 @@ on:
       - main
     paths:
       - 'docker-practice/**'
-  push:
-    branches:
-      - main
-    paths:
-      - 'docker-practice/**'
 
 jobs:
   lint:
@@ -76,7 +71,7 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-          DJANGO_SETTINGS_MODULE: core.settings
+          DJANGO_SETTINGS_MODULE: core.settings.test
         run: |
           echo "Running unit tests..."
           python manage.py migrate --no-input
