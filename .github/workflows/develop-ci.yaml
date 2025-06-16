@@ -10,7 +10,7 @@ on:
 jobs:
   ci:
     name: CI Pipeline
-    uses: ./.github/workflows/shared-jobs.yml
+    uses: ./.github/workflows/shared-ci-jobs.yml
     with:
       target-branch: develop
       skip-on-no-changes: true
