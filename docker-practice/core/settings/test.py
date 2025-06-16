@@ -2,41 +2,35 @@
 Test settings for running tests.
 """
 
-from .base import *
+import os
 
-# SECURITY WARNING: keep the secret key used in production secret!
+from core.settings.base import *  # noqa: E402,F403
+
 SECRET_KEY = "django-insecure-test-secret-key"
-
-# SECURITY WARNING: don't run with debug turned on in production!
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 DEBUG = False
 
-ALLOWED_HOSTS = ["testserver"]
-
-# Database
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "test_db"),
+        "USER": os.environ.get("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }
 
-# CORS settings
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = []
 
-# Disable debug toolbar
 INSTALLED_APPS.remove("debug_toolbar")
 MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
 
-# Email settings
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-
-# Disable password hashers for faster tests
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
-
-# Disable logging during tests
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": True,
