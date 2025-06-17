@@ -7,7 +7,7 @@ import os
 from core.settings.base import *  # noqa: E402,F403
 
 SECRET_KEY = "django-insecure-test-secret-key"
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "103.249.201.227"]
 DEBUG = False
 
 DATABASES = {
