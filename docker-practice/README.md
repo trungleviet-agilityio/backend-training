@@ -112,6 +112,8 @@ To rollback to a previous version:
 4. Enter the commit hash to rollback to
 5. Select the environment (production/staging)
 
+## Deployment Test
+This is a test change to verify the CI/CD pipeline.
 
 ## 📝 License
 
