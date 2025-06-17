@@ -73,12 +73,26 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest || true
             docker stop docker-practice-app || true
             docker rm docker-practice-app || true
-            docker run -d --name docker-practice-app --restart unless-stopped -p 8000:8000 -v /app/data:/app/data ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
+            docker run -d --name docker-practice-app --restart unless-stopped -p 8080:8000 -v /app/data:/app/data ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
             docker image prune -f
+            echo 'Verifying Swagger UI endpoint...'
+            for i in {1..30}; do
+              STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://127.0.0.1:8080/api/v1/schema/swagger-ui)
+              if [ "$STATUS" = "200" ]; then
+                echo "Swagger UI is accessible (HTTP 200)"
+                curl -s http://127.0.0.1:8080/api/v1/schema/swagger-ui | head -20
+                exit 0
+              fi
+              echo "Waiting for Swagger UI endpoint... (HTTP $STATUS)"
+              sleep 2
+            done
+            echo "Swagger UI endpoint not accessible after 60 seconds."
+            exit 1
 
   health-check:
     needs: deploy
@@ -86,7 +100,7 @@ jobs:
     with:
       target-branch: main
       container_name: docker-practice-app
-      healthcheck_url: http://localhost:8000/health/
+      healthcheck_url: http://localhost:8080/health/
     secrets:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
