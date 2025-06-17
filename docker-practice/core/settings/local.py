@@ -22,6 +22,17 @@ DATABASES = {
     }
 }
 
+# Static files configuration for development
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Static files finders to include app static files
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
+
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [

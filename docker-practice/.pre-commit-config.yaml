@@ -15,12 +15,7 @@ repos:
         language_version: python3.11
         args: [--line-length=88]
 
-  # isort - Python import sorting
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile=black, --known-django=django, --known-first-party=books,core, --sections=FUTURE,STDLIB,THIRDPARTY,DJANGO,FIRSTPARTY,LOCALFOLDER]
+
 
   # Pre-commit hooks for general checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

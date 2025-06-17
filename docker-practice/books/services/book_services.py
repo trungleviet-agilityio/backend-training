@@ -50,7 +50,9 @@ class BookService:
         try:
             author = Author.objects.get(id=author_id)
         except Author.DoesNotExist as err:
-            raise ValidationError({"author_id": "Author with this ID does not exist."}) from err
+            raise ValidationError(
+                {"author_id": "Author with this ID does not exist."}
+            ) from err
 
         # Validate categories exist
         if category_ids:
