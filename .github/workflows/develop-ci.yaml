@@ -1,4 +1,4 @@
-name: Develop CI
+name: "CI: Test, Build, Push (Develop)"
 
 on:
   push:
@@ -13,150 +13,49 @@ on:
       - 'docker-practice/**'
 
 env:
-  PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-  PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
-  PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
+  DOCKER_IMAGE: docker-practice-app
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
-  validate-changes:
-    name: Validate Changes
-    runs-on: ubuntu-latest
-    outputs:
-      has-changes: ${{ steps.check-changes.outputs.has-changes }}
+  shared-ci:
+    uses: ./.github/workflows/shared-ci-jobs.yml
+    with:
+      target-branch: develop
+      skip-on-no-changes: false
+      run-docker-compose: false
+      container_name: docker-practice-app
+      healthcheck_url: http://localhost:8000/health/
+    secrets:
+      vps_host: ${{ secrets.VPS_HOST }}
+      vps_username: ${{ secrets.VPS_USERNAME }}
+      vps_ssh_key: ${{ secrets.VPS_SSH_KEY }}
 
+  build-and-push:
+    needs: shared-ci
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          fetch-depth: 0
-
-      - name: Check for relevant changes
-        id: check-changes
-        run: |
-          echo "Checking for relevant changes..."
-
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # For pull requests, check changed files
-            CHANGED_FILES=$(git diff --name-only origin/develop...HEAD)
-          else
-            # For pushes, check last commit
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          fi
-
-          if echo "$CHANGED_FILES" | grep -q "^docker-practice/"; then
-            echo "✅ Found changes in docker-practice directory"
-            echo "has-changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "ℹ️ No changes in docker-practice directory"
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-          fi
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: validate-changes
-    if: needs.validate-changes.outputs.has-changes == 'true'
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r docker-practice/requirements.txt
-          pip install pytest pytest-cov
-
-      - name: Build Docker image (optional)
-        run: |
-          docker build -f docker-practice/Dockerfile -t my-app:latest docker-practice/
-
-      - name: Run tests
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
-        run: |
-          cd docker-practice
-          pytest --cov=. --cov-report=xml
-
-  lint:
-    name: Run Linters
-    runs-on: ubuntu-latest
-    needs: validate-changes
-    if: needs.validate-changes.outputs.has-changes == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+          images: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff black
-
-      - name: Run Ruff (lint and format)
-        run: |
-          cd docker-practice
-          ruff check .
-          ruff format --check .
-
-      - name: Run Black (format check)
-        run: |
-          cd docker-practice
-          black . --check
-
-  ci-status:
-    name: CI Status
-    runs-on: ubuntu-latest
-    needs: [validate-changes, test, lint]
-    if: always()
-
-    steps:
-      - name: Report CI status
-        run: |
-          echo "CI Status Report:"
-          echo "================"
-
-          if [[ "${{ needs.validate-changes.result }}" != "success" ]]; then
-            echo "❌ Change validation failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.test.result }}" != "success" ]]; then
-            echo "❌ Tests failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.lint.result }}" != "success" ]]; then
-            echo "❌ Linting failed"
-            exit 1
-          fi
-
-          echo "✅ All CI checks passed!"
-          echo "::notice::CI pipeline completed successfully"
-
-          # Summary
-          echo ""
-          echo "CI Summary:"
-          echo "- Change Validation: ✅"
-          echo "- Tests: ✅"
-          echo "- Linting: ✅"
+          context: ./docker-practice
+          file: ./docker-practice/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

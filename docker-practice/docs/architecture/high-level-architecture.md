@@ -16,9 +16,9 @@ graph TB
         PUSH[Push to Docker Hub]
     end
 
-    subgraph "AWS Deployment"
-        ECS[ECS Fargate]
-        RDS[RDS PostgreSQL]
+    subgraph "VPS Deployment"
+        DOCKER[Docker Container]
+        POSTGRES[PostgreSQL]
     end
 
     CODE --> GITHUB
@@ -26,8 +26,8 @@ graph TB
     ACTIONS --> TEST
     TEST --> BUILD
     BUILD --> PUSH
-    PUSH --> ECS
-    ECS --> RDS
+    PUSH --> DOCKER
+    DOCKER --> POSTGRES
 ```
 
 ## Architecture Components
@@ -35,106 +35,132 @@ graph TB
 ### 1. Development Environment
 - **Python DRF Application**
   - Django REST Framework (DRF)
-  - PostgreSQL database (PostgreSQL)
-  - Docker containerization (Docker)
+  - PostgreSQL database
+  - Docker containerization
 
 - **GitHub Repository**
   - Source code management
   - Version control
-  - Branch protection rules
+  - Branch protection rules (main and develop)
+  - Automated cleanup of merged branches
 
 ### 2. CI/CD Pipeline (GitHub Actions)
 
 #### Workflow Steps
-1. **Test**
+1. **Test & Quality**
+   - Lint code (Ruff, Black)
    - Run unit tests (pytest)
-   - Code quality checks (ruff)
-   - Run integration tests (if possible)
+   - Code coverage reporting
+   - PostgreSQL service for tests
 
 2. **Build**
-   - Build Docker image (docker build)
-   - Tag image with version (latest - version number)
-   - Security scanning (clair)
+   - Build Docker image
+   - Tag images (latest + commit SHA)
+   - Multi-stage builds for optimization
 
 3. **Deploy**
-   - Push to Docker Hub (docker push)
-   - Deploy to AWS ECS (ecs-cli)
-   - Database migrations (rds-cli)
+   - Push to Docker Hub
+   - SSH deployment to VPS
+   - Container management
+   - Health checks
 
-### 3. AWS Infrastructure
+### 3. VPS Infrastructure
 
-#### ECS Fargate
+#### Docker Container
 - **Container Management**
-  - Serverless containers (Fargate)
-  - Auto-scaling (ECS)
-  - Load balancing (ALB)
+  - Single container deployment
+  - Volume mounting for persistence
+  - Port mapping (8000:8000)
+  - Automatic restart policy
 
-#### RDS PostgreSQL
+#### PostgreSQL Database
 - **Database**
-  - Managed PostgreSQL (RDS)
-  - Automated backups (RDS)
-  - High availability (RDS)
+  - Local PostgreSQL instance
+  - Volume-mounted data
+  - Regular backups (recommended)
 
 ## Deployment Architecture
 
 ```mermaid
 graph TB
-    subgraph "GitHub Actions Workflow"
-        TRIGGER[Push to main]
-        TEST[Run Tests]
-        BUILD[Build Docker]
-        PUSH[Push to Docker Hub]
+    subgraph "GitHub Actions Workflows"
+        DEVELOP[develop-ci.yaml]
+        PROD[production-ci-cd.yaml]
+        ROLLBACK[roll-back-manual.yaml]
+        CLEANUP[cleanup.yaml]
     end
 
-    subgraph "AWS Infrastructure"
-        ECS[ECS Fargate]
-        RDS[RDS PostgreSQL]
+    subgraph "Shared Components"
+        SHARED[shared-ci-jobs.yml]
+        LINT[Code Quality]
+        TESTS[Unit Tests]
+        DOCKER_TEST[Docker Tests]
     end
 
-    TRIGGER --> TEST
-    TEST --> BUILD
-    BUILD --> PUSH
-    PUSH --> ECS
-    ECS --> RDS
+    subgraph "VPS Deployment"
+        SSH[SSH Deploy]
+        CONTAINER[Docker Container]
+        HEALTH[Health Check]
+    end
+
+    DEVELOP --> SHARED
+    PROD --> SHARED
+    SHARED --> LINT
+    SHARED --> TESTS
+    SHARED --> DOCKER_TEST
+    PROD --> SSH
+    SSH --> CONTAINER
+    CONTAINER --> HEALTH
+    ROLLBACK --> SSH
 ```
 
 ## Security Considerations
 
 ### 1. GitHub Security
-- Repository secrets for sensitive data (GITHUB_TOKEN)
-- Branch protection rules (main branch protection)
-- Code review requirements (PR reviews)
+- Repository secrets for sensitive data
+  - `VPS_HOST`
+  - `VPS_USERNAME`
+  - `VPS_SSH_KEY`
+  - `DOCKER_USERNAME`
+  - `DOCKER_PASSWORD`
+- Branch protection rules
+- Required PR reviews
 
 ### 2. Docker Security
-- Docker image scanning (clair)
-- Base image security (alpine)
-- Container best practices (dockerfile)
+- Multi-stage builds
+- Base image security
+- Container best practices
+- Image pruning after deployment
 
-### 3. AWS Security
-- IAM roles and policies (IAM)
-- Security groups (VPC)
-- VPC configuration (VPC)
+### 3. VPS Security
+- SSH key authentication
+- Firewall configuration
+- Regular system updates
+- Limited port exposure
 
 ## Monitoring
 
 ### 1. Application Monitoring
-- Container health checks (ECS)
-- Application logs (ECS)
-- Error tracking (ECS)
+- Container health checks
+- Application logs
+- Error tracking
+- HTTP endpoint monitoring
 
 ### 2. Infrastructure Monitoring
-- ECS service metrics (ECS)
-- RDS performance metrics (RDS)
-- Cost monitoring (AWS)
+- Docker container status
+- PostgreSQL performance
+- Disk usage monitoring
+- Network monitoring
 
 ## Cost Optimization
 
-### 1. AWS Resources
-- Right-sized ECS tasks (ECS)
-- RDS instance optimization (RDS)
-- Auto-scaling configuration (ECS)
+### 1. VPS Resources
+- Right-sized VPS instance
+- Optimized container resources
+- Storage management
 
 ### 2. Docker Optimization
-- Multi-stage builds (dockerfile)
-- Image size optimization (dockerfile)
-- Layer caching (dockerfile)
+- Multi-stage builds
+- Image size optimization
+- Layer caching
+- Regular cleanup of unused images

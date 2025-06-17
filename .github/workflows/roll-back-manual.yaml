@@ -1,4 +1,6 @@
-name: Rollback (Manual)
+name: "Manual: VPS Rollback"
+# Manually rollback docker-practice deployment on VPS to a specific Docker image tag
+# Uses /docker-practice/Dockerfile and can use scripts from /docker-practice/scripts
 run-name: ${{ github.ref_name }}
 
 on:
@@ -13,7 +15,7 @@ on:
           - staging
           - production
       commit_hash:
-        description: 'Commit hash to rollback to'
+        description: 'Docker image tag or commit hash to rollback to'
         required: true
         type: string
       dry_run:
@@ -26,109 +28,54 @@ on:
           - 'false'
 
 env:
-  PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-  PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
-  PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
+  DOCKER_IMAGE: docker-practice-app
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
   rollback:
     name: Rollback
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.commit_hash }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pythonanywhere-client
-
-      - name: Build Docker image (optional)
-        run: |
-          docker build -f docker-practice/Dockerfile -t my-app:latest docker-practice/
-
-      - name: Rollback to previous version
+      - name: Deploy to VPS (Rollback)
         if: inputs.dry_run == 'false'
-        run: |
-          echo "🚀 Rolling back to commit: ${{ inputs.commit_hash }}"
-          echo "📦 Environment: ${{ inputs.environment }}"
-          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
-
-          # Create PythonAnywhere client
-          python -c "
-          from pythonanywhere_client import PythonAnywhereClient
-          client = PythonAnywhereClient(
-              username='${{ env.PYTHONANYWHERE_USERNAME }}',
-              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
-          )
-
-          # Reload the web app
-          client.reload_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
-          print('✅ Webapp reloaded successfully')
-          "
-
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ inputs.commit_hash }} || true
+            docker stop docker-practice-app || true
+            docker rm docker-practice-app || true
+            docker run -d --name docker-practice-app --restart unless-stopped -p 8000:8000 -v /app/data:/app/data ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ inputs.commit_hash }}
+            docker image prune -f
       - name: Dry Run
         if: inputs.dry_run == 'true'
         run: |
           echo "🔍 Dry Run Mode"
           echo "=============="
-          echo "📦 Environment: ${{ inputs.environment }}"
-          echo "🔍 Commit: ${{ inputs.commit_hash }}"
-          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
-          echo ""
-          echo "✅ This was a dry run - no changes were made"
+          echo "Would rollback to image tag: ${{ inputs.commit_hash }} on VPS."
+          echo "No changes were made."
 
-  verify-rollback:
-    name: Verify Rollback
-    runs-on: ubuntu-latest
+  health-check:
     needs: rollback
-    if: always()
-
-    steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pythonanywhere-client
-
-      - name: Check deployment health
-        run: |
-          echo "Validating rollback health..."
-
-          # Create PythonAnywhere client
-          python -c "
-          from pythonanywhere_client import PythonAnywhereClient
-          client = PythonAnywhereClient(
-              username='${{ env.PYTHONANYWHERE_USERNAME }}',
-              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
-          )
-
-          # Check webapp status
-          status = client.get_webapp_status('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
-          if status['status'] != 'running':
-              print('❌ Webapp is not running')
-              exit(1)
-          print('✅ Webapp is running')
-          "
-
-          echo "✅ Rollback validation passed"
+    if: always() && inputs.dry_run == 'false'
+    uses: ./.github/workflows/shared-ci-jobs.yml
+    with:
+      target-branch: ${{ github.ref_name }}
+      container_name: docker-practice-app
+      healthcheck_url: http://localhost:8000/health/
+    secrets:
+      vps_host: ${{ secrets.VPS_HOST }}
+      vps_username: ${{ secrets.VPS_USERNAME }}
+      vps_ssh_key: ${{ secrets.VPS_SSH_KEY }}
 
   rollback-status:
     name: Rollback Status
     runs-on: ubuntu-latest
-    needs: [rollback, verify-rollback]
+    needs: [rollback, health-check]
     if: always()
     steps:
       - name: Report rollback status
@@ -141,7 +88,7 @@ jobs:
             exit 1
           fi
 
-          if [[ "${{ needs.verify-rollback.result }}" != "success" ]]; then
+          if [[ "${{ needs.health-check.result }}" != "success" ]]; then
             echo "❌ Rollback verification failed"
             exit 1
           fi
