@@ -3,6 +3,9 @@ Response serializers for the Author model.
 These serializers handle output formatting and nested relationships.
 """
 
+from typing import Any
+
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from books.serializers.author_serializers import AuthorSerializer
@@ -20,11 +23,13 @@ class AuthorListResponseSerializer(AuthorSerializer):
     class Meta(AuthorSerializer.Meta):
         fields = ["id", "name", "full_name", "email", "book_count"]
 
-    def get_book_count(self, obj):
+    @extend_schema_field(serializers.IntegerField)
+    def get_book_count(self, obj) -> int:
         """Get the number of books by this author."""
         return obj.books.count()
 
-    def get_full_name(self, obj):
+    @extend_schema_field(serializers.CharField)
+    def get_full_name(self, obj) -> str:
         """Get the author's full name."""
         return f"{obj.name} ({obj.email})"
 
@@ -45,9 +50,15 @@ class AuthorDetailResponseSerializer(AuthorSerializer):
             "updated_at",
         ]
 
-    def get_books(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_books(self, obj) -> list[dict[str, Any]]:
         """Get list of books by this author."""
         return [
-            {"id": book.id, "title": book.title, "isbn": book.isbn, "price": book.price}
+            {
+                "id": book.id,
+                "title": book.title,
+                "isbn": book.isbn,
+                "price": str(book.price),
+            }
             for book in obj.books.all()
         ]

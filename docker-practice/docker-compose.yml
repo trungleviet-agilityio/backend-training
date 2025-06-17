@@ -1,6 +1,6 @@
 # Init docker-compose.yml
 
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database Service
@@ -18,7 +18,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=postgres
     ports:
-      - "5433:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -44,7 +44,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
     ports:
-      - "8000:8000"
+      - "${WEB_HOST_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy

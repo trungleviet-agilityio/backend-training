@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-your-secret-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
 # Database
 DATABASES = {
@@ -21,6 +21,17 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+# Static files configuration for development
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Static files finders to include app static files
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True

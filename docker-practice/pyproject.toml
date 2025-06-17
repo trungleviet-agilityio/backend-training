@@ -4,9 +4,8 @@ target-version = ['py310']
 
 [tool.isort]
 profile = "black"
-known_django = "django"
+known_third_party = ["django"]
 known_first_party = ["books", "core"]
-sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.ruff]
 line-length = 88
@@ -28,6 +27,10 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
+
+[tool.ruff.lint.isort]
+known-third-party = ["django"]
+known-first-party = ["books", "core"]
 
 [tool.ruff.lint.per-file-ignores]
 "*/migrations/*" = ["E501", "F401", "F841"]

@@ -1,22 +1,16 @@
 """
 URL configuration for core project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Following Django REST Framework best practices:
+- Clean separation of concerns
+- Proper API versioning structure
+- Namespace support for scalability
+- DefaultRouter handles API root automatically
 """
 
 from django.conf import settings
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -24,10 +18,21 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+
+def root_redirect(request):
+    """Redirect root URL to Swagger documentation for better developer experience."""
+    return redirect("/api/v1/schema/swagger-ui/")
+
+
+# Main URL patterns
 urlpatterns = [
+    # Root redirect to API documentation
+    path("", root_redirect, name="root"),
+    # Admin interface
     path("admin/", admin.site.urls),
-    path("api/v1/", include("books.urls")),
-    # API Documentation
+    # API v1 endpoints with namespace for future versioning
+    path("api/v1/", include("books.urls", namespace="v1")),
+    # API Documentation endpoints
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/v1/schema/swagger-ui/",
@@ -41,9 +46,14 @@ urlpatterns = [
     ),
 ]
 
+# Development-only URLs
 if settings.DEBUG:
     import debug_toolbar
+    from django.conf.urls.static import static
 
     urlpatterns += [
         path("__debug__/", include(debug_toolbar.urls)),
     ]
+
+    # Serve static files during development
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

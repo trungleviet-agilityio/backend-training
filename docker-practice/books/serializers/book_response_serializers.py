@@ -3,6 +3,9 @@ Response serializers for the Book model.
 These serializers handle output formatting and nested relationships.
 """
 
+from typing import Any
+
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from books.serializers.book_serializers import BookSerializer
@@ -20,13 +23,21 @@ class BookListResponseSerializer(BookSerializer):
     class Meta(BookSerializer.Meta):
         fields = ["id", "title", "isbn", "price", "price_display", "author_name"]
 
-    def get_author_name(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_author_name(self, obj) -> str | None:
         """Get the author's name."""
         return obj.author.name if obj.author else None
 
-    def get_price_display(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_price_display(self, obj) -> str | None:
         """Format price with currency symbol."""
-        return f"${obj.price:.2f}" if obj.price is not None else None
+        if obj.price is not None:
+            try:
+                price_float = float(obj.price)
+                return f"${price_float:.2f}"
+            except (ValueError, TypeError):
+                return f"${obj.price}"
+        return None
 
 
 class BookDetailResponseSerializer(BookListResponseSerializer):
@@ -46,13 +57,15 @@ class BookDetailResponseSerializer(BookListResponseSerializer):
             "updated_at",
         ]
 
-    def get_author(self, obj):
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_author(self, obj) -> dict[str, Any] | None:
         """Get author details."""
         if not obj.author:
             return None
         return {"id": obj.author.id, "name": obj.author.name, "email": obj.author.email}
 
-    def get_categories(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_categories(self, obj) -> list[dict[str, Any]]:
         """Get category details."""
         return [
             {

@@ -3,6 +3,7 @@ Response serializers for the Category model.
 These serializers handle outgoing data formatting and nested relationships.
 """
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from books.serializers.category_serializers import CategorySerializer
@@ -21,11 +22,13 @@ class CategoryListResponseSerializer(CategorySerializer):
         fields = ["id", "name", "name_display", "book_count"]
         read_only_fields = fields
 
-    def get_book_count(self, obj):
+    @extend_schema_field(serializers.IntegerField)
+    def get_book_count(self, obj) -> int:
         """Get the number of books in this category."""
         return obj.books.count()
 
-    def get_name_display(self, obj):
+    @extend_schema_field(serializers.CharField)
+    def get_name_display(self, obj) -> str:
         """Get the formatted category name."""
         return obj.name.strip().title()
 
@@ -53,14 +56,17 @@ class CategoryDetailResponseSerializer(CategorySerializer):
         ]
         read_only_fields = fields
 
-    def get_book_count(self, obj):
+    @extend_schema_field(serializers.IntegerField)
+    def get_book_count(self, obj) -> int:
         """Get the number of books in this category."""
         return obj.books.count()
 
-    def get_name_display(self, obj):
+    @extend_schema_field(serializers.CharField)
+    def get_name_display(self, obj) -> str:
         """Get the formatted category name."""
         return obj.name.strip().title()
 
-    def get_books(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_books(self, obj) -> list[str]:
         """Get list of book titles in this category."""
         return [book.title for book in obj.books.all()]
