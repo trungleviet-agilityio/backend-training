@@ -14,6 +14,9 @@ env:
   ECS_TASK_DEFINITION: docker-practice-task
   CONTAINER_NAME: docker-practice-app
   IMAGE_NAME: docker-practice-app
+  PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+  PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+  PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
 
 jobs:
   pre-deployment-check:
@@ -38,13 +41,18 @@ jobs:
           fi
 
           # Validate required secrets are available
-          if [[ -z "${{ secrets.DOCKER_USERNAME }}" ]]; then
-            echo "❌ Docker username not configured"
+          if [[ -z "${{ secrets.PYTHONANYWHERE_USERNAME }}" ]]; then
+            echo "❌ PythonAnywhere username not configured"
             exit 1
           fi
 
-          if [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]]; then
-            echo "❌ AWS credentials not configured"
+          if [[ -z "${{ secrets.PYTHONANYWHERE_API_TOKEN }}" ]]; then
+            echo "❌ PythonAnywhere API token not configured"
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}" ]]; then
+            echo "❌ PythonAnywhere webapp name not configured"
             exit 1
           fi
 
@@ -115,165 +123,90 @@ jobs:
           echo "✅ Production images tested successfully!"
 
   deploy:
-    name: Deploy to AWS ECS
+    name: Deploy to PythonAnywhere
     runs-on: ubuntu-latest
-    needs: [pre-deployment-check, docker-build-production]
+    needs: pre-deployment-check
     if: needs.pre-deployment-check.outputs.deploy-ready == 'true'
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          python-version: '3.11'
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Pull and push images to ECR
+      - name: Install dependencies
         run: |
-          echo "Copying images from Docker Hub to ECR..."
+          python -m pip install --upgrade pip
+          pip install pythonanywhere-client
 
-          # Pull from Docker Hub
-          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          docker pull ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
-
-          # Tag for ECR
-          docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest
-          docker tag ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest \
-            ${{ steps.login-ecr.outputs.registry }}/docker-practice-postgres:latest
-
-          # Push to ECR
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ steps.login-ecr.outputs.registry }}/docker-practice-postgres:latest
-
-          echo "✅ Images pushed to ECR successfully"
-
-      - name: Prepare task definition
+      - name: Deploy to PythonAnywhere
         run: |
-          echo "Preparing ECS task definition..."
+          echo "Deploying to PythonAnywhere..."
+          echo "- Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
+          echo "- Environment: Production"
+          echo "- Commit: ${{ github.sha }}"
 
-          # Download current task definition
-          aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-            --query taskDefinition > task-definition.json
+          # Create PythonAnywhere client
+          python -c "
+          from pythonanywhere_client import PythonAnywhereClient
+          client = PythonAnywhereClient(
+              username='${{ env.PYTHONANYWHERE_USERNAME }}',
+              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
+          )
 
-          # Update image URI in task definition
-          jq --arg IMAGE_URI "${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:latest" \
-            '.containerDefinitions[0].image = $IMAGE_URI' task-definition.json > new-task-def.json
+          # Reload the web app
+          client.reload_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          print('✅ Webapp reloaded successfully')
+          "
 
-          # Register new task definition
-          aws ecs register-task-definition --cli-input-json file://new-task-def.json
-
-          echo "✅ Task definition updated"
-
-      - name: Run database migrations
-        run: |
-          echo "Running database migrations..."
-
-          # Create one-time task for migrations
-          aws ecs run-task \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-            --overrides '{
-              "containerOverrides": [{
-                "name": "${{ env.CONTAINER_NAME }}",
-                "command": ["python", "manage.py", "migrate", "--no-input"]
-              }]
-            }' \
-            --launch-type FARGATE \
-            --network-configuration '{
-              "awsvpcConfiguration": {
-                "subnets": ["'${{ secrets.SUBNET_IDS }}'"],
-                "securityGroups": ["'${{ secrets.SECURITY_GROUP_ID }}'"],
-                "assignPublicIp": "ENABLED"
-              }
-            }'
-
-          echo "✅ Database migrations initiated"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DJANGO_SETTINGS_MODULE: core.settings
-
-      - name: Update ECS service
-        run: |
-          echo "Updating ECS service..."
-
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service ${{ env.ECS_SERVICE }} \
-            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-            --force-new-deployment
-
-          echo "✅ ECS service update initiated"
-
-      - name: Wait for deployment
-        run: |
-          echo "Waiting for deployment to complete..."
-
-          aws ecs wait services-stable \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }}
-
-          echo "✅ Deployment completed successfully"
+          echo "✅ PythonAnywhere deployment initiated"
 
   deployment-validation:
     name: Validate Deployment
     runs-on: ubuntu-latest
-    needs: [pre-deployment-check, docker-build-production, deploy]
+    needs: [pre-deployment-check, deploy]
     if: always()
 
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          python-version: '3.11'
 
-      - name: Check service health
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pythonanywhere-client
+
+      - name: Check deployment health
         run: |
           echo "Validating deployment health..."
 
-          # Get service status
-          SERVICE_STATUS=$(aws ecs describe-services \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].status' --output text)
+          # Create PythonAnywhere client
+          python -c "
+          from pythonanywhere_client import PythonAnywhereClient
+          client = PythonAnywhereClient(
+              username='${{ env.PYTHONANYWHERE_USERNAME }}',
+              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
+          )
 
-          if [[ "$SERVICE_STATUS" != "ACTIVE" ]]; then
-            echo "❌ Service is not active: $SERVICE_STATUS"
-            exit 1
-          fi
-
-          # Check running task count
-          RUNNING_COUNT=$(aws ecs describe-services \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].runningCount' --output text)
-
-          DESIRED_COUNT=$(aws ecs describe-services \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].desiredCount' --output text)
-
-          if [[ "$RUNNING_COUNT" != "$DESIRED_COUNT" ]]; then
-            echo "❌ Task count mismatch. Running: $RUNNING_COUNT, Desired: $DESIRED_COUNT"
-            exit 1
-          fi
+          # Check webapp status
+          status = client.get_webapp_status('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          if status['status'] != 'running':
+              print('❌ Webapp is not running')
+              exit(1)
+          print('✅ Webapp is running')
+          "
 
           echo "✅ Deployment validation passed"
-          echo "- Service Status: $SERVICE_STATUS"
-          echo "- Running Tasks: $RUNNING_COUNT/$DESIRED_COUNT"
 
   deployment-status:
     name: Deployment Status
     runs-on: ubuntu-latest
-    needs: [pre-deployment-check, docker-build-production, deploy, deployment-validation]
+    needs: [pre-deployment-check, deploy, deployment-validation]
     if: always()
     steps:
       - name: Report deployment status
@@ -283,11 +216,6 @@ jobs:
 
           if [[ "${{ needs.pre-deployment-check.result }}" != "success" ]]; then
             echo "❌ Pre-deployment checks failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.docker-build-production.result }}" != "success" ]]; then
-            echo "❌ Docker build failed"
             exit 1
           fi
 
@@ -308,6 +236,5 @@ jobs:
           echo ""
           echo "Deployment Summary:"
           echo "- Pre-checks: ✅"
-          echo "- Docker Build: ✅"
-          echo "- AWS Deployment: ✅"
+          echo "- Deployment: ✅"
           echo "- Health Validation: ✅"

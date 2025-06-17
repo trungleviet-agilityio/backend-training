@@ -1,49 +1,192 @@
-name: PR to Develop - CI
+name: Develop CI
 
 on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docker-practice/**'
   pull_request:
     branches:
       - develop
     paths:
       - 'docker-practice/**'
 
+env:
+  PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+  PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+  PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
+
 jobs:
-  ci:
-    name: CI Pipeline
-    uses: ./.github/workflows/shared-ci-jobs.yml
-    with:
-      target-branch: develop
-      skip-on-no-changes: true
-      run-docker-compose: false
-
-  merge-ready:
-    name: Ready to Merge
+  validate-changes:
+    name: Validate Changes
     runs-on: ubuntu-latest
-    needs: ci
-    if: always()
+    outputs:
+      has-changes: ${{ steps.check-changes.outputs.has-changes }}
+
     steps:
-      - name: Check pipeline status
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for relevant changes
+        id: check-changes
         run: |
-          echo "🔍 Checking CI pipeline status for PR to develop..."
-          echo "================================================="
+          echo "Checking for relevant changes..."
 
-          CI_STATUS="${{ needs.ci.result }}"
-          PYTHON_CHANGED="${{ needs.ci.outputs.python-changed }}"
-          DOCKER_CHANGED="${{ needs.ci.outputs.docker-changed }}"
-
-          echo "📊 Results:"
-          echo "- CI Pipeline: $CI_STATUS"
-          echo "- Python Changes: $PYTHON_CHANGED"
-          echo "- Docker Changes: $DOCKER_CHANGED"
-          echo ""
-
-          if [[ "$CI_STATUS" == "success" ]]; then
-            echo "✅ ALL CHECKS PASSED! PR is ready to merge to develop."
-            echo "🟢 Merge button is now ENABLED"
-            echo "::notice::Quality gates passed - can merge to develop"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # For pull requests, check changed files
+            CHANGED_FILES=$(git diff --name-only origin/develop...HEAD)
           else
-            echo "❌ MERGE BLOCKED - CI pipeline failed"
-            echo "🔴 Fix issues before merging"
-            echo "::error::Cannot merge to develop - CI checks failed"
+            # For pushes, check last commit
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^docker-practice/"; then
+            echo "✅ Found changes in docker-practice directory"
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "ℹ️ No changes in docker-practice directory"
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: validate-changes
+    if: needs.validate-changes.outputs.has-changes == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docker-practice/requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          cd docker-practice
+          pytest --cov=. --cov-report=xml
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./docker-practice/coverage.xml
+          fail_ci_if_error: true
+
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+    needs: validate-changes
+    if: needs.validate-changes.outputs.has-changes == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
+
+      - name: Run linters
+        run: |
+          cd docker-practice
+          flake8 .
+          black . --check
+          isort . --check-only
+
+  pythonanywhere-test:
+    name: Test PythonAnywhere Configuration
+    runs-on: ubuntu-latest
+    needs: validate-changes
+    if: needs.validate-changes.outputs.has-changes == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pythonanywhere-client
+
+      - name: Test PythonAnywhere configuration
+        run: |
+          echo "Testing PythonAnywhere configuration..."
+
+          # Create PythonAnywhere client
+          python -c "
+          from pythonanywhere_client import PythonAnywhereClient
+          client = PythonAnywhereClient(
+              username='${{ env.PYTHONANYWHERE_USERNAME }}',
+              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
+          )
+
+          # Test webapp configuration
+          webapp = client.get_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          print(f'✅ Webapp configuration verified:')
+          print(f'- Virtualenv path: {webapp.get(\"virtualenv_path\")}')
+          print(f'- Source code path: {webapp.get(\"source_code_path\")}')
+          print(f'- WSGI file: {webapp.get(\"wsgi_file\")}')
+          "
+
+          echo "✅ PythonAnywhere configuration test passed"
+
+  ci-status:
+    name: CI Status
+    runs-on: ubuntu-latest
+    needs: [validate-changes, test, lint, pythonanywhere-test]
+    if: always()
+
+    steps:
+      - name: Report CI status
+        run: |
+          echo "CI Status Report:"
+          echo "================"
+
+          if [[ "${{ needs.validate-changes.result }}" != "success" ]]; then
+            echo "❌ Change validation failed"
             exit 1
           fi
+
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "❌ Linting failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.pythonanywhere-test.result }}" != "success" ]]; then
+            echo "❌ PythonAnywhere configuration test failed"
+            exit 1
+          fi
+
+          echo "✅ All CI checks passed!"
+          echo "::notice::CI pipeline completed successfully"
+
+          # Summary
+          echo ""
+          echo "CI Summary:"
+          echo "- Change Validation: ✅"
+          echo "- Tests: ✅"
+          echo "- Linting: ✅"
+          echo "- PythonAnywhere Config: ✅"

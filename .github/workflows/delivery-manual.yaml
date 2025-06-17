@@ -8,11 +8,6 @@ on:
         required: true
         default: 'main'
         type: string
-      docker_tag:
-        description: 'Docker image tag (default: latest)'
-        required: false
-        default: 'latest'
-        type: string
       environment:
         description: 'Target environment'
         required: true
@@ -32,7 +27,6 @@ jobs:
     name: Validate Input
     runs-on: ubuntu-latest
     outputs:
-      deploy-tag: ${{ steps.validate.outputs.tag }}
       target-env: ${{ steps.validate.outputs.environment }}
       deploy-branch: ${{ steps.validate.outputs.branch }}
 
@@ -49,13 +43,6 @@ jobs:
           fi
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
-          # Validate Docker tag
-          TAG="${{ github.event.inputs.docker_tag }}"
-          if [[ -z "$TAG" ]]; then
-            TAG="latest"
-          fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
           # Validate environment
           ENV="${{ github.event.inputs.environment }}"
           if [[ "$ENV" != "production" && "$ENV" != "staging" ]]; then
@@ -66,7 +53,6 @@ jobs:
 
           echo "✅ Input validation passed"
           echo "- Branch: $BRANCH"
-          echo "- Docker tag: $TAG"
           echo "- Environment: $ENV"
 
   deploy:
@@ -96,7 +82,6 @@ jobs:
           echo "- Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
           echo "- Environment: ${{ needs.validate-input.outputs.target-env }}"
           echo "- Branch: ${{ needs.validate-input.outputs.deploy-branch }}"
-          echo "- Docker tag: ${{ needs.validate-input.outputs.deploy-tag }}"
 
           # Create PythonAnywhere client
           python -c "
@@ -108,6 +93,7 @@ jobs:
 
           # Reload the web app
           client.reload_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          print('✅ Webapp reloaded successfully')
           "
 
           echo "✅ PythonAnywhere deployment initiated"
@@ -137,5 +123,4 @@ jobs:
           echo "✅ Manual deployment completed successfully!"
           echo "- Environment: ${{ needs.validate-input.outputs.target-env }}"
           echo "- Branch: ${{ needs.validate-input.outputs.deploy-branch }}"
-          echo "- Docker tag: ${{ needs.validate-input.outputs.deploy-tag }}"
           echo "::notice::Manual deployment successful"

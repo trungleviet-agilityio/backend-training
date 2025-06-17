@@ -1,34 +1,213 @@
-name: Cleanup Merged Branches
+name: Cleanup
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
-      - develop
-    paths:
-      - 'docker-practice/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to clean up'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+      cleanup-type:
+        description: 'Type of cleanup to perform'
+        required: true
+        type: choice
+        options:
+          - temporary-files
+          - logs
+          - all
+
+env:
+  PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+  PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+  PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
 
 jobs:
-  cleanup:
-    name: Delete Merged Branch
+  validate-inputs:
+    name: Validate Inputs
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    outputs:
+      valid: ${{ steps.validate.outputs.valid }}
+      environment: ${{ inputs.environment }}
+      cleanup-type: ${{ inputs.cleanup-type }}
 
     steps:
-      - name: Delete merged feature branch
+      - name: Validate inputs
+        id: validate
         run: |
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          echo "Validating cleanup inputs..."
 
-          # Protect main and develop branches from deletion
-          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "develop" ]]; then
-            echo "🛡️ Protected branch '$BRANCH_NAME' - skipping deletion"
-            exit 0
+          # Validate environment
+          if [[ "${{ inputs.environment }}" != "production" && "${{ inputs.environment }}" != "staging" ]]; then
+            echo "❌ Invalid environment: ${{ inputs.environment }}"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
-          echo "🗑️ Deleting merged feature branch: $BRANCH_NAME"
-          curl -X DELETE \
-            -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$BRANCH_NAME"
-          echo "✅ Feature branch '$BRANCH_NAME' deleted successfully"
+          # Validate cleanup type
+          if [[ "${{ inputs.cleanup-type }}" != "temporary-files" && \
+                "${{ inputs.cleanup-type }}" != "logs" && \
+                "${{ inputs.cleanup-type }}" != "all" ]]; then
+            echo "❌ Invalid cleanup type: ${{ inputs.cleanup-type }}"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Validate required secrets
+          if [[ -z "${{ secrets.PYTHONANYWHERE_USERNAME }}" ]]; then
+            echo "❌ PythonAnywhere username not configured"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.PYTHONANYWHERE_API_TOKEN }}" ]]; then
+            echo "❌ PythonAnywhere API token not configured"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          if [[ -z "${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}" ]]; then
+            echo "❌ PythonAnywhere webapp name not configured"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ Input validation passed"
+          echo "valid=true" >> $GITHUB_OUTPUT
+
+  cleanup:
+    name: Perform Cleanup
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    if: needs.validate-inputs.outputs.valid == 'true'
+    environment: ${{ needs.validate-inputs.outputs.environment }}
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pythonanywhere-client
+
+      - name: Execute cleanup
+        run: |
+          echo "Performing cleanup..."
+          echo "Environment: ${{ needs.validate-inputs.outputs.environment }}"
+          echo "Cleanup type: ${{ needs.validate-inputs.outputs.cleanup-type }}"
+
+          # Create PythonAnywhere client
+          python -c "
+          from pythonanywhere_client import PythonAnywhereClient
+          client = PythonAnywhereClient(
+              username='${{ env.PYTHONANYWHERE_USERNAME }}',
+              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
+          )
+
+          # Get webapp path
+          webapp = client.get_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          webapp_path = webapp['path']
+
+          # Perform cleanup based on type
+          cleanup_type = '${{ needs.validate-inputs.outputs.cleanup-type }}'
+
+          if cleanup_type in ['temporary-files', 'all']:
+              # Clean temporary files
+              client.run_bash_command(
+                  f'find {webapp_path} -type f -name "*.tmp" -delete'
+              )
+              print('✅ Temporary files cleaned')
+
+          if cleanup_type in ['logs', 'all']:
+              # Clean log files
+              client.run_bash_command(
+                  f'find {webapp_path}/logs -type f -name "*.log" -mtime +7 -delete'
+              )
+              print('✅ Old log files cleaned')
+
+          # Reload webapp after cleanup
+          client.reload_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          print('✅ Webapp reloaded after cleanup')
+          "
+
+          echo "✅ Cleanup completed successfully"
+
+  verify-cleanup:
+    name: Verify Cleanup
+    runs-on: ubuntu-latest
+    needs: cleanup
+    if: always()
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pythonanywhere-client
+
+      - name: Check webapp health
+        run: |
+          echo "Validating webapp health after cleanup..."
+
+          # Create PythonAnywhere client
+          python -c "
+          from pythonanywhere_client import PythonAnywhereClient
+          client = PythonAnywhereClient(
+              username='${{ env.PYTHONANYWHERE_USERNAME }}',
+              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
+          )
+
+          # Check webapp status
+          status = client.get_webapp_status('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
+          if status['status'] != 'running':
+              print('❌ Webapp is not running')
+              exit(1)
+          print('✅ Webapp is running')
+          "
+
+          echo "✅ Cleanup verification passed"
+
+  cleanup-status:
+    name: Cleanup Status
+    runs-on: ubuntu-latest
+    needs: [validate-inputs, cleanup, verify-cleanup]
+    if: always()
+    steps:
+      - name: Report cleanup status
+        run: |
+          echo "Cleanup Status Report:"
+          echo "====================="
+
+          if [[ "${{ needs.validate-inputs.result }}" != "success" ]]; then
+            echo "❌ Input validation failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.cleanup.result }}" != "success" ]]; then
+            echo "❌ Cleanup failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.verify-cleanup.result }}" != "success" ]]; then
+            echo "❌ Cleanup verification failed"
+            exit 1
+          fi
+
+          echo "✅ Cleanup completed successfully!"
+          echo "::notice::Cleanup completed for ${{ needs.validate-inputs.outputs.environment }}"
+
+          # Summary
+          echo ""
+          echo "Cleanup Summary:"
+          echo "- Input Validation: ✅"
+          echo "- Cleanup Process: ✅"
+          echo "- Health Check: ✅"
