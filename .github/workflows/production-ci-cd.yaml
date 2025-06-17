@@ -65,8 +65,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -75,11 +73,27 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest || true
+            echo "Logging in to Docker Hub as ${{ env.DOCKERHUB_USERNAME }}"
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ env.DOCKERHUB_USERNAME }} --password-stdin
+
+            echo "Pulling image: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest"
+            docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest || true
+
+            echo "Stopping old container (if exists)..."
             docker stop docker-practice-app || true
+
+            echo "Removing old container (if exists)..."
             docker rm docker-practice-app || true
-            docker run -d --name docker-practice-app --restart unless-stopped -p 8000:8000 -v /app/data:/app/data ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
+
+            echo "Running new container on port 8080 (host) -> 8000 (container)..."
+            docker run -d \
+              --name docker-practice-app \
+              --restart unless-stopped \
+              -p 8080:8000 \
+              -v /app/data:/app/data \
+              ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
+
+            echo "Pruning old images..."
             docker image prune -f
 
   health-check:
