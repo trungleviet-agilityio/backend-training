@@ -1,19 +1,29 @@
-name: Manual Rollback
+name: Rollback (Manual)
+run-name: ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to rollback'
+        description: 'Environment'
         required: true
         type: choice
+        default: staging
         options:
-          - production
           - staging
-      commit-hash:
+          - production
+      commit_hash:
         description: 'Commit hash to rollback to'
         required: true
         type: string
+      dry_run:
+        description: 'Dry run?'
+        required: true
+        type: choice
+        default: 'true'
+        options:
+          - 'true'
+          - 'false'
 
 env:
   PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
@@ -21,66 +31,15 @@ env:
   PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
 
 jobs:
-  validate-inputs:
-    name: Validate Inputs
-    runs-on: ubuntu-latest
-    outputs:
-      valid: ${{ steps.validate.outputs.valid }}
-      environment: ${{ inputs.environment }}
-
-    steps:
-      - name: Validate inputs
-        id: validate
-        run: |
-          echo "Validating rollback inputs..."
-
-          # Validate environment
-          if [[ "${{ inputs.environment }}" != "production" && "${{ inputs.environment }}" != "staging" ]]; then
-            echo "❌ Invalid environment: ${{ inputs.environment }}"
-            echo "valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          # Validate commit hash format
-          if ! [[ "${{ inputs.commit-hash }}" =~ ^[a-f0-9]{40}$ ]]; then
-            echo "❌ Invalid commit hash format"
-            echo "valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          # Validate required secrets
-          if [[ -z "${{ secrets.PYTHONANYWHERE_USERNAME }}" ]]; then
-            echo "❌ PythonAnywhere username not configured"
-            echo "valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.PYTHONANYWHERE_API_TOKEN }}" ]]; then
-            echo "❌ PythonAnywhere API token not configured"
-            echo "valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}" ]]; then
-            echo "❌ PythonAnywhere webapp name not configured"
-            echo "valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          echo "✅ Input validation passed"
-          echo "valid=true" >> $GITHUB_OUTPUT
-
   rollback:
-    name: Rollback Deployment
+    name: Rollback
     runs-on: ubuntu-latest
-    needs: validate-inputs
-    if: needs.validate-inputs.outputs.valid == 'true'
-    environment: ${{ needs.validate-inputs.outputs.environment }}
+    environment: ${{ inputs.environment }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.commit-hash }}
+          ref: ${{ inputs.commit_hash }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -93,9 +52,11 @@ jobs:
           pip install pythonanywhere-client
 
       - name: Rollback to previous version
+        if: inputs.dry_run == 'false'
         run: |
-          echo "Rolling back to commit: ${{ inputs.commit-hash }}"
-          echo "Environment: ${{ needs.validate-inputs.outputs.environment }}"
+          echo "🚀 Rolling back to commit: ${{ inputs.commit_hash }}"
+          echo "📦 Environment: ${{ inputs.environment }}"
+          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
 
           # Create PythonAnywhere client
           python -c "
@@ -110,7 +71,16 @@ jobs:
           print('✅ Webapp reloaded successfully')
           "
 
-          echo "✅ Rollback completed successfully"
+      - name: Dry Run
+        if: inputs.dry_run == 'true'
+        run: |
+          echo "🔍 Dry Run Mode"
+          echo "=============="
+          echo "📦 Environment: ${{ inputs.environment }}"
+          echo "🔍 Commit: ${{ inputs.commit_hash }}"
+          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
+          echo ""
+          echo "✅ This was a dry run - no changes were made"
 
   verify-rollback:
     name: Verify Rollback
@@ -154,18 +124,13 @@ jobs:
   rollback-status:
     name: Rollback Status
     runs-on: ubuntu-latest
-    needs: [validate-inputs, rollback, verify-rollback]
+    needs: [rollback, verify-rollback]
     if: always()
     steps:
       - name: Report rollback status
         run: |
           echo "Rollback Status Report:"
           echo "======================"
-
-          if [[ "${{ needs.validate-inputs.result }}" != "success" ]]; then
-            echo "❌ Input validation failed"
-            exit 1
-          fi
 
           if [[ "${{ needs.rollback.result }}" != "success" ]]; then
             echo "❌ Rollback failed"
@@ -178,11 +143,10 @@ jobs:
           fi
 
           echo "✅ Rollback completed successfully!"
-          echo "::notice::Application rolled back to commit ${{ inputs.commit-hash }}"
+          echo "::notice::Application rolled back to commit ${{ inputs.commit_hash }}"
 
           # Summary
           echo ""
           echo "Rollback Summary:"
-          echo "- Input Validation: ✅"
           echo "- Rollback Process: ✅"
           echo "- Health Check: ✅"

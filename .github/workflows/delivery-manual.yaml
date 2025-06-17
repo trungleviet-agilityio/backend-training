@@ -1,26 +1,27 @@
-name: Deploy (Manual)
+name: Delivery (Manual)
+run-name: ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment'
         required: true
+        default: 'staging'
+        description: 'Deploy to:'
         type: choice
-        default: develop
         options:
-          - develop
-          - main
+          - staging
+          - production
       branch:
-        description: 'Branch to deploy'
         required: true
-        type: string
         default: 'develop'
-      dry-run:
-        description: 'Dry-run?'
+        description: 'Branch to deploy'
+        type: string
+      dry_run:
         required: true
-        type: choice
         default: 'true'
+        description: 'Dry run?'
+        type: choice
         options:
           - 'true'
           - 'false'
@@ -31,15 +32,15 @@ env:
   PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
 
 jobs:
-  deploy:
-    name: "Deploy"
+  delivery_manual:
+    name: Delivery Manual
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ inputs.environment }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ inputs.branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -52,12 +53,12 @@ jobs:
           pip install pythonanywhere-client
 
       - name: Deploy to PythonAnywhere
-        if: github.event.inputs.dry-run == 'false'
+        if: inputs.dry_run == 'false'
         run: |
-          echo "Deploying to PythonAnywhere..."
-          echo "- Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
-          echo "- Environment: ${{ github.event.inputs.environment }}"
-          echo "- Branch: ${{ github.event.inputs.branch }}"
+          echo "🚀 Deploying to PythonAnywhere..."
+          echo "📦 Environment: ${{ inputs.environment }}"
+          echo "🌿 Branch: ${{ inputs.branch }}"
+          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
 
           # Create PythonAnywhere client
           python -c "
@@ -73,12 +74,12 @@ jobs:
           "
 
       - name: Dry Run
-        if: github.event.inputs.dry-run == 'true'
+        if: inputs.dry_run == 'true'
         run: |
           echo "🔍 Dry Run Mode"
           echo "=============="
-          echo "Environment: ${{ github.event.inputs.environment }}"
-          echo "Branch: ${{ github.event.inputs.branch }}"
-          echo "Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
+          echo "📦 Environment: ${{ inputs.environment }}"
+          echo "🌿 Branch: ${{ inputs.branch }}"
+          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
           echo ""
           echo "✅ This was a dry run - no changes were made"
