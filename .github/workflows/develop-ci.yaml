@@ -14,7 +14,7 @@ on:
 
 env:
   DOCKER_IMAGE: docker-practice-app
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
   shared-ci:
@@ -41,13 +41,13 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}
           tags: |
             type=raw,value=latest
             type=sha,format=short
