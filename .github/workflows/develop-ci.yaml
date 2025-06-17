@@ -26,9 +26,9 @@ jobs:
       container_name: docker-practice-app
       healthcheck_url: http://localhost:8000/health/
     secrets:
-      vps_host: ${{ secrets.VPS_HOST }}
-      vps_username: ${{ secrets.VPS_USERNAME }}
-      vps_ssh_key: ${{ secrets.VPS_SSH_KEY }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
   build-and-push:
     needs: shared-ci

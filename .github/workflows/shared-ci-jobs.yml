@@ -30,15 +30,12 @@ on:
         default: 'http://localhost:8000/health/'
         description: 'Health check URL'
     secrets:
-      vps_host:
+      VPS_HOST:
         required: false
-        description: 'VPS host for health check'
-      vps_username:
+      VPS_USERNAME:
         required: false
-        description: 'VPS username for health check'
-      vps_ssh_key:
+      VPS_SSH_KEY:
         required: false
-        description: 'VPS SSH key for health check'
     outputs:
       python-changed:
         description: 'Whether Python files changed'
@@ -170,14 +167,14 @@ jobs:
   health-check:
     name: Health Check (Reusable)
     runs-on: ubuntu-latest
-    if: ${{ secrets.vps_host != '' && secrets.vps_username != '' && secrets.vps_ssh_key != '' }}
+    if: secrets.VPS_HOST != '' && secrets.VPS_USERNAME != '' && secrets.VPS_SSH_KEY != ''
     steps:
       - name: Check deployment health
         uses: appleboy/ssh-action@v1.2.2
         with:
-          host: ${{ secrets.vps_host }}
-          username: ${{ secrets.vps_username }}
-          key: ${{ secrets.vps_ssh_key }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             echo "Waiting for container to be ready..."
             timeout 60 bash -c 'until docker ps | grep -q "${{ inputs.container_name }}"; do sleep 2; done'
