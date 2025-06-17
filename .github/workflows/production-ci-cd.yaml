@@ -66,32 +66,60 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment files
+        run: |
+          mkdir -p deploy
+          cp docker-practice/docker-compose.yml deploy/
+          cp docker-practice/scripts/docker/postgres/Dockerfile deploy/
+          cp docker-practice/scripts/docker/postgres/create-user.sh deploy/
+          cp docker-practice/local.env deploy/.env
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/"
+          target: "/home/${{ secrets.VPS_USERNAME }}/app"
           script: |
             set -e
+            cd /home/${{ secrets.VPS_USERNAME }}/app
+
+            # Login to DockerHub
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest || true
-            docker stop docker-practice-app || true
-            docker rm docker-practice-app || true
-            docker run -d --name docker-practice-app --restart unless-stopped -p 8080:8000 -v /app/data:/app/data ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
-            docker image prune -f
-            echo 'Verifying Swagger UI endpoint...'
+
+            # Stop and remove old containers
+            docker-compose down || true
+
+            # Update environment variables
+            echo "DJANGO_SETTINGS_MODULE=core.settings.production" >> .env
+            echo "DB_HOST=postgres" >> .env
+            echo "DB_PORT=5432" >> .env
+            echo "DB_NAME=postgres" >> .env
+            echo "DB_USER=postgres" >> .env
+            echo "DB_PASSWORD=postgres" >> .env
+            echo "ALLOWED_HOSTS=*" >> .env
+            echo "DEBUG=False" >> .env
+            echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
+
+            # Start services
+            docker-compose up -d
+
+            # Wait for services to be healthy
+            echo "Waiting for services to be ready..."
             for i in {1..30}; do
-              STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://127.0.0.1:8080/api/v1/schema/swagger-ui)
-              if [ "$STATUS" = "200" ]; then
-                echo "Swagger UI is accessible (HTTP 200)"
-                curl -s http://127.0.0.1:8080/api/v1/schema/swagger-ui | head -20
+              if curl -s http://localhost:8080/health/ | grep -q "ok"; then
+                echo "Application is healthy"
                 exit 0
               fi
-              echo "Waiting for Swagger UI endpoint... (HTTP $STATUS)"
+              echo "Waiting for application to be healthy... (attempt $i/30)"
               sleep 2
             done
-            echo "Swagger UI endpoint not accessible after 60 seconds."
+            echo "Application failed to become healthy after 60 seconds"
             exit 1
 
   health-check:
