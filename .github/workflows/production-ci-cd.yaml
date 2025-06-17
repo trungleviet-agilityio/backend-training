@@ -1,4 +1,5 @@
 name: PR to Main - CI/CD
+run-name: ${{ github.ref_name }}
 
 on:
   pull_request:

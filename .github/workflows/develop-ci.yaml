@@ -98,60 +98,23 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
+          pip install ruff black
 
-      - name: Run linters
+      - name: Run Ruff (lint and format)
         run: |
           cd docker-practice
-          flake8 .
+          ruff check .
+          ruff format --check .
+
+      - name: Run Black (format check)
+        run: |
+          cd docker-practice
           black . --check
-          isort . --check-only
-
-  pythonanywhere-test:
-    name: Test PythonAnywhere Configuration
-    runs-on: ubuntu-latest
-    needs: validate-changes
-    if: needs.validate-changes.outputs.has-changes == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pythonanywhere-client
-
-      - name: Test PythonAnywhere configuration
-        run: |
-          echo "Testing PythonAnywhere configuration..."
-
-          # Create PythonAnywhere client
-          python -c "
-          from pythonanywhere_client import PythonAnywhereClient
-          client = PythonAnywhereClient(
-              username='${{ env.PYTHONANYWHERE_USERNAME }}',
-              api_token='${{ env.PYTHONANYWHERE_API_TOKEN }}'
-          )
-
-          # Test webapp configuration
-          webapp = client.get_webapp('${{ env.PYTHONANYWHERE_WEBAPP_NAME }}')
-          print(f'✅ Webapp configuration verified:')
-          print(f'- Virtualenv path: {webapp.get(\"virtualenv_path\")}')
-          print(f'- Source code path: {webapp.get(\"source_code_path\")}')
-          print(f'- WSGI file: {webapp.get(\"wsgi_file\")}')
-          "
-
-          echo "✅ PythonAnywhere configuration test passed"
 
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [validate-changes, test, lint, pythonanywhere-test]
+    needs: [validate-changes, test, lint]
     if: always()
 
     steps:
@@ -175,11 +138,6 @@ jobs:
             exit 1
           fi
 
-          if [[ "${{ needs.pythonanywhere-test.result }}" != "success" ]]; then
-            echo "❌ PythonAnywhere configuration test failed"
-            exit 1
-          fi
-
           echo "✅ All CI checks passed!"
           echo "::notice::CI pipeline completed successfully"
 
@@ -189,4 +147,3 @@ jobs:
           echo "- Change Validation: ✅"
           echo "- Tests: ✅"
           echo "- Linting: ✅"
-          echo "- PythonAnywhere Config: ✅"

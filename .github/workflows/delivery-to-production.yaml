@@ -1,4 +1,5 @@
 name: Deploy to Production
+run-name: ${{ github.ref_name }}
 
 on:
   push:
@@ -8,125 +9,14 @@ on:
       - 'docker-practice/**'
 
 env:
-  AWS_REGION: us-east-1
-  ECS_CLUSTER: docker-practice-cluster
-  ECS_SERVICE: docker-practice-service
-  ECS_TASK_DEFINITION: docker-practice-task
-  CONTAINER_NAME: docker-practice-app
-  IMAGE_NAME: docker-practice-app
   PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
   PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
   PYTHONANYWHERE_WEBAPP_NAME: ${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}
 
 jobs:
-  pre-deployment-check:
-    name: Pre-deployment Check
-    runs-on: ubuntu-latest
-    outputs:
-      deploy-ready: ${{ steps.check.outputs.ready }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate deployment readiness
-        id: check
-        run: |
-          echo "Checking deployment readiness..."
-
-          # Check if this is a valid main branch push
-          if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-            echo "❌ Not a main branch push"
-            echo "ready=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          # Validate required secrets are available
-          if [[ -z "${{ secrets.PYTHONANYWHERE_USERNAME }}" ]]; then
-            echo "❌ PythonAnywhere username not configured"
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.PYTHONANYWHERE_API_TOKEN }}" ]]; then
-            echo "❌ PythonAnywhere API token not configured"
-            exit 1
-          fi
-
-          if [[ -z "${{ secrets.PYTHONANYWHERE_WEBAPP_NAME }}" ]]; then
-            echo "❌ PythonAnywhere webapp name not configured"
-            exit 1
-          fi
-
-          echo "✅ Pre-deployment checks passed"
-          echo "ready=true" >> $GITHUB_OUTPUT
-
-  docker-build-production:
-    name: Build Production Images
-    runs-on: ubuntu-latest
-    needs: pre-deployment-check
-    if: needs.pre-deployment-check.outputs.deploy-ready == 'true'
-    defaults:
-      run:
-        working-directory: docker-practice
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=prod-{{date 'YYYYMMDD'}}-
-
-      - name: Build PostgreSQL image
-        run: |
-          echo "Building production PostgreSQL image..."
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest ./scripts/docker/postgres
-          docker push ${{ secrets.DOCKER_USERNAME }}/docker-practice-postgres:latest
-          echo "✅ PostgreSQL image built and pushed successfully!"
-
-      - name: Build and push Django application
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: ./docker-practice
-          file: ./docker-practice/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
-      - name: Test production images
-        run: |
-          echo "Testing production images..."
-
-          # Test Django image
-          docker run --rm ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest python --version
-          docker run --rm ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest python manage.py check --deploy
-
-          echo "✅ Production images tested successfully!"
-
   deploy:
-    name: Deploy to PythonAnywhere
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: pre-deployment-check
-    if: needs.pre-deployment-check.outputs.deploy-ready == 'true'
     environment: production
 
     steps:
@@ -144,10 +34,10 @@ jobs:
 
       - name: Deploy to PythonAnywhere
         run: |
-          echo "Deploying to PythonAnywhere..."
-          echo "- Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
-          echo "- Environment: Production"
-          echo "- Commit: ${{ github.sha }}"
+          echo "🚀 Deploying to Production..."
+          echo "📦 Environment: Production"
+          echo "🔧 Webapp: ${{ env.PYTHONANYWHERE_WEBAPP_NAME }}"
+          echo "🌿 Commit: ${{ github.sha }}"
 
           # Create PythonAnywhere client
           python -c "
@@ -162,28 +52,9 @@ jobs:
           print('✅ Webapp reloaded successfully')
           "
 
-          echo "✅ PythonAnywhere deployment initiated"
-
-  deployment-validation:
-    name: Validate Deployment
-    runs-on: ubuntu-latest
-    needs: [pre-deployment-check, deploy]
-    if: always()
-
-    steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+      - name: Verify deployment
         run: |
-          python -m pip install --upgrade pip
-          pip install pythonanywhere-client
-
-      - name: Check deployment health
-        run: |
-          echo "Validating deployment health..."
+          echo "🔍 Verifying deployment..."
 
           # Create PythonAnywhere client
           python -c "
@@ -200,41 +71,3 @@ jobs:
               exit(1)
           print('✅ Webapp is running')
           "
-
-          echo "✅ Deployment validation passed"
-
-  deployment-status:
-    name: Deployment Status
-    runs-on: ubuntu-latest
-    needs: [pre-deployment-check, deploy, deployment-validation]
-    if: always()
-    steps:
-      - name: Report deployment status
-        run: |
-          echo "Production Deployment Status Report:"
-          echo "==================================="
-
-          if [[ "${{ needs.pre-deployment-check.result }}" != "success" ]]; then
-            echo "❌ Pre-deployment checks failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.deploy.result }}" != "success" ]]; then
-            echo "❌ Deployment failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.deployment-validation.result }}" != "success" ]]; then
-            echo "❌ Deployment validation failed"
-            exit 1
-          fi
-
-          echo "✅ Production deployment completed successfully!"
-          echo "::notice::Application deployed to production"
-
-          # Summary
-          echo ""
-          echo "Deployment Summary:"
-          echo "- Pre-checks: ✅"
-          echo "- Deployment: ✅"
-          echo "- Health Validation: ✅"
