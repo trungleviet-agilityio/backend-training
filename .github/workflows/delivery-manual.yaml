@@ -52,6 +52,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install pythonanywhere-client
 
+      - name: Build Docker image (optional)
+        run: |
+          docker build -f docker-practice/Dockerfile -t my-app:latest docker-practice/
+
       - name: Deploy to PythonAnywhere
         if: inputs.dry_run == 'false'
         run: |

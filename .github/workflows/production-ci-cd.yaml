@@ -71,6 +71,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Build Docker image (optional)
+        run: |
+          docker build -f docker-practice/Dockerfile -t my-app:latest docker-practice/
+
       - name: Build and push application image
         uses: docker/build-push-action@v5
         with:

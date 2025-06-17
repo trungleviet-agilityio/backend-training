@@ -165,3 +165,6 @@ jobs:
           docker-compose logs web
           docker-compose down
           echo "✅ Docker Compose setup tested successfully!"
+      - name: Build Docker image (optional)
+        run: |
+          docker build -f docker-practice/Dockerfile -t my-app:latest docker-practice/
