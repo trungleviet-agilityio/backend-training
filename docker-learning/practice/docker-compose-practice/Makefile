@@ -106,10 +106,10 @@ scale-test: ## Test horizontal scaling with 3 app instances
 	done
 	@echo "🎯 Load balancing test complete!"
 
-scale-up: ## Scale app to 5 instances  
+scale-up: ## Scale app to 5 instances
 	@echo "📈 Scaling up to 5 app instances..."
 	docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=5 -d
-	
+
 scale-down: ## Scale app down to 1 instance
 	@echo "📉 Scaling down to 1 app instance..."
 	docker-compose -f docker-compose.yml -f docker-compose.scale.yml up --scale app=1 -d

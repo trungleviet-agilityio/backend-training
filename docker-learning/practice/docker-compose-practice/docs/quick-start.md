@@ -105,7 +105,7 @@ This guide will help you get the Docker Compose Practice project up and running 
    ```bash
    # Check what's using port 80
    sudo lsof -i :80
-   
+
    # Stop conflicting service (e.g., Apache)
    sudo systemctl stop apache2
    ```
@@ -121,7 +121,7 @@ This guide will help you get the Docker Compose Practice project up and running 
    ```bash
    # Check Redis logs
    docker-compose logs redis
-   
+
    # Test Redis connection
    docker-compose exec redis redis-cli ping
    ```
@@ -139,4 +139,3 @@ This guide will help you get the Docker Compose Practice project up and running 
 - Study the network architecture: `docker network inspect app-network`
 - Learn about health checks: `docker-compose ps`
 - Read the full documentation to understand the architecture
- 

@@ -1,0 +1,47 @@
+# Django and DRF
+django==5.0.2
+djangorestframework==3.14.0
+
+# Django Extensions
+django-cors-headers==4.3.1
+django-filter==24.1
+drf-yasg==1.21.10
+drf-spectacular==0.27.2
+drf-spectacular-sidecar==2025.6.1
+
+# Testing
+pytest==8.3.4
+pytest-django==4.11.1
+pytest-mock==3.13.0
+pytest-cov==6.0.0
+pytest-env==1.1.5
+
+# Linting
+ruff==0.9.3
+
+# Formatting
+black==25.1.0
+isort==6.0.0
+
+# Database
+psycopg2-binary==2.9.10
+
+# Environment and Configuration
+python-dotenv==1.1.0
+PyYAML==6.0.1
+
+# Production Server
+gunicorn==23.0.0
+whitenoise==6.9.0
+
+# Dependency Management
+uv==0.1.0
+
+# Dev Packages
+pre-commit==3.5.0
+
+# Internal Packages here (Will have to be added later)
+# - None
+
+# Added from the code block
+django-debug-toolbar==4.3.0

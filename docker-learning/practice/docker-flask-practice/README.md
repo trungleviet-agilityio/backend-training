@@ -26,7 +26,7 @@ Learn fundamental Docker concepts and commands with a simple Flask application.
    ```bash
    docker run -d -p 5000:5000 --name hello-world-app hello-world
    ```
-   Note: 
+   Note:
    - `-d` runs the container in detached mode (background)
    - `--name` gives the container a name for easy reference
    - `-p 5000:5000` maps port 5000 from the container to your host machine
@@ -136,7 +136,7 @@ Learn about Docker networking by connecting multiple containers.
    # Stop Redis and see what happens
    docker stop redis
    curl http://localhost:5000  # Should show an error
-   
+
    # Start Redis again
    docker start redis
    curl http://localhost:5000  # Should work again
@@ -153,7 +153,7 @@ Learn about Docker networking by connecting multiple containers.
    ```bash
    # Try removing network while containers are running
    docker network rm app-network  # Should fail
-   
+
    # Remove network after stopping containers
    docker stop hello-redis-app redis
    docker network rm app-network  # Should succeed
@@ -246,7 +246,7 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
    # Stop and remove containers
    docker stop hello-redis-app redis
    docker rm hello-redis-app redis
-   
+
    # Start Redis with same volume
    docker run -d \
      --name redis \
@@ -254,14 +254,14 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
      -v redis-data:/data \
      redis:7-alpine \
      redis-server --appendonly yes
-   
+
    # Start Flask app
    docker run -d \
      --name hello-redis-app \
      --network app-network \
      -p 5000:5000 \
      hello-redis
-   
+
    # Check if counter persists
    curl http://localhost:5000
    ```
@@ -271,7 +271,7 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
     # Stop and remove containers
     docker stop hello-redis-app redis
     docker rm hello-redis-app redis
-    
+
     # Remove volume
     docker volume rm redis-data
     ```
@@ -282,14 +282,14 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
    # Run Redis without volume
    docker run -d --name test-redis --network app-network redis:7-alpine
    docker run -d --name test-app --network app-network -p 5001:5000 hello-redis
-   
+
    # Make some visits
    curl http://localhost:5001
-   
+
    # Stop and restart containers
    docker stop test-redis test-app
    docker start test-redis test-app
-   
+
    # Check counter (should reset)
    curl http://localhost:5001
    ```
@@ -299,14 +299,14 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
    # Run with volume
    docker run -d --name vol-redis --network app-network -v redis-data:/data redis:7-alpine redis-server --appendonly yes
    docker run -d --name vol-app --network app-network -p 5000:5000 hello-redis
-   
+
    # Make visits
    curl http://localhost:5000
-   
+
    # Stop and restart
    docker stop vol-redis vol-app
    docker start vol-redis vol-app
-   
+
    # Check counter (should persist)
    curl http://localhost:5000
    ```
@@ -315,7 +315,7 @@ Learn about Docker volumes and data persistence by ensuring our Redis data survi
    ```bash
    # Try removing volume while container is running
    docker volume rm redis-data  # Should fail
-   
+
    # Remove volume after stopping container
    docker stop vol-redis
    docker volume rm redis-data  # Should succeed
@@ -377,4 +377,4 @@ This demonstrates that Docker volumes persist data independently of the containe
    - Implement proper permissions
    - Regular security audits
    - Backup sensitive data
-   - Use tmpfs for temporary data 
+   - Use tmpfs for temporary data

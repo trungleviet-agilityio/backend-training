@@ -11,7 +11,7 @@ Welcome to the **Docker Compose Practice Project** documentation! This directory
   - Verification commands
   - Common troubleshooting
 
-### 🏗️ Architecture & Design  
+### 🏗️ Architecture & Design
 - **[Architecture Documentation](architecture.md)** - Deep dive into system design
   - Service architecture diagrams
   - Container communication flow
@@ -63,7 +63,7 @@ Welcome to the **Docker Compose Practice Project** documentation! This directory
 - [ ] Test all API endpoints
 - [ ] Explore container logs
 
-### Intermediate Level  
+### Intermediate Level
 - [ ] Study service communication patterns
 - [ ] Understand health check implementations
 - [ ] Practice with development vs production modes
@@ -122,7 +122,7 @@ Welcome to the **Docker Compose Practice Project** documentation! This directory
 # Start the project
 make dev
 
-# Check service status  
+# Check service status
 docker-compose ps
 
 # View logs
@@ -171,8 +171,8 @@ After completing the documentation:
 
 ---
 
-**Documentation maintained by**: Docker Compose Practice Project  
-**Last updated**: January 2024  
-**Version**: 1.0.0  
+**Documentation maintained by**: Docker Compose Practice Project
+**Last updated**: January 2024
+**Version**: 1.0.0
 
-Happy learning! 🐳🚀 
+Happy learning! 🐳🚀

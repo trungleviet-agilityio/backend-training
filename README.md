@@ -1,27 +1,47 @@
-# backend-training
+# Backend Training
 
-# Docker Compose Practice
+This repository contains training materials and practice projects for backend development, focusing on Docker and Django/Flask applications.
 
-A Flask application demonstrating Docker Compose usage with Redis integration.
+## 📚 Projects
 
-## Features
+### 1. Docker Practice
+A Django-based project demonstrating best practices for Docker containerization and development workflow.
 
-- Flask web application
-- Redis for caching and data storage
-- Multi-stage Docker builds
-- Development and production configurations
-- Comprehensive testing with GitHub Actions
-- Automated Docker Hub deployments
+**Key Features:**
+- Django REST framework
+- Docker containerization
+- Code quality tools (Ruff, Black, isort)
+- Pre-commit hooks
+- GPG commit signing
 
-## CI/CD Pipeline
+[View Project →](docker-practice/README.md)
 
-This project uses GitHub Actions for continuous integration and deployment:
+### 2. Docker Learning
+A collection of Docker learning materials and practice projects.
 
-- **Lint**: Code quality checks with ruff
-- **Test**: Unit tests with pytest and coverage
-- **Build & Push**: Docker images to Docker Hub
-- **Deploy**: Production deployment automation
+**Contents:**
+- **Practice Projects:**
+  - [Docker Flask Practice](docker-learning/practice/docker-flask-practice/) - Flask application with Docker
+  - [Docker Compose Practice](docker-learning/practice/docker-compose-practice/) - Multi-container application
 
-**Note**: Ensure Docker Hub credentials are properly configured in GitHub repository secrets:
-- `DOCKERHUB_USERNAME`: Your Docker Hub username
-- `DOCKERHUB_TOKEN`: Your Docker Hub access token (not password)
+- **Shared Resources:**
+  - [Docker Basics](docker-learning/shared/docker/) - Docker fundamentals
+  - [Docker Compose](docker-learning/shared/docker-compose/) - Docker Compose guides
+
+## 🚀 Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd backend-training
+   ```
+
+2. Choose a project to work on:
+   - For Django practice: `cd docker-practice`
+   - For Docker learning: `cd docker-learning`
+
+3. Follow the specific project's README for setup instructions.
+
+## 📝 License
+
+This project is created from Trung with love.

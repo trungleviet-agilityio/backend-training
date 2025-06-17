@@ -225,4 +225,4 @@ The project is working as expected with:
 Ready for:
 - Development use
 - Learning purposes
-- Production deployment (with additional security) 
+- Production deployment (with additional security)

@@ -144,33 +144,33 @@ services:
   web:
     # Image to use
     image: nginx:latest
-    
+
     # Container name
     container_name: my-web
-    
+
     # Port mapping
     ports:
       - "80:80"
       - "443:443"
-    
+
     # Environment variables
     environment:
       - NODE_ENV=production
       - DEBUG=false
-    
+
     # Volume mounts
     volumes:
       - ./web:/app
       - /app/node_modules
-    
+
     # Service dependencies
     depends_on:
       - db
       - redis
-    
+
     # Restart policy
     restart: unless-stopped
-    
+
     # Health check
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
@@ -189,7 +189,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-    
+
     # Resource limits
     deploy:
       resources:
@@ -199,7 +199,7 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-    
+
     # Health check
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
@@ -207,11 +207,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     # Security options
     security_opt:
       - no-new-privileges:true
-    
+
     # Capabilities
     cap_drop:
       - ALL
@@ -240,12 +240,12 @@ services:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
       - NODE_ENV=production
-    
+
     # Environment file
     env_file:
       - .env
       - .env.prod
-    
+
     # Environment variable substitution
     command: echo "Hello ${DB_USER}"
 ```
@@ -371,4 +371,4 @@ docker volume inspect docker-compose-practice_postgres_data
 3. Implement health checks
 4. Explore advanced configuration options
 5. Study production deployment strategies
-6. Learn about Docker Compose in CI/CD 
+6. Learn about Docker Compose in CI/CD

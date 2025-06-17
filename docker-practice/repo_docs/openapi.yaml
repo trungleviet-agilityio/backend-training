@@ -1,0 +1,1388 @@
+openapi: 3.0.3
+info:
+  title: Books API
+  version: 1.0.0
+  description: API for managing books, authors, and categories
+paths:
+  /api/v1/authors/:
+    get:
+      operationId: authors_list
+      description: Returns a paginated list of all authors with basic information.
+      summary: List all authors
+      parameters:
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Order by field (prefix with '-' for descending)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search in name or email
+      tags:
+      - authors
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuthorListResponseList'
+          description: ''
+    post:
+      operationId: authors_create
+      description: Creates a new author with the provided information.
+      summary: Create a new author
+      tags:
+      - authors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorCreateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthorCreateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetailResponse'
+          description: ''
+  /api/v1/authors/{id}/:
+    get:
+      operationId: authors_retrieve
+      description: Returns detailed information about a specific author including
+        their books.
+      summary: Get author details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      tags:
+      - authors
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetailResponse'
+          description: ''
+    put:
+      operationId: authors_update
+      description: Updates all fields of an existing author.
+      summary: Update an author
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      tags:
+      - authors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthorUpdateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetailResponse'
+          description: ''
+    patch:
+      operationId: authors_partial_update
+      description: Updates specific fields of an existing author.
+      summary: Partially update an author
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      tags:
+      - authors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthorUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthorUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAuthorUpdateRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetailResponse'
+          description: ''
+    delete:
+      operationId: authors_destroy
+      description: Deletes an existing author.
+      summary: Delete an author
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      tags:
+      - authors
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/authors/{id}/books/:
+    get:
+      operationId: authors_books_list
+      description: Returns all books written by this author.
+      summary: Get author's books
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - authors
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookListResponseList'
+              examples:
+                SuccessResponse:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - success: true
+                      message: Author books retrieved successfully
+                      timestamp: '2024-03-20T10:00:00.000Z'
+                      data:
+                      - id: 1
+                        title: Sample Book
+                        isbn: '9781234567890'
+                        price: '29.99'
+                        author_name: John Doe
+                        category_names:
+                        - Fiction
+                        - Mystery
+                        created_at: '2024-03-20T10:00:00Z'
+                  summary: Success Response
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/authors/{id}/statistics/:
+    get:
+      operationId: authors_statistics_retrieve
+      description: Returns statistics about the author's books including total books,
+        categories, average price, and latest book.
+      summary: Get author statistics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Author.
+        required: true
+      tags:
+      - authors
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetailResponse'
+              examples:
+                SuccessResponse:
+                  value:
+                    success: true
+                    message: Author statistics retrieved successfully
+                    timestamp: '2024-03-20T10:00:00.000Z'
+                    data:
+                      total_books: 5
+                      categories:
+                      - Fiction
+                      - Mystery
+                      - Thriller
+                      average_price: '32.50'
+                      latest_book:
+                        id: 1
+                        title: Latest Book
+                        created_at: '2024-03-20T10:00:00Z'
+                  summary: Success Response
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/books/:
+    get:
+      operationId: books_list
+      description: Returns a paginated list of all books with basic information.
+      summary: List all books
+      parameters:
+      - in: query
+        name: author
+        schema:
+          type: integer
+        description: Filter by author ID
+      - in: query
+        name: categories
+        schema:
+          type: integer
+        description: Filter by category ID
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Order by field (prefix with '-' for descending)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search in title, ISBN, or author name
+      tags:
+      - books
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookListResponseList'
+          description: ''
+    post:
+      operationId: books_create
+      description: Creates a new book with the provided information.
+      summary: Create a new book
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookCreateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookCreateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+  /api/v1/books/{id}/:
+    get:
+      operationId: books_retrieve
+      description: Returns detailed information about a specific book including author
+        and categories.
+      summary: Get book details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+    put:
+      operationId: books_update
+      description: Updates all fields of an existing book.
+      summary: Update a book
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookUpdateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+    patch:
+      operationId: books_partial_update
+      description: Updates specific fields of an existing book.
+      summary: Partially update a book
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookUpdateRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+    delete:
+      operationId: books_destroy
+      description: Deletes an existing book.
+      summary: Delete a book
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/books/{id}/add_category/:
+    post:
+      operationId: books_add_category_create
+      description: Adds a category to an existing book.
+      summary: Add a category to a book
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category_id:
+                  type: integer
+                  description: ID of the category to add
+              required:
+              - category_id
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+  /api/v1/books/{id}/remove_category/:
+    post:
+      operationId: books_remove_category_create
+      description: Removes a category from an existing book.
+      summary: Remove a category from a book
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this book.
+        required: true
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category_id:
+                  type: integer
+                  description: ID of the category to remove
+              required:
+              - category_id
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+          description: ''
+  /api/v1/categories/:
+    get:
+      operationId: categories_list
+      description: Returns a paginated list of all categories with basic information.
+      summary: List all categories
+      parameters:
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Order by field (prefix with '-' for descending)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search in name or description
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryListResponseList'
+          description: ''
+    post:
+      operationId: categories_create
+      description: Creates a new category with the provided information.
+      summary: Create a new category
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetailResponse'
+          description: ''
+  /api/v1/categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: Returns detailed information about a specific category including
+        associated books.
+      summary: Get category details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetailResponse'
+          description: ''
+    put:
+      operationId: categories_update
+      description: Updates all fields of an existing category.
+      summary: Update a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetailResponse'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: Updates specific fields of an existing category.
+      summary: Partially update a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryUpdateRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetailResponse'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      description: Deletes an existing category.
+      summary: Delete a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/categories/{id}/books/:
+    get:
+      operationId: categories_books_list
+      description: Returns all books in this category.
+      summary: Get category's books
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookListResponseList'
+              examples:
+                SuccessResponse:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - - id: 1
+                        title: Sample Book
+                        isbn: '9781234567890'
+                        price: '29.99'
+                        author_name: John Doe
+                        category_names:
+                        - Fiction
+                        - Mystery
+                        created_at: '2024-03-20T10:00:00Z'
+                  summary: Success Response
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/categories/{id}/statistics/:
+    get:
+      operationId: categories_statistics_retrieve
+      description: Returns statistics about the category's books including total books,
+        authors, price ranges, and latest book.
+      summary: Get category statistics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_books:
+                    type: integer
+                  total_authors:
+                    type: integer
+                  price_range:
+                    type: object
+                    properties:
+                      min_price:
+                        type: string
+                      max_price:
+                        type: string
+                      avg_price:
+                        type: string
+                  latest_book:
+                    type: object
+              examples:
+                SuccessResponse:
+                  value:
+                    total_books: 15
+                    total_authors: 8
+                    price_range:
+                      min_price: '15.99'
+                      max_price: '49.99'
+                      avg_price: '32.50'
+                    latest_book:
+                      id: 1
+                      title: Latest Book
+                      created_at: '2024-03-20T10:00:00Z'
+                  summary: Success Response
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/categories/popular/:
+    get:
+      operationId: categories_popular_list
+      description: Returns most popular categories by book count.
+      summary: Get popular categories
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Number of categories to return (default: 10)'
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryListResponseList'
+              examples:
+                SuccessResponse:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - - id: 1
+                        name: Fiction
+                        description: Fictional books and novels
+                        created_at: '2024-03-20T10:00:00Z'
+                      - id: 2
+                        name: Mystery
+                        description: Mystery and thriller books
+                        created_at: '2024-03-20T10:00:00Z'
+                  summary: Success Response
+          description: ''
+components:
+  schemas:
+    AuthorCreateRequestRequest:
+      type: object
+      description: |-
+        Serializer for creating a new author.
+        Handles validation of incoming data for author creation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        bio:
+          type: string
+      required:
+      - email
+      - name
+    AuthorDetailResponse:
+      type: object
+      description: |-
+        Serializer for detailed author information.
+        Includes list of books.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        bio:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        books:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+      required:
+      - books
+      - created_at
+      - email
+      - id
+      - name
+      - updated_at
+    AuthorListResponse:
+      type: object
+      description: |-
+        Serializer for listing authors.
+        Includes basic author information and book count.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        book_count:
+          type: integer
+          readOnly: true
+      required:
+      - book_count
+      - email
+      - full_name
+      - id
+      - name
+    AuthorUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing author.
+        All fields are optional for partial updates.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        bio:
+          type: string
+      required:
+      - email
+      - name
+    BookCreateRequestRequest:
+      type: object
+      description: |-
+        Serializer for creating a new book.
+        Handles validation of incoming data for book creation.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isbn:
+          type: string
+          minLength: 1
+          maxLength: 13
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        author_id:
+          type: integer
+        category_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - author_id
+      - isbn
+      - price
+      - title
+    BookDetailResponse:
+      type: object
+      description: |-
+        Serializer for detailed book information.
+        Includes full author and category details.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        isbn:
+          type: string
+          maxLength: 13
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        price_display:
+          type: string
+          nullable: true
+          readOnly: true
+        author:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - categories
+      - created_at
+      - id
+      - isbn
+      - price
+      - price_display
+      - title
+      - updated_at
+    BookListResponse:
+      type: object
+      description: |-
+        Serializer for listing books.
+        Includes basic book information and author name.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        isbn:
+          type: string
+          maxLength: 13
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        price_display:
+          type: string
+          nullable: true
+          readOnly: true
+        author_name:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - author_name
+      - id
+      - isbn
+      - price
+      - price_display
+      - title
+    BookUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing book.
+        All fields are optional for partial updates.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isbn:
+          type: string
+          minLength: 1
+          maxLength: 13
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        author_id:
+          type: integer
+        category_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - isbn
+      - price
+      - title
+    CategoryCreateRequestRequest:
+      type: object
+      description: |-
+        Serializer for creating a new category.
+        Handles validation of incoming data for category creation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - name
+    CategoryDetailResponse:
+      type: object
+      description: |-
+        Serializer for detailed category information.
+        Includes full category details and list of books.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        name_display:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        books:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        book_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - book_count
+      - books
+      - created_at
+      - description
+      - id
+      - name
+      - name_display
+      - updated_at
+    CategoryListResponse:
+      type: object
+      description: |-
+        Serializer for listing categories with basic information.
+        Includes book count and basic category details.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        name_display:
+          type: string
+          readOnly: true
+        book_count:
+          type: integer
+          readOnly: true
+      required:
+      - book_count
+      - id
+      - name
+      - name_display
+    CategoryUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing category.
+        All fields are optional for partial updates.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - name
+    PaginatedAuthorListResponseList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorListResponse'
+    PaginatedBookListResponseList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookListResponse'
+    PaginatedCategoryListResponseList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryListResponse'
+    PatchedAuthorUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing author.
+        All fields are optional for partial updates.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        bio:
+          type: string
+    PatchedBookUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing book.
+        All fields are optional for partial updates.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isbn:
+          type: string
+          minLength: 1
+          maxLength: 13
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        author_id:
+          type: integer
+        category_ids:
+          type: array
+          items:
+            type: integer
+    PatchedCategoryUpdateRequestRequest:
+      type: object
+      description: |-
+        Serializer for updating an existing category.
+        All fields are optional for partial updates.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
