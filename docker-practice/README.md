@@ -83,6 +83,36 @@ docker-practice/
 4. Run tests and pre-commit hooks
 5. Submit a pull request
 
+## PythonAnywhere Deployment
+
+This project is configured to deploy to PythonAnywhere using GitHub Actions. The deployment process is automated through several workflows:
+
+### Manual Deployment
+To manually deploy any branch to production or staging:
+1. Go to GitHub Actions
+2. Select "Manual Deploy" workflow
+3. Click "Run workflow"
+4. Select the branch and environment (production/staging)
+
+### Automatic Deployment
+- Pushes to `main` branch automatically deploy to production
+- Pushes to `develop` branch automatically deploy to staging
+
+### Required Secrets
+The following secrets must be configured in GitHub:
+- `PYTHONANYWHERE_USERNAME`: Your PythonAnywhere username
+- `PYTHONANYWHERE_API_TOKEN`: Your PythonAnywhere API token
+- `PYTHONANYWHERE_WEBAPP_NAME`: Your PythonAnywhere webapp name
+
+### Rollback
+To rollback to a previous version:
+1. Go to GitHub Actions
+2. Select "Manual Rollback" workflow
+3. Click "Run workflow"
+4. Enter the commit hash to rollback to
+5. Select the environment (production/staging)
+
+
 ## 📝 License
 
 This project is created from Trung with love.

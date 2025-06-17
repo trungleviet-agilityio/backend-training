@@ -1,4 +1,6 @@
-name: Cleanup Merged Branches
+name: "Maintenance: Cleanup Merged Branches"
+# Deletes merged feature branches except main and develop
+# Triggered on PR close to main or develop for docker-practice
 
 on:
   pull_request:

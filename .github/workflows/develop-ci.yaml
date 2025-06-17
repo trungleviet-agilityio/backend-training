@@ -1,49 +1,61 @@
-name: PR to Develop - CI
+name: "CI: Test, Build, Push (Develop)"
 
 on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docker-practice/**'
   pull_request:
     branches:
       - develop
     paths:
       - 'docker-practice/**'
 
+env:
+  DOCKER_IMAGE: docker-practice-app
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
 jobs:
-  ci:
-    name: CI Pipeline
+  shared-ci:
     uses: ./.github/workflows/shared-ci-jobs.yml
     with:
       target-branch: develop
-      skip-on-no-changes: true
+      skip-on-no-changes: false
       run-docker-compose: false
+      container_name: docker-practice-app
+      healthcheck_url: http://localhost:8000/health/
+    secrets:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
-  merge-ready:
-    name: Ready to Merge
+  build-and-push:
+    needs: shared-ci
     runs-on: ubuntu-latest
-    needs: ci
-    if: always()
     steps:
-      - name: Check pipeline status
-        run: |
-          echo "🔍 Checking CI pipeline status for PR to develop..."
-          echo "================================================="
-
-          CI_STATUS="${{ needs.ci.result }}"
-          PYTHON_CHANGED="${{ needs.ci.outputs.python-changed }}"
-          DOCKER_CHANGED="${{ needs.ci.outputs.docker-changed }}"
-
-          echo "📊 Results:"
-          echo "- CI Pipeline: $CI_STATUS"
-          echo "- Python Changes: $PYTHON_CHANGED"
-          echo "- Docker Changes: $DOCKER_CHANGED"
-          echo ""
-
-          if [[ "$CI_STATUS" == "success" ]]; then
-            echo "✅ ALL CHECKS PASSED! PR is ready to merge to develop."
-            echo "🟢 Merge button is now ENABLED"
-            echo "::notice::Quality gates passed - can merge to develop"
-          else
-            echo "❌ MERGE BLOCKED - CI pipeline failed"
-            echo "🔴 Fix issues before merging"
-            echo "::error::Cannot merge to develop - CI checks failed"
-            exit 1
-          fi
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker-practice
+          file: ./docker-practice/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
