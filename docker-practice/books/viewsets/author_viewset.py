@@ -6,6 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from books.serializers.author_request_serializers import (
     AuthorCreateRequestSerializer,
@@ -28,6 +30,7 @@ class AuthorViewSet(ServiceAndUserAuthenticationMixin, viewsets.ModelViewSet):
     """
 
     lookup_field = "id"
+    permission_classes = [IsAuthenticated]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -205,13 +208,17 @@ class AuthorViewSet(ServiceAndUserAuthenticationMixin, viewsets.ModelViewSet):
                 books, many=True, context={"request": request}
             )
 
-            return self.success_response(
+            return success_response(
                 data=serializer.data, message="Author books retrieved successfully"
             )
         except Exception as e:
             if "not found" in str(e).lower():
-                return self.not_found_response("Author not found")
-            return self.internal_server_error_response(str(e))
+                return Response(
+                    {"error": "Author not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @extend_schema(
         summary="Get author statistics",
@@ -249,10 +256,14 @@ class AuthorViewSet(ServiceAndUserAuthenticationMixin, viewsets.ModelViewSet):
         try:
             stats = AuthorService.get_author_statistics(id)
 
-            return self.success_response(
+            return success_response(
                 data=stats, message="Author statistics retrieved successfully"
             )
         except Exception as e:
             if "not found" in str(e).lower():
-                return self.not_found_response("Author not found")
-            return self.internal_server_error_response(str(e))
+                return Response(
+                    {"error": "Author not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

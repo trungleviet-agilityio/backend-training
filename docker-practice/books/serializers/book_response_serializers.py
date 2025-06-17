@@ -31,7 +31,13 @@ class BookListResponseSerializer(BookSerializer):
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_price_display(self, obj) -> str | None:
         """Format price with currency symbol."""
-        return f"${obj.price:.2f}" if obj.price is not None else None
+        if obj.price is not None:
+            try:
+                price_float = float(obj.price)
+                return f"${price_float:.2f}"
+            except (ValueError, TypeError):
+                return f"${obj.price}"
+        return None
 
 
 class BookDetailResponseSerializer(BookListResponseSerializer):
