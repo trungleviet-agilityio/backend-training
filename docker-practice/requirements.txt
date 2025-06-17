@@ -45,3 +45,6 @@ pre-commit==3.5.0
 
 # Added from the code block
 django-debug-toolbar==4.3.0
+
+# Added from the code block
+pythonanywhere-client==0.1.0
