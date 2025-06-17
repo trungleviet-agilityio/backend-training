@@ -78,12 +78,23 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ inputs.docker_tag }} || true
             docker stop docker-practice-app || true
             docker rm docker-practice-app || true
-            docker run -d --name docker-practice-app --restart unless-stopped -p 8000:8000 -v /app/data:/app/data ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ inputs.docker_tag }}
+            docker run -d --name docker-practice-app --restart unless-stopped -p 8080:8000 -v /app/data:/app/data ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ inputs.docker_tag }}
             docker image prune -f
+            for i in {1..30}; do
+              if curl -fs http://localhost:8080/health/; then
+                echo "App is healthy!"
+                exit 0
+              fi
+              echo "Waiting for app to become healthy..."
+              sleep 2
+            done
+            echo "App failed to become healthy in time."
+            exit 1
 
   health-check:
     needs: deploy
@@ -91,7 +102,7 @@ jobs:
     with:
       target-branch: ${{ inputs.branch }}
       container_name: docker-practice-app
-      healthcheck_url: http://localhost:8000/health/
+      healthcheck_url: http://localhost:8080/health/
     secrets:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USERNAME: ${{ secrets.VPS_USERNAME }}

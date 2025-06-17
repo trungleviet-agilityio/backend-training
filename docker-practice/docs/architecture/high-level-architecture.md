@@ -70,7 +70,7 @@ graph TB
 - **Container Management**
   - Single container deployment
   - Volume mounting for persistence
-  - Port mapping (8000:8000)
+  - Port mapping (8080:8000)
   - Automatic restart policy
 
 #### PostgreSQL Database
