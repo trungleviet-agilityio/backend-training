@@ -6,9 +6,9 @@ This chapter covers the crucial process of establishing keys for each table in t
 
 ## 📝 Guided Notes
 
-### Why Keys Are Important
+### 🎯 Why Keys Are Important
 
-**Three Critical Reasons**
+**Three Critical Reasons:**
 
 1. **Ensure precise identification of each record**
    - Table represents collection of similar objects or events
@@ -24,27 +24,27 @@ This chapter covers the crucial process of establishing keys for each table in t
    - Keys used to establish relationships between tables
    - Foundation for connecting related data across tables
 
-**Key Benefits**
+**Key Benefits:**
 - Guarantee sound table structures
 - Minimize redundant data within each table
 - Ensure solid relationships between tables
 
-### Establishing Keys for Each Table
+### 🔑 Establishing Keys for Each Table
 
-**Four Main Types of Keys**
+**Four Main Types of Keys:**
 1. **Candidate Keys** - Fields that uniquely identify single instance of table's subject
 2. **Primary Keys** - Most important key, exclusively identifies table throughout database
 3. **Foreign Keys** - Used to establish relationships (assigned in Chapter 10)
 4. **Non-keys** - Fields that don't serve as any type of key
 
-### Candidate Keys
+### 🔍 Candidate Keys
 
-**Definition**
+**Definition:**
 - Field or set of fields that uniquely identifies single instance of table's subject
 - Each table must have at least one candidate key
 - One candidate key will be designated as primary key
 
-**Elements of a Candidate Key**
+**Elements of a Candidate Key:**
 
 1. **Cannot be a multipart field**
    - Multipart fields cause problems and cannot serve as identifiers
@@ -84,12 +84,12 @@ This chapter covers the crucial process of establishing keys for each table in t
    - Should never change value unless absolutely necessary
    - Arbitrary changes indicate field may not conform to other elements
 
-**Establishing Candidate Keys**
+**Establishing Candidate Keys:**
 - Look for field or set of fields conforming to all Elements of a Candidate Key
 - Can define more than one candidate key for given table
 - Loading table with sample data helps identify potential candidate keys accurately
 
-**Example: EMPLOYEES Table Analysis**
+**Example: EMPLOYEES Table Analysis:**
 - **EMPLOYEE ID**: Eligible - conforms to every element
 - **SOCIAL SECURITY NUMBER**: Ineligible - could contain nulls, compromises privacy
 - **EMPLAST NAME**: Ineligible - can contain duplicate values
@@ -97,42 +97,42 @@ This chapter covers the crucial process of establishing keys for each table in t
 - **EMPZIPCODE**: Ineligible - can contain duplicate values
 - **EMPHOME PHONE**: Ineligible - can contain duplicates, subject to change
 
-**Marking Candidate Keys**
+**Marking Candidate Keys:**
 - Write "CK" next to field name for candidate key
 - Write "CCK" for composite candidate key (two or more fields)
 - Use numbers to distinguish multiple composite keys (CCK1, CCK2)
 
-### Artificial Candidate Keys
+### 🤖 Artificial Candidate Keys
 
-**When to Create**
+**When to Create:**
 - Table does not contain candidate key
 - Existing candidate key is weaker than artificial one would be
 - Need stronger, more appropriate candidate key
 
-**Creation Process**
+**Creation Process:**
 - Create new field conforming to all Elements of a Candidate Key
 - Add field to table
 - Field automatically conforms because created from scratch
 
-**Example: PARTS Table**
+**Example: PARTS Table:**
 - No existing field qualifies as candidate key
 - Create artificial candidate key called "PART NUMBER"
 - Mark with "CK" in table structure
 
-**Common Practice**
+**Common Practice:**
 - Create ID fields (EMPLOYEE ID, VENDOR ID, DEPARTMENT ID, CATEGORY ID)
 - Always conforms to Elements of a Candidate Key
 - Makes great primary key
 - Easier to establish table relationships
 
-**Review Process**
+**Review Process:**
 - Review all candidate keys to ensure compliance with Elements
 - Remove "CK" designator if field is not truly a candidate key
 - Establish artificial candidate key if only candidate key is invalid
 
-### Primary Keys
+### 👑 Primary Keys
 
-**Definition**
+**Definition:**
 - Most important key of all
 - Exclusively identifies table throughout database structure
 - Helps establish relationships with other tables
@@ -140,12 +140,12 @@ This chapter covers the crucial process of establishing keys for each table in t
 - Exclusively represents record throughout entire database
 - Guards against duplicate records
 
-**Selection Process**
+**Selection Process:**
 - Select from table's pool of available candidate keys
 - Similar to presidential election - choose one from qualified candidates
 - Must conform to exact same elements as candidate key
 
-**Selection Guidelines**
+**Selection Guidelines:**
 
 1. **Choose simple candidate key over composite candidate key**
    - Always best to use candidate key with least number of fields
@@ -158,7 +158,7 @@ This chapter covers the crucial process of establishing keys for each table in t
    - Select key that most accurately identifies table's subject
    - Choose key most meaningful to everyone in organization
 
-**Elements of a Primary Key**
+**Elements of a Primary Key:**
 - Same as Elements of a Candidate Key
 - Must enforce to the letter
 
@@ -166,7 +166,7 @@ This chapter covers the crucial process of establishing keys for each table in t
 Before finalizing primary key selection, ensure it complies with this element:
 **"Its value must exclusively identify the value of each field within a given record."**
 
-**Testing Process**
+**Testing Process:**
 1. Load table with sample data
 2. Select record for test purposes and note current primary key value
 3. Examine value of first field and ask:
@@ -175,12 +175,12 @@ Before finalizing primary key selection, ensure it complies with this element:
 5. If "no" - remove field from table, move to next field, repeat
 6. Continue until examined every field value in record
 
-**Field Removal Process**
+**Field Removal Process:**
 - Field value not exclusively identified by primary key indicates unnecessary field
 - Remove field and reconfirm table complies with Elements of the Ideal Table
 - Add field to another table if appropriate, or discard if truly unnecessary
 
-**Example: SALES INVOICES Table**
+**Example: SALES INVOICES Table:**
 - INVOICE NUMBER as primary key
 - Test each field value:
   - INVOICE DATE: Yes - invoice number identifies specific date
@@ -191,11 +191,11 @@ Before finalizing primary key selection, ensure it complies with this element:
   - EMPHOME PHONE: No - invoice number indirectly identifies via employee name
   - Remove EMPHOME PHONE (unnecessary field, already in EMPLOYEES table)
 
-**Marking Primary Keys**
+**Marking Primary Keys:**
 - Remove "CK" and replace with "PK"
 - Use "CPK" for composite primary key (two or more fields)
 
-**Rules for Establishing Primary Keys**
+**Rules for Establishing Primary Keys:**
 
 1. **Each table must have one—and only one—primary key**
    - Only one primary key necessary per table
@@ -206,34 +206,34 @@ Before finalizing primary key selection, ensure it complies with this element:
    - Exception: one-to-one relationships or subset tables
    - Each table must have unique primary key to avoid confusion
 
-### Alternate Keys
+### 🔄 Alternate Keys
 
-**Definition**
+**Definition:**
 - Remaining candidate keys after primary key selection
 - Provide alternative means of uniquely identifying record within table
 - Useful in RDBMS programs
 
-**Marking**
+**Marking:**
 - Mark with "AK" (alternate key) or "CAK" (composite alternate key)
 - Or remove designation and return to normal field status
 - Not concerned with alternate keys for remainder of design process
 - Will work with them again during RDBMS implementation
 
-### Non-keys
+### 📝 Non-keys
 
-**Definition**
+**Definition:**
 - Field that does not serve as candidate, primary, alternate, or foreign key
 - Sole purpose: represent characteristic of table's subject
 - Value determined by primary key
 - No particular designation needed
 
-### Table-Level Integrity
+### 🏗️ Table-Level Integrity
 
-**Definition**
+**Definition:**
 - Major component of overall data integrity
 - Ensures proper table structure and data quality
 
-**Four Key Requirements**
+**Four Key Requirements:**
 
 1. **No duplicate records in table**
    - Each record must be unique
@@ -247,19 +247,19 @@ Before finalizing primary key selection, ensure it complies with this element:
 4. **Primary key values are not null**
    - Primary key must always have a value
 
-**Establishment Process**
+**Establishment Process:**
 - Began when defined primary key for each table
 - Ensured enforcement by making primary key comply with Elements
 - Enhanced further in next chapter with field specifications
 
-### Reviewing the Initial Table Structures
+### 🔍 Reviewing the Initial Table Structures
 
-**Purpose**
+**Purpose:**
 - Conduct interviews with users and management
 - Review work performed so far
 - Fairly straightforward and relatively easy to conduct
 
-**Five Key Tasks**
+**Five Key Tasks:**
 
 1. **Ensure appropriate subjects represented in database**
    - Highly unlikely important subject missing at this stage
@@ -283,78 +283,31 @@ Before finalizing primary key selection, ensure it complies with this element:
 5. **Complete interviews and move to next phase**
    - Establish field specifications for every field in database
 
-## 💡 Reflection
+## 🧠 Mind Map Structure
 
-- Why is it critical to test candidate keys with sample data before designating them?
-- How does the exclusive identification test help maintain table structural integrity?
-- What are the risks of using Social Security numbers or other sensitive data as keys?
-- Why is it important to have only one primary key per table?
-- How do artificial candidate keys help solve structural problems in tables?
+### Central Topic: Keys
+- **Why Important** → Three Critical Reasons, Key Benefits
+- **Types of Keys** → Four Main Types
+  - **Candidate Keys** → 9 Elements, Establishment Process, Marking (CK/CCK)
+  - **Primary Keys** → Selection Guidelines, Critical Test, Marking (PK/CPK)
+  - **Alternate Keys** → Definition, Marking (AK/CAK)
+  - **Non-keys** → Definition, Purpose
+- **Artificial Keys** → When to Create, Creation Process, Common Practice
+- **Table-Level Integrity** → Four Requirements, Establishment Process
+- **Review Process** → Five Key Tasks, Interview Process
 
-## Review Questions
+## 🔑 Key Takeaways
 
-1. State the three reasons why keys are important.
-2. What are the four main types of keys?
-3. What is the purpose of a candidate key?
-4. State four items of the Elements of a Candidate Key.
-5. True or False: A candidate key can be composed of more than one field.
-6. Can a table have more than one candidate key?
-7. What is an artificial candidate key?
-8. What is the most important key you assign to a table?
-9. Why is this key important?
-10. How do you establish a primary key?
-11. State four items of the Elements of a Primary Key.
-12. What must you do before you finalize your selection of a primary key?
-13. What is an alternate key?
-14. What do you ensure by establishing table-level integrity?
-15. Why should you review the initial table structures?
+1. **Keys are the foundation** of database relationships and data integrity
+2. **Nine Elements of a Candidate Key** must be strictly followed
+3. **Primary key selection** requires testing exclusive identification of all field values
+4. **Artificial candidate keys** solve structural problems when natural keys unavailable
+5. **Table-level integrity** ensures proper table structure and data quality
+6. **Key marking system** provides clear identification of key types
+7. **Review process** validates work with users and management
+8. **Exclusive identification test** helps maintain table structural integrity
 
----
-
-- Add diagrams, ERDs, or illustrations in `diagrams.md`.
-- Add SQL examples or commands in `examples.sql`.
-
-> Use this template for each chapter. Add more sections as needed for exercises, review questions, or additional resources.
-
-## Notes
-
-### Key Techniques Learned
-
-**Candidate Key Establishment**
-- Using Elements of a Candidate Key to evaluate fields
-- Testing with sample data to verify compliance
-- Creating artificial candidate keys when needed
-- Marking candidate keys with CK/CCK designations
-
-**Primary Key Selection**
-- Choosing from pool of candidate keys
-- Applying selection guidelines (simple over composite, meaningful names)
-- Testing exclusive identification of all field values
-- Removing fields not exclusively identified by primary key
-
-**Key Marking System**
-- CK: Candidate Key
-- CCK: Composite Candidate Key
-- PK: Primary Key
-- CPK: Composite Primary Key
-- AK: Alternate Key
-- CAK: Composite Alternate Key
-
-**Table-Level Integrity**
-- Ensuring no duplicate records
-- Primary key exclusively identifies each record
-- Every primary key value is unique
-- Primary key values are not null
-
-### Analysis Deliverables
-
-1. **Candidate Keys** - All fields/sets of fields that uniquely identify records
-2. **Primary Keys** - Selected candidate key for each table
-3. **Alternate Keys** - Remaining candidate keys marked appropriately
-4. **Table-Level Integrity** - Ensured through proper key establishment
-5. **Reviewed Table Structures** - Validated with users and management
-
-### Common Pitfalls to Avoid
+## 🚫 Common Pitfalls to Avoid
 
 - **Using multipart fields as keys** - Decompose into separate fields first
 - **Using fields with null values** - Keys cannot contain nulls
@@ -365,3 +318,70 @@ Before finalizing primary key selection, ensure it complies with this element:
 - **Not testing exclusive identification** - Critical for primary key validation
 - **Using composite keys when simple keys available** - Prefer simpler keys
 - **Duplicate primary keys across tables** - Each table needs unique primary key
+
+## 📚 Review Questions
+
+1. **State the three reasons** why keys are important
+2. **What are the four main types** of keys?
+3. **What is the purpose** of a candidate key?
+4. **State four items** of the Elements of a Candidate Key
+5. **True or False:** A candidate key can be composed of more than one field
+6. **Can a table have more than one** candidate key?
+7. **What is an artificial** candidate key?
+8. **What is the most important key** you assign to a table?
+9. **Why is this key important?**
+10. **How do you establish** a primary key?
+11. **State four items** of the Elements of a Primary Key
+12. **What must you do before** you finalize your selection of a primary key?
+13. **What is an alternate key?**
+14. **What do you ensure** by establishing table-level integrity?
+15. **Why should you review** the initial table structures?
+
+## 💡 Reflection
+
+- **Why is it critical** to test candidate keys with sample data before designating them?
+- **How does the exclusive identification test** help maintain table structural integrity?
+- **What are the risks** of using Social Security numbers or other sensitive data as keys?
+- **Why is it important** to have only one primary key per table?
+- **How do artificial candidate keys** help solve structural problems in tables?
+
+## 📋 Analysis Deliverables
+
+1. **Candidate Keys** - All fields/sets of fields that uniquely identify records
+2. **Primary Keys** - Selected candidate key for each table
+3. **Alternate Keys** - Remaining candidate keys marked appropriately
+4. **Table-Level Integrity** - Ensured through proper key establishment
+5. **Reviewed Table Structures** - Validated with users and management
+
+## 🔧 Key Techniques Learned
+
+**Candidate Key Establishment:**
+- Using Elements of a Candidate Key to evaluate fields
+- Testing with sample data to verify compliance
+- Creating artificial candidate keys when needed
+- Marking candidate keys with CK/CCK designations
+
+**Primary Key Selection:**
+- Choosing from pool of candidate keys
+- Applying selection guidelines (simple over composite, meaningful names)
+- Testing exclusive identification of all field values
+- Removing fields not exclusively identified by primary key
+
+**Key Marking System:**
+- CK: Candidate Key
+- CCK: Composite Candidate Key
+- PK: Primary Key
+- CPK: Composite Primary Key
+- AK: Alternate Key
+- CAK: Composite Alternate Key
+
+**Table-Level Integrity:**
+- Ensuring no duplicate records
+- Primary key exclusively identifies each record
+- Every primary key value is unique
+- Primary key values are not null
+
+---
+
+- Add diagrams, ERDs, or illustrations in `diagrams.md`
+- Add SQL examples or commands in `examples.sql`
