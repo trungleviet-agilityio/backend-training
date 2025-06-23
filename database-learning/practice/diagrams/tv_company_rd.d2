@@ -65,6 +65,7 @@ roles: {
 departments: {
   shape: sql_table
   id: uuid {constraint: primary_key}
+  department_name: varchar
   description: text
   deleted: boolean
 }
