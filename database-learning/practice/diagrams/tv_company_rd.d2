@@ -1,0 +1,172 @@
+direction: right
+
+series_domains: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  domain_name: varchar {constraint: unique}
+  description: text
+  deleted: boolean
+}
+
+tv_series: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  domain_id: uuid {constraint: foreign_key}
+  title: varchar
+  description: text
+  start_date: date
+  end_date: date
+  deleted: boolean
+}
+
+episodes: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  series_id: uuid {constraint: foreign_key}
+  director_id: uuid {constraint: foreign_key}
+  episode_number: int
+  title: varchar
+  duration_minutes: int
+  air_date: date
+  deleted: boolean
+}
+
+transmissions: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  episode_id: uuid {constraint: foreign_key}
+  transmission_time: timestamp
+  channel: varchar
+  viewership: int
+  deleted: boolean
+}
+
+employees: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  first_name: varchar
+  last_name: varchar
+  email: varchar {constraint: unique}
+  birthdate: date
+  employment_date: date
+  is_internal: boolean
+  deleted: boolean
+}
+
+roles: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  department_id: uuid {constraint: foreign_key}
+  role_name: varchar
+  description: text
+  deleted: boolean
+}
+
+departments: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  description: text
+  deleted: boolean
+}
+
+employee_roles: {
+  shape: sql_table
+  employee_id: uuid {constraint: [foreign_key; primary_key]}
+  role_id: uuid {constraint: [foreign_key; primary_key]}
+  assigned_at: date
+  is_active: boolean
+}
+
+employee_series_roles: {
+  shape: sql_table
+  employee_id: uuid {constraint: [foreign_key; primary_key]}
+  series_id: uuid {constraint: [foreign_key; primary_key]}
+  role_id: uuid {constraint: [foreign_key; primary_key]}
+  character_name: varchar
+  start_date: date
+  end_date: date
+  deleted: boolean
+}
+
+# Relationships with better styling
+series_domains.id -> tv_series.domain_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+tv_series.id -> episodes.series_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+episodes.id -> transmissions.episode_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+employees.id -> episodes.director_id: {
+  label: "1:N (director)"
+  style.stroke-width: 2
+  style: dashed
+}
+
+tv_series.id -> employee_series_roles.series_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+employees.id -> employee_series_roles.employee_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+roles.id -> employee_series_roles.role_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+employees.id -> employee_roles.employee_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+roles.id -> employee_roles.role_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+roles.department_id -> departments.id: {
+  label: "N:1"
+  style.stroke-width: 2
+}
+
+# Enhanced legend with better styling
+legend: {
+  style.font-size: 16
+  shape: text
+  style.fill: "#f7fafc"
+  style.stroke: "#2d3748"
+  style.stroke-width: 1
+  style.border-radius: 8
+  style.shadow: true
+  label: |md
+    ## 🎬 Database Relationship Diagram
+
+    ### 1:N Relationships
+    - **TVSeries → SeriesDomain**: N:1 – Each series belongs to one domain
+    - **TVSeries → Episode**: 1:N – Each series has many episodes
+    - **Episode → Transmission**: 1:N – Each episode can have multiple transmissions
+    - **Role → Department**: N:1 – Each role belongs to one department
+    - **Episode → Director (Employee)**: N:1 – Each episode has one director
+
+    ### M:N Relationships (via linking tables)
+    - **TVSeries ↔ Employee**: M:N – Through EmployeeSeriesRole (employees participate in series)
+    - **Employee ↔ Role (company-wide)**: M:N – Through EmployeeRole (employees can have multiple roles)
+
+    ### **Notes:**
+    - Each table automatically contains 2 fields:
+      - created_at: timestamp
+      - updated_at: timestamp
+    ---
+  |
+}
