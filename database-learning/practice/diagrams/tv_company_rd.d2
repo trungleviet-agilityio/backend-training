@@ -5,9 +5,6 @@ series_domains: {
   uuid: uuid {constraint: primary_key}
   name: varchar {constraint: unique}
   description: text
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 tv_series: {
@@ -18,9 +15,6 @@ tv_series: {
   description: text
   start_date: date
   end_date: date
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 episodes: {
@@ -32,9 +26,6 @@ episodes: {
   title: varchar
   duration_minutes: int
   air_date: date
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 transmissions: {
@@ -43,9 +34,6 @@ transmissions: {
   episode_uuid: uuid {constraint: foreign_key}
   transmission_time: timestamptz
   viewership: bigint
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 channels: {
@@ -54,18 +42,12 @@ channels: {
   name: varchar {constraint: unique}
   type: varchar
   description: text
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 transmission_channels: {
   shape: sql_table
   transmission_uuid: uuid {constraint: [foreign_key; primary_key]}
   channel_uuid: uuid {constraint: [foreign_key; primary_key]}
-  created_time: timestamp
-  updated_time: timestamp
-  deleted: boolean
 }
 
 employees: {
@@ -78,9 +60,6 @@ employees: {
   employment_date: date
   is_internal: boolean
   status: enum
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 roles: {
@@ -89,9 +68,6 @@ roles: {
   department_uuid: uuid {constraint: foreign_key}
   name: varchar {constraint: unique}
   description: text
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 departments: {
@@ -99,9 +75,6 @@ departments: {
   uuid: uuid {constraint: primary_key}
   name: varchar {constraint: unique}
   description: text
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 employee_roles: {
@@ -110,8 +83,6 @@ employee_roles: {
   role_uuid: uuid {constraint: [foreign_key; primary_key]}
   assigned_at: date
   is_active: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 employee_series_roles: {
@@ -122,9 +93,6 @@ employee_series_roles: {
   character_name: varchar
   start_date: date
   end_date: date
-  deleted: boolean
-  created_time: timestamp
-  updated_time: timestamp
 }
 
 # Relationships with better styling
@@ -213,5 +181,11 @@ legend: {
     - **TVSeries ↔ Employee**: M:N – Through EmployeeSeriesRole (employees participate in series)
     - **Employee ↔ Role (company-wide)**: M:N – Through EmployeeRole (employees can have multiple roles)
     - **Transmission ↔ Channel**: M:N – Through TransmissionChannel (transmissions can be on multiple channels)
-  |
+
+    ### Note:
+    - Each tables automatically has a soft delete flag (deleted) and a created_time and updated_time column.
+      - The soft delete flag is used to mark a record as deleted.
+      - The created_time is the time the record was created.
+      - The updated_time is the time the record was last updated.
+    |
 }
