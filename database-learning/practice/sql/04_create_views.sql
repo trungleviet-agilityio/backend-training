@@ -82,6 +82,8 @@ SELECT
     emp.employment_date,
     emp.is_internal,
     emp.status,
+    EXTRACT(YEAR FROM AGE(current_date, emp.birthdate)) AS age,
+    EXTRACT(YEAR FROM AGE(current_date, emp.employment_date)) AS years_of_employment,
     STRING_AGG(r.name, ', ') as current_roles,
     STRING_AGG(d.name, ', ') as departments
 FROM employees emp
@@ -101,6 +103,8 @@ SELECT
     emp.email,
     emp.employment_date,
     emp.is_internal,
+    EXTRACT(YEAR FROM AGE(current_date, emp.birthdate)) AS age,
+    EXTRACT(YEAR FROM AGE(current_date, emp.employment_date)) AS years_of_employment,
     STRING_AGG(r.name, ', ') as roles
 FROM employees emp
 JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
