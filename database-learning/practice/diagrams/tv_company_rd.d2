@@ -2,7 +2,7 @@ direction: right
 
 series_domains: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
+  uuid: uuid {constraint: primary_key}
   name: varchar {constraint: unique}
   description: text
   deleted: boolean
@@ -12,8 +12,8 @@ series_domains: {
 
 tv_series: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
-  domain_id: uuid {constraint: foreign_key}
+  uuid: uuid {constraint: primary_key}
+  domain_uuid: uuid {constraint: foreign_key}
   title: varchar
   description: text
   start_date: date
@@ -25,9 +25,9 @@ tv_series: {
 
 episodes: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
-  series_id: uuid {constraint: foreign_key}
-  director_id: uuid {constraint: foreign_key}
+  uuid: uuid {constraint: primary_key}
+  series_uuid: uuid {constraint: foreign_key}
+  director_uuid: uuid {constraint: foreign_key}
   episode_number: int
   title: varchar
   duration_minutes: int
@@ -39,8 +39,8 @@ episodes: {
 
 transmissions: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
-  episode_id: uuid {constraint: foreign_key}
+  uuid: uuid {constraint: primary_key}
+  episode_uuid: uuid {constraint: foreign_key}
   transmission_time: timestamptz
   viewership: bigint
   deleted: boolean
@@ -50,7 +50,7 @@ transmissions: {
 
 channels: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
+  uuid: uuid {constraint: primary_key}
   name: varchar {constraint: unique}
   type: varchar
   description: text
@@ -61,8 +61,8 @@ channels: {
 
 transmission_channels: {
   shape: sql_table
-  transmission_id: uuid {constraint: [foreign_key; primary_key]}
-  channel_id: uuid {constraint: [foreign_key; primary_key]}
+  transmission_uuid: uuid {constraint: [foreign_key; primary_key]}
+  channel_uuid: uuid {constraint: [foreign_key; primary_key]}
   created_time: timestamp
   updated_time: timestamp
   deleted: boolean
@@ -70,8 +70,9 @@ transmission_channels: {
 
 employees: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
-  name: varchar
+  uuid: uuid {constraint: primary_key}
+  first_name: varchar
+  last_name: varchar
   email: varchar {constraint: unique}
   birthdate: date
   employment_date: date
@@ -84,8 +85,8 @@ employees: {
 
 roles: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
-  department_id: uuid {constraint: foreign_key}
+  uuid: uuid {constraint: primary_key}
+  department_uuid: uuid {constraint: foreign_key}
   name: varchar {constraint: unique}
   description: text
   deleted: boolean
@@ -95,7 +96,7 @@ roles: {
 
 departments: {
   shape: sql_table
-  id: uuid {constraint: primary_key}
+  uuid: uuid {constraint: primary_key}
   name: varchar {constraint: unique}
   description: text
   deleted: boolean
@@ -105,8 +106,8 @@ departments: {
 
 employee_roles: {
   shape: sql_table
-  employee_id: uuid {constraint: [foreign_key; primary_key]}
-  role_id: uuid {constraint: [foreign_key; primary_key]}
+  employee_uuid: uuid {constraint: [foreign_key; primary_key]}
+  role_uuid: uuid {constraint: [foreign_key; primary_key]}
   assigned_at: date
   is_active: boolean
   created_time: timestamp
@@ -115,9 +116,9 @@ employee_roles: {
 
 employee_series_roles: {
   shape: sql_table
-  employee_id: uuid {constraint: [foreign_key; primary_key]}
-  series_id: uuid {constraint: [foreign_key; primary_key]}
-  role_id: uuid {constraint: [foreign_key; primary_key]}
+  employee_uuid: uuid {constraint: [foreign_key; primary_key]}
+  series_uuid: uuid {constraint: [foreign_key; primary_key]}
+  role_uuid: uuid {constraint: [foreign_key; primary_key]}
   character_name: varchar
   start_date: date
   end_date: date
@@ -127,64 +128,64 @@ employee_series_roles: {
 }
 
 # Relationships with better styling
-series_domains.id -> tv_series.domain_id: {
+series_domains.uuid -> tv_series.domain_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-tv_series.id -> episodes.series_id: {
+tv_series.uuid -> episodes.series_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-episodes.id -> transmissions.episode_id: {
+episodes.uuid -> transmissions.episode_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-employees.id -> episodes.director_id: {
+employees.uuid -> episodes.director_uuid: {
   label: "1:N (director)"
   style.stroke-width: 2
   style: dashed
 }
 
-tv_series.id -> employee_series_roles.series_id: {
+tv_series.uuid -> employee_series_roles.series_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-employees.id -> employee_series_roles.employee_id: {
+employees.uuid -> employee_series_roles.employee_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-roles.id -> employee_series_roles.role_id: {
+roles.uuid -> employee_series_roles.role_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-employees.id -> employee_roles.employee_id: {
+employees.uuid -> employee_roles.employee_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-roles.id -> employee_roles.role_id: {
+roles.uuid -> employee_roles.role_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-roles.department_id -> departments.id: {
+roles.department_uuid -> departments.uuid: {
   label: "N:1"
   style.stroke-width: 2
 }
 
 # New relationships for Channel and TransmissionChannel
-transmissions.id -> transmission_channels.transmission_id: {
+transmissions.uuid -> transmission_channels.transmission_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-channels.id -> transmission_channels.channel_id: {
+channels.uuid -> transmission_channels.channel_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
