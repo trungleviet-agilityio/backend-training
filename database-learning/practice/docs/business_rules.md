@@ -3,204 +3,215 @@
 ---
 
 ## 1. Introduction
-This document defines all business rules for the TV company database system, organized by table and field. Rules are based on project requirements and best practices from database design literature (see chapters 9, 10, 11, and 13). Rules are categorized as database-oriented (enforced by schema/constraints) or application-oriented (enforced by application logic).
+This document defines all business rules for the TV company database system, organized by enforcement type and table. Rules are categorized as **schema logic** (enforced by database constraints/triggers) or **application logic** (enforced by application code) based on database design best practices.
+
+**Key Distinction:**
+- **Schema Logic**: Enforced at database level (constraints, triggers, foreign keys)
+- **Application Logic**: Enforced at application level (code validation, business workflows)
 
 ---
 
-## 2. Business Rules by Table
+## 2. Schema Logic (Database-Enforced Rules)
 
-### 2.1. SeriesDomain
-- **id**: Must be unique, not null (PK, UUID)
-- **name**: Must be unique, not null, max 100 characters
-- **description**: Optional, max 500 characters
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - No TVSeries may reference a deleted SeriesDomain (application logic)
+### 2.1. Field-Level Constraints
 
-### 2.2. TVSeries
-- **id**: Must be unique, not null (PK, UUID)
-- **title**: Not null (not unique; duplicate titles allowed for remakes, reboots)
-- **description**: Optional
-- **domain_id**: Must reference existing, non-deleted SeriesDomain (FK, not null)
-- **start_date**: Not null; should not be in the future (recommend only past or present dates)
-- **end_date**: Nullable, if present must be >= start_date
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each TVSeries must belong to a SeriesDomain
-  - Each TVSeries may have multiple Episodes
-  - No Episode may reference a deleted TVSeries (application logic)
-  - **Business Rule:** A TV series must have at least one episode (enforced by application/reporting logic)
-  - **Business Rule:** Multiple series may have the same title (e.g., remakes, reboots); use id for uniqueness
+#### SeriesDomain
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **name**: UNIQUE NOT NULL, max 100 chars (enforced by schema)
+- **description**: max 500 chars (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.3. Episode
-- **id**: Must be unique, not null (PK, UUID)
-- **series_id**: Must reference existing, non-deleted TVSeries (FK, not null)
-- **episode_number**: Must be positive integer, unique within series (composite unique)
-- **title**: Optional (not unique; duplicate titles allowed)
-- **duration_minutes**: Must be between 1 and 600
-- **air_date**: Optional, if present must be >= TVSeries.start_date (enforced by application logic or trigger)
-- **director_id**: Must reference Employee with 'Director' role, not null; must be validated by application logic or trigger before insert/update. The director must be active (is_internal = TRUE, deleted = FALSE, is_active = TRUE in EmployeeRole).
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Episode must belong to a TVSeries
-  - Each Episode must have a Director (Employee with 'Director' role)
-  - Each Episode may have multiple Transmissions
-  - No Transmission may reference a deleted Episode (application logic)
-  - **Business Rule:** The first episode of each series must have episode_number = 1
-  - **Business Rule:** An episode can only be directed by one director at a time
-  - **Business Rule:** Use (series_id, episode_number) as unique identifier for episodes within a series
+#### TVSeries
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **title**: NOT NULL (enforced by schema)
+- **domain_uuid**: FOREIGN KEY to SeriesDomain (enforced by schema)
+- **start_date**: NOT NULL (enforced by schema)
+- **end_date**: Must be >= start_date (enforced by CHECK constraint)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.4. Transmission
-- **id**: Must be unique, not null (PK, UUID)
-- **episode_id**: Must reference existing, non-deleted Episode (FK, not null)
-- **transmission_time**: Not null, TIMESTAMPTZ (with timezone support for global broadcasts)
-- **viewership**: Optional, BIGINT, if present must be >= 0 (supports global scale)
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Transmission must belong to an Episode
-  - Each Transmission may be broadcast on multiple Channels (via TransmissionChannel)
-  - No TransmissionChannel may reference a deleted Transmission (application logic)
-  - **Business Rule:** An episode can be transmitted multiple times, but each transmission_time must be unique for the same episode (no duplicate airings at the same time)
-  - **Business Rule:** A transmission can be broadcast simultaneously on multiple channels/platforms (e.g., global sports events, multi-platform releases)
+#### Episode
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **series_uuid**: FOREIGN KEY to TVSeries (enforced by schema)
+- **episode_number**: Positive integer (enforced by schema)
+- **duration_minutes**: BETWEEN 1 AND 600 (enforced by CHECK constraint)
+- **air_date**: Must be >= TVSeries.start_date (enforced by CHECK constraint)
+- **director_uuid**: FOREIGN KEY to Employee (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.5. Channel
-- **id**: Must be unique, not null (PK, UUID)
-- **name**: Must be unique, not null, max 100 characters
-- **type**: Optional (e.g., Cable, OTT, Web, Streaming)
-- **description**: Optional
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Channel may be used for multiple Transmissions (via TransmissionChannel)
-  - No TransmissionChannel may reference a deleted Channel (application logic)
-  - **Business Rule:** Channel names must be unique across all active channels
-  - **Business Rule:** A channel cannot be deleted if it has active transmission records
+#### Transmission
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **episode_uuid**: FOREIGN KEY to Episode (enforced by schema)
+- **transmission_time**: NOT NULL TIMESTAMPTZ (enforced by schema)
+- **viewership**: BIGINT >= 0 (enforced by CHECK constraint)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.6. TransmissionChannel
-- **transmission_id, channel_id**: Composite PK, both must reference existing, non-deleted Transmission and Channel
-- **created_time, updated_time**: Set automatically
-- **deleted**: Boolean, default FALSE (soft delete)
-- **Relationships**:
-  - Each TransmissionChannel links one Transmission and one Channel
-  - No TransmissionChannel may reference a deleted Transmission or Channel (application logic)
-  - **Business Rule:** A transmission can be broadcast on multiple channels simultaneously
-  - **Business Rule:** A channel can be used for multiple transmissions
-  - **Business Rule:** The combination of transmission_id and channel_id must be unique (no duplicate channel assignments for the same transmission)
+#### Channel
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **name**: UNIQUE NOT NULL, max 100 chars (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.7. Employee
-- **id**: Must be unique, not null (PK, UUID)
-- **name**: Not null
-- **email**: Not null, unique, valid email format
-- **birthdate**: Not null, must be in the past
-- **employment_date**: Not null, must be >= birthdate
-- **is_internal**: Not null, boolean, default TRUE (company employees are internal by default)
-- **status**: ENUM (active, on_leave, terminated), default 'active'
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Employee may have multiple Roles (via EmployeeRole)
-  - Each Employee may participate in multiple Series (via EmployeeSeriesRole)
-  - No Episode or EmployeeSeriesRole may reference a deleted Employee (application logic)
-  - **Business Rule:** An employee can be both an actor and a director (multi-role allowed)
-  - **Business Rule:** A director must be employed by the company (is_internal = TRUE)
-  - **Business Rule:** There must always be at least one director employed by the company (enforced by reporting/administration)
-  - **Business Rule:** Only employees with status 'active' can be assigned to new episodes or series
+#### Employee
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **name**: NOT NULL (enforced by schema)
+- **email**: UNIQUE NOT NULL (enforced by schema)
+- **birthdate**: NOT NULL (enforced by schema)
+- **employment_date**: Must be >= birthdate (enforced by CHECK constraint)
+- **is_internal**: BOOLEAN DEFAULT TRUE (enforced by schema)
+- **status**: ENUM('active', 'on_leave', 'terminated') (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.8. Role
-- **id**: Must be unique, not null (PK, UUID)
-- **name**: Not null, unique
-- **department_id**: Must reference existing, non-deleted Department (FK, not null)
-- **description**: Optional
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Role must belong to a Department
-  - Each Role may be assigned to multiple Employees (via EmployeeRole)
-  - **Business Rule:** Only employees with the 'Actor' role can be assigned a character_name in EmployeeSeriesRole
+#### Role
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **name**: UNIQUE NOT NULL (enforced by schema)
+- **department_uuid**: FOREIGN KEY to Department (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.9. Department
-- **id**: Must be unique, not null (PK, UUID)
-- **name**: Not null, unique
-- **description**: Optional
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each Department may have multiple Roles
+#### Department
+- **uuid**: UUID PRIMARY KEY (enforced by schema)
+- **name**: UNIQUE NOT NULL (enforced by schema)
+- **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
+- **created_time, updated_time**: Set automatically (enforced by triggers)
 
-### 2.10. EmployeeRole
-- **employee_id, role_id**: Composite PK, both must reference existing, non-deleted Employee and Role
-- **assigned_at**: Optional
-- **is_active**: Boolean, default TRUE
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each EmployeeRole links one Employee and one Role
-  - No EmployeeRole may reference a deleted Employee or Role (application logic)
-  - **Business Rule:** An employee must have at least one active role at all times
+### 2.2. Relationship-Level Constraints
 
-### 2.11. EmployeeSeriesRole
-- **employee_id, series_id, role_id**: Composite PK, all must reference existing, non-deleted Employee, TVSeries, and Role
-- **character_name**: Required if role is 'Actor', must be NULL otherwise
-- **start_date, end_date**: Optional
-- **deleted**: Boolean, default FALSE (soft delete)
-- **created_time, updated_time**: Set automatically
-- **Relationships**:
-  - Each EmployeeSeriesRole links one Employee, one TVSeries, and one Role
-  - No EmployeeSeriesRole may reference a deleted Employee, TVSeries, or Role (application logic)
-  - **Business Rule:** An actor can participate in multiple series, and a series can have multiple actors
-  - **Business Rule:** An actor can play different characters in different series
-  - **Business Rule:** An actor can participate in more than one series at the same time
+#### Composite Unique Constraints
+- **Episode**: (series_uuid, episode_number) UNIQUE (enforced by schema)
+- **EmployeeRole**: (employee_uuid, role_uuid) PRIMARY KEY (enforced by schema)
+- **EmployeeSeriesRole**: (employee_uuid, series_uuid, role_uuid) PRIMARY KEY (enforced by schema)
+- **TransmissionChannel**: (transmission_uuid, channel_uuid) PRIMARY KEY (enforced by schema)
+
+#### Foreign Key Constraints
+- All foreign keys enforce referential integrity (enforced by schema)
+- Cascade rules prevent orphaned records (enforced by schema)
+
+### 2.3. Business Rule Triggers
+
+#### Director Validation
+- **Rule**: Director must have active 'Director' role and be active employee
+- **Enforcement**: Trigger on episodes table
+- **Function**: `validate_director_role()`
+
+#### Character Name Validation
+- **Rule**: Character name required for Actor role, NULL for others
+- **Enforcement**: Trigger on employee_series_roles table
+- **Function**: `validate_character_name()`
+
+#### Channel Deletion Prevention
+- **Rule**: Cannot delete channel with active transmission records
+- **Enforcement**: Trigger on channels table
+- **Function**: `prevent_channel_deletion()`
+
+#### Audit Field Updates
+- **Rule**: updated_time automatically set on record modification
+- **Enforcement**: Triggers on all tables
+- **Function**: `update_updated_time()`
+
+### 2.4. Performance Indexes
+- Foreign key indexes for join performance
+- Soft delete indexes for filtering
+- Composite indexes for common query patterns
+- Unique constraint indexes
 
 ---
 
-## 3. General Business Rules
-- All tables: No duplicate records (enforced by PK/unique constraints)
-- All tables: Soft delete only, never hard delete
-- All tables: created_time and updated_time must be set and maintained
-- All FKs: Must reference non-deleted records (application logic; referential integrity must be maintained for active data)
-- All queries: Must filter out deleted records unless explicitly required
-- All validation fields: Must reference values in validation tables (e.g., domains, roles, departments, channels)
-- **Multi-channel Broadcasting:** Transmissions can be broadcast on multiple channels simultaneously through the TransmissionChannel linking table
-- **Global Support:** Transmission times use TIMESTAMPTZ for timezone support, viewership uses BIGINT for global scale
-- **Indexing:** Indexes should be created on frequently joined or filtered fields (e.g., series_id, episode_id, role_id, employee_id, transmission_id, channel_id) to support efficient queries and reporting.
-- **Reporting/Analytics:**
-  - It must be possible to answer:
-    - Which actors play in a given series (e.g., "Big Sister")
-    - In which series a given actor (e.g., "Bertil Bom") participates
-    - Which actors participate in more than one series
-    - How many times (and when) an episode was transmitted
-    - How many directors are employed by the company
-    - Which director has directed the greatest number of episodes
-    - **New Multi-channel Queries:**
-      - Which channels broadcast a specific episode
-      - How many channels broadcast each transmission
-      - Which episodes were broadcast on multiple channels simultaneously
-      - Channel performance comparison (viewership by channel)
-      - Global transmission reach (total viewership across all channels)
+## 3. Application Logic (Code-Enforced Rules)
+
+### 3.1. Cross-Table Validation Rules
+
+#### Soft Delete Referential Integrity
+- **Rule**: No reference to deleted records across tables
+- **Enforcement**: Application queries must filter `deleted = FALSE`
+- **Examples**:
+  - Episodes cannot reference deleted TVSeries
+  - Transmissions cannot reference deleted Episodes
+  - EmployeeSeriesRoles cannot reference deleted Employees/Series/Roles
+
+#### Business Workflow Rules
+- **Rule**: Only active employees can be assigned to new episodes/series
+- **Enforcement**: Application validation before database operations
+- **Rule**: First episode of each series must have episode_number = 1
+- **Enforcement**: Application logic during episode creation
+
+#### Complex Business Rules
+- **Rule**: A TV series must have at least one episode
+- **Enforcement**: Application/reporting logic, not database constraint
+- **Rule**: An employee must have at least one active role
+- **Enforcement**: Application validation during role management
+
+### 3.2. User Interface Rules
+- **Rule**: Channel names must be unique across active channels
+- **Enforcement**: Application validation with user-friendly error messages
+- **Rule**: Email format validation
+- **Enforcement**: Application-level regex validation
+
+### 3.3. Reporting and Analytics Rules
+- **Rule**: All queries must filter deleted records unless explicitly required
+- **Enforcement**: Application query patterns and reporting logic
+- **Rule**: Complex aggregations and business metrics
+- **Enforcement**: Application reporting services
 
 ---
 
-## 4. Data Integrity Review Checklist
-- [ ] No duplicate, calculated, multivalued, or multipart fields
-- [ ] No duplicate records
-- [ ] Every record identified by a primary key
-- [ ] Each primary key conforms to best practices
-- [ ] Each field conforms to the Elements of the Ideal Field
-- [ ] Field specifications are complete
-- [ ] All relationships properly established
-- [ ] Deletion rules are appropriate (soft delete)
-- [ ] Participation and degree are correct
-- [ ] Each rule imposes a meaningful constraint
-- [ ] Proper category and type are determined
-- [ ] Rules are documented and maintained
-- [ ] Validation tables are used where appropriate
+## 4. Implementation Guidelines
+
+### 4.1. Schema Logic Implementation
+- **Location**: `02_business_rules.sql` and schema files
+- **Tools**: CHECK constraints, triggers, foreign keys, indexes
+- **Benefits**: Automatic enforcement, high reliability, centralized
+- **Limitations**: Simple rules only, no complex business workflows
+
+### 4.2. Application Logic Implementation
+- **Location**: Application code, service layers, validation logic
+- **Tools**: Programming language validation, business objects, workflows
+- **Benefits**: Complex rules, user-friendly errors, business workflows
+- **Limitations**: Manual enforcement, distributed logic, potential bypass
+
+### 4.3. When to Use Each Type
+
+#### Use Schema Logic For:
+- ✅ Field format and range validation
+- ✅ Referential integrity
+- ✅ Atomic business rules (single table)
+- ✅ Audit trail requirements
+- ✅ Performance-critical constraints
+
+#### Use Application Logic For:
+- ✅ Cross-table validation
+- ✅ Complex business workflows
+- ✅ User interface validation
+- ✅ External system integration
+- ✅ Temporary or conditional rules
 
 ---
 
-## 5. References
+## 5. Data Integrity Review Checklist
+
+### Schema Logic Checklist
+- [ ] All primary keys properly defined
+- [ ] All foreign keys with appropriate constraints
+- [ ] Field-level constraints (CHECK, NOT NULL, UNIQUE)
+- [ ] Business rule triggers implemented and tested
+- [ ] Performance indexes created
+- [ ] Audit fields automatically maintained
+
+### Application Logic Checklist
+- [ ] Soft delete filtering in all queries
+- [ ] Cross-table validation implemented
+- [ ] User input validation
+- [ ] Business workflow enforcement
+- [ ] Error handling and user feedback
+- [ ] Reporting logic implemented
+
+---
+
+## 6. References
 - Project requirements
 - Chapter 9: Field Specifications (Database Design Book)
 - Chapter 10: Table Relationships (Database Design Book)
