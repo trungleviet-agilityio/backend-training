@@ -3,9 +3,11 @@ direction: right
 series_domains: {
   shape: sql_table
   id: uuid {constraint: primary_key}
-  domain_name: varchar {constraint: unique}
+  name: varchar {constraint: unique}
   description: text
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 tv_series: {
@@ -17,6 +19,8 @@ tv_series: {
   start_date: date
   end_date: date
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 episodes: {
@@ -29,45 +33,74 @@ episodes: {
   duration_minutes: int
   air_date: date
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 transmissions: {
   shape: sql_table
   id: uuid {constraint: primary_key}
   episode_id: uuid {constraint: foreign_key}
-  transmission_time: timestamp
-  channel: varchar
-  viewership: int
+  transmission_time: timestamptz
+  viewership: bigint
+  deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
+}
+
+channels: {
+  shape: sql_table
+  id: uuid {constraint: primary_key}
+  name: varchar {constraint: unique}
+  type: varchar
+  description: text
+  deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
+}
+
+transmission_channels: {
+  shape: sql_table
+  transmission_id: uuid {constraint: [foreign_key; primary_key]}
+  channel_id: uuid {constraint: [foreign_key; primary_key]}
+  created_time: timestamp
+  updated_time: timestamp
   deleted: boolean
 }
 
 employees: {
   shape: sql_table
   id: uuid {constraint: primary_key}
-  first_name: varchar
-  last_name: varchar
+  name: varchar
   email: varchar {constraint: unique}
   birthdate: date
   employment_date: date
   is_internal: boolean
+  status: enum
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 roles: {
   shape: sql_table
   id: uuid {constraint: primary_key}
   department_id: uuid {constraint: foreign_key}
-  role_name: varchar
+  name: varchar {constraint: unique}
   description: text
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 departments: {
   shape: sql_table
   id: uuid {constraint: primary_key}
-  department_name: varchar
+  name: varchar {constraint: unique}
   description: text
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 employee_roles: {
@@ -76,6 +109,8 @@ employee_roles: {
   role_id: uuid {constraint: [foreign_key; primary_key]}
   assigned_at: date
   is_active: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 employee_series_roles: {
@@ -87,6 +122,8 @@ employee_series_roles: {
   start_date: date
   end_date: date
   deleted: boolean
+  created_time: timestamp
+  updated_time: timestamp
 }
 
 # Relationships with better styling
@@ -141,6 +178,17 @@ roles.department_id -> departments.id: {
   style.stroke-width: 2
 }
 
+# New relationships for Channel and TransmissionChannel
+transmissions.id -> transmission_channels.transmission_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+channels.id -> transmission_channels.channel_id: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
 # Enhanced legend with better styling
 legend: {
   style.font-size: 16
@@ -163,11 +211,6 @@ legend: {
     ### M:N Relationships (via linking tables)
     - **TVSeries ↔ Employee**: M:N – Through EmployeeSeriesRole (employees participate in series)
     - **Employee ↔ Role (company-wide)**: M:N – Through EmployeeRole (employees can have multiple roles)
-
-    ### **Notes:**
-    - Each table automatically contains 2 fields:
-      - created_at: timestamp
-      - updated_at: timestamp
-    ---
+    - **Transmission ↔ Channel**: M:N – Through TransmissionChannel (transmissions can be on multiple channels)
   |
 }
