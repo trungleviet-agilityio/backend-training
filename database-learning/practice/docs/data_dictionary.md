@@ -96,21 +96,10 @@
 |--------------|-----------|-------------|----------------------------------------|
 | uuid           | UUID      | Unique identifier for the role | 🔑 Primary Key                         |
 | name         | VARCHAR   | Name of the role (e.g., Actor, Director) | Unique, max 100 chars                |
-| department_uuid| UUID      | Reference to the department this role belongs to | FK → Department(uuid)                 |
 | description  | TEXT      | Description of the role's responsibilities | Optional                               |
 | deleted      | BOOLEAN   | Marks record as deleted without physical removal | Soft delete                            |
 | created_time | TIMESTAMP | When the record was created | Record creation time                   |
 | updated_time | TIMESTAMP | When the record was last updated | Last update time                       |
-
-### Department
-| Field         | Type      | Description | Notes                        |
-|--------------|-----------|-------------|-----------------------------|
-| uuid           | UUID      | Unique identifier for the department | 🔑 Primary Key               |
-| name         | VARCHAR   | Name of the department (must be unique) | Unique, max 100 chars        |
-| description  | TEXT      | Description of the department's function | Optional                    |
-| deleted      | BOOLEAN   | Marks record as deleted without physical removal | Soft delete                 |
-| created_time | TIMESTAMP | When the record was created | Record creation time        |
-| updated_time | TIMESTAMP | When the record was last updated | Last update time            |
 
 ### SeriesCast (employee participates in TVSeries)
 | Field          | Type      | Description | Notes                                  |
@@ -143,18 +132,17 @@
 
 ## 2. Adjacency Matrix (Table Relationships)
 
-|                   | SeriesDomain | TVSeries | Episode | Employee | Role | Department | SeriesCast | TransmissionChannel | Transmission | Channel |
-|-------------------|:-----------:|:--------:|:-------:|:--------:|:----:|:----------:|:----------:|:------------------:|:------------:|:-------:|
-| **SeriesDomain**        |      -      |   1:N    |         |          |      |            |            |                    |              |         |
-| **TVSeries**            |    N:1      |    -     |   1:N   |          |      |            |    1:N     |                    |              |         |
-| **Episode**             |             |   N:1    |    -    |   N:1*   |      |            |            |                    |     1:N      |         |
-| **Employee**            |             |          |   1:N*  |    -     |      |     1:N    |    1:N     |                    |              |         |
-| **Role**                |             |          |         |          |  -   |    N:1     |    1:N     |                    |              |         |
-| **Department**          |             |          |         |          |  1:N |     -      |            |                    |              |         |
-| **SeriesCast**          |             |   N:1    |         |   N:1    |  N:1 |            |     -      |                    |              |         |
-| **TransmissionChannel** |             |          |         |          |      |            |            |        -           |     N:1      |   N:1   |
-| **Transmission**        |             |          |   N:1   |          |      |            |            |        1:N         |      -       |         |
-| **Channel**             |             |          |         |          |      |            |            |        1:N         |              |    -    |
+|                   | SeriesDomain | TVSeries | Episode | Employee | Role | SeriesCast | TransmissionChannel | Transmission | Channel |
+|-------------------|:-----------:|:--------:|:-------:|:--------:|:----:|:----------:|:------------------:|:------------:|:-------:|
+| **SeriesDomain**        |      -      |   1:N    |         |          |      |            |                    |              |         |
+| **TVSeries**            |    N:1      |    -     |   1:N   |          |      |    1:N     |                    |              |         |
+| **Episode**             |             |   N:1    |    -    |   N:1*   |      |            |                    |     1:N      |         |
+| **Employee**            |             |          |   1:N*  |    -     |      |     1:N    |                    |              |         |
+| **Role**                |             |          |         |          |  -   |    1:N     |                    |              |         |
+| **SeriesCast**          |             |   N:1    |         |   N:1    |  N:1 |     -      |                    |              |         |
+| **TransmissionChannel** |             |          |         |          |      |            |        -           |     N:1      |   N:1   |
+| **Transmission**        |             |          |   N:1   |          |      |            |        1:N         |      -       |         |
+| **Channel**             |             |          |         |          |      |            |        1:N         |              |    -    |
 
 - **1:N**: Row table has one, column table has many (e.g., TVSeries 1:N Episode)
 - **N:1**: Row table has many, column table has one (e.g., Episode N:1 TVSeries)
