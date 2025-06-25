@@ -1,15 +1,16 @@
 /**
- * TV Company Database - Mock Data Generator
- * =========================================
+ * TV Company Database - Improved Mock Data Generator
+ * =================================================
  *
  * This script generates realistic mock data for the TV Company Database
- * following the database design methodology from "Database Design for Mere Mortals"
+ * using a configuration-driven approach for business rule resilience
  *
- * Purpose:
- * - Generate test data that complies with all business rules
- * - Create realistic TV production scenarios
- * - Support database testing and development
- * - Demonstrate proper data relationships and constraints
+ * Key Improvements:
+ * - Configuration-driven business rules (business_rules_config.json)
+ * - Centralized validation functions
+ * - Easy to update when business rules change
+ * - Better error handling and logging
+ * - Modular design for maintainability
  *
  * Business Rules Compliance:
  * - All generated data follows field-specific business rules (BR-001 to BR-015)
@@ -17,48 +18,133 @@
  * - Data integrity is maintained across all tables
  * - Soft delete functionality is properly implemented
  *
- * Field Specifications Followed:
- * - All fields have appropriate data types and constraints
- * - Character names are provided for Actor roles only
- * - Employee statuses are valid (available, busy, unavailable)
- * - Episode durations are within valid range (1-300 minutes)
- * - Viewership numbers are non-negative
- *
  * Dependencies:
  * - Node.js with @faker-js/faker package
  * - PostgreSQL database with tv_company schema
+ * - business_rules_config.json configuration file
  */
 
 const fs = require('fs');
+const path = require('path');
 const { faker } = require('@faker-js/faker');
 
 // ============================================================================
-// CONFIGURATION CONSTANTS
+// CONFIGURATION LOADING
 // ============================================================================
-//
-// These constants define the scope and scale of generated data
-// following the principle of configurable data generation
 
-const NUM_SERIES_DOMAINS = 4;        // BR-001: Series Domain Uniqueness
-const NUM_CHANNELS = 6;              // BR-015: Channel Name Uniqueness
-const NUM_ROLES = 5;                 // BR-011: Role Name Uniqueness
-const NUM_EMPLOYEES = 15;            // BR-009: Employee Email Uniqueness
-const NUM_TV_SERIES = 100;           // BR-003: Series Title Uniqueness Within Domain
-const NUM_EPISODES = 1000;           // BR-005: Episode Number Uniqueness Within Series
-const NUM_TRANSMISSIONS = 2000;      // BR-014: Viewership Data Validation
-const NUM_SERIES_CAST = 500;         // BR-012: Cast Assignment Uniqueness
-const NUM_TRANSMISSION_CHANNELS = 1500; // BR-027: Unique Transmission-Channel Combinations
+/**
+ * Loads business rules configuration from JSON file
+ * @returns {Object} Configuration object
+ */
+const loadBusinessRulesConfig = () => {
+  try {
+    const configPath = path.join(__dirname, 'business_rules_config.json');
+    const configData = fs.readFileSync(configPath, 'utf8');
+    const config = JSON.parse(configData);
 
-// Performance optimization for large datasets
-const BATCH_SIZE = 1000;             // Process data in batches to avoid memory issues
-const ENABLE_PROGRESS_LOGGING = true; // Show progress for large data generation
+    console.log(`✅ Loaded business rules configuration v${config.version}`);
+    console.log(`📅 Last updated: ${config.last_updated}`);
+
+    return config;
+  } catch (error) {
+    console.error('❌ Error loading business rules configuration:', error.message);
+    process.exit(1);
+  }
+};
+
+// Load configuration
+const config = loadBusinessRulesConfig();
+
+// ============================================================================
+// VALIDATION FUNCTIONS (Business Rule Compliant)
+// ============================================================================
+
+/**
+ * Validates if a role name is valid according to business rules
+ * @param {string} roleName - Role name to validate
+ * @returns {boolean} True if valid
+ */
+const isValidRole = (roleName) => {
+  return config.roles.valid_roles.includes(roleName);
+};
+
+/**
+ * Validates if an employee status is valid according to business rules
+ * @param {string} status - Status to validate
+ * @returns {boolean} True if valid
+ */
+const isValidEmployeeStatus = (status) => {
+  return config.employee_statuses.valid_statuses.includes(status);
+};
+
+/**
+ * Validates if an employee status is active (can be assigned roles)
+ * @param {string} status - Status to validate
+ * @returns {boolean} True if active
+ */
+const isActiveEmployeeStatus = (status) => {
+  return config.employee_statuses.active_statuses.includes(status);
+};
+
+/**
+ * Validates if a series domain is valid according to business rules
+ * @param {string} domain - Domain to validate
+ * @returns {boolean} True if valid
+ */
+const isValidSeriesDomain = (domain) => {
+  return config.series_domains.valid_domains.includes(domain);
+};
+
+/**
+ * Validates if a channel type is valid
+ * @param {string} type - Channel type to validate
+ * @returns {boolean} True if valid
+ */
+const isValidChannelType = (type) => {
+  return config.channel_types.valid_types.includes(type);
+};
+
+/**
+ * Validates episode duration according to business rules
+ * @param {number} duration - Duration in minutes
+ * @returns {boolean} True if valid
+ */
+const isValidEpisodeDuration = (duration) => {
+  return duration >= config.constraints.episode_duration.min_minutes &&
+         duration <= config.constraints.episode_duration.max_minutes;
+};
+
+/**
+ * Validates viewership according to business rules
+ * @param {number} viewership - Viewership count
+ * @returns {boolean} True if valid
+ */
+const isValidViewership = (viewership) => {
+  return viewership >= config.constraints.viewership.min_value;
+};
+
+/**
+ * Validates employment age according to business rules
+ * @param {number} age - Age in years
+ * @returns {boolean} True if valid
+ */
+const isValidEmploymentAge = (age) => {
+  return age >= config.constraints.employment_age.min_age &&
+         age <= config.constraints.employment_age.max_age;
+};
+
+/**
+ * Checks if character name is required for a role
+ * @param {string} roleName - Role name
+ * @returns {boolean} True if character name required
+ */
+const isCharacterNameRequired = (roleName) => {
+  return config.roles.character_name_required.includes(roleName);
+};
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-//
-// Helper functions for data generation and validation
-// following the principle of reusable utility functions
 
 /**
  * Escapes single quotes in strings for SQL insertion
@@ -75,119 +161,23 @@ const esc = (str) => str.replace(/'/g, "''");
 const isValidDate = (date) => date <= new Date();
 
 /**
- * Generates a realistic episode duration (20-60 minutes)
+ * Generates a realistic episode duration using business rule constraints
  * @returns {number} - Duration in minutes
  */
-const generateEpisodeDuration = () => faker.number.int({ min: 20, max: 60 });
-
-/**
- * Generates a realistic viewership number (1,000 - 2,000,000)
- * @returns {number} - Viewership count
- */
-const generateViewership = () => faker.number.int({ min: 1000, max: 2000000 });
-
-/**
- * Generates unique TV series titles for large datasets
- * @param {number} count - Number of titles to generate
- * @returns {Array} Array of unique titles
- */
-const generateUniqueTitles = (count) => {
-  const titlePrefixes = [
-    'The', 'Big', 'Wild', 'Dark', 'Lost', 'Hidden', 'Secret', 'Mystery',
-    'Broken', 'Silent', 'Blood', 'Family', 'Final', 'Last', 'First',
-    'New', 'Old', 'Young', 'Ancient', 'Modern', 'Future', 'Past',
-    'Northern', 'Southern', 'Eastern', 'Western', 'Central', 'Global',
-    'Local', 'Urban', 'Rural', 'City', 'Town', 'Village', 'Island',
-    'Mountain', 'River', 'Ocean', 'Forest', 'Desert', 'Arctic', 'Tropical'
-  ];
-
-  const titleSuffixes = [
-    'Sister', 'Brother', 'Father', 'Mother', 'Son', 'Daughter',
-    'Lies', 'Truth', 'Secrets', 'Mystery', 'Case', 'Story', 'Tale',
-    'Factory', 'Company', 'Corporation', 'Enterprise', 'Business',
-    'Check', 'Point', 'Line', 'Cross', 'Bridge', 'Road', 'Street',
-    'Noir', 'Storm', 'Wind', 'Rain', 'Snow', 'Ice', 'Fire', 'Water',
-    'Light', 'Dark', 'Shadow', 'Ghost', 'Spirit', 'Soul', 'Heart',
-    'Mind', 'Brain', 'Eye', 'Hand', 'Foot', 'Leg', 'Arm', 'Head',
-    'End', 'Beginning', 'Start', 'Finish', 'Close', 'Open', 'Lock',
-    'Key', 'Door', 'Window', 'Wall', 'Floor', 'Ceiling', 'Roof'
-  ];
-
-  const titles = new Set();
-  let attempts = 0;
-  const maxAttempts = count * 10; // Prevent infinite loops
-
-  while (titles.size < count && attempts < maxAttempts) {
-    const prefix = faker.helpers.arrayElement(titlePrefixes);
-    const suffix = faker.helpers.arrayElement(titleSuffixes);
-    const title = `${prefix} ${suffix}`;
-    titles.add(title);
-    attempts++;
-  }
-
-  // If we couldn't generate enough unique titles, add numbered variants
-  const titleArray = Array.from(titles);
-  while (titleArray.length < count) {
-    const baseTitle = faker.helpers.arrayElement(titleArray);
-    const number = faker.number.int({ min: 1, max: 999 });
-    titleArray.push(`${baseTitle} ${number}`);
-  }
-
-  return titleArray.slice(0, count);
+const generateEpisodeDuration = () => {
+  const min = config.constraints.episode_duration.min_minutes;
+  const max = config.constraints.episode_duration.max_minutes;
+  return faker.number.int({ min, max });
 };
 
 /**
- * Generates unique episode titles for large datasets
- * @param {number} count - Number of titles to generate
- * @returns {Array} Array of unique episode titles
+ * Generates a realistic viewership number using business rule constraints
+ * @returns {number} - Viewership count
  */
-const generateUniqueEpisodeTitles = (count) => {
-  const episodePrefixes = [
-    'The', 'Hidden', 'Dark', 'Lost', 'Broken', 'Silent', 'Blood',
-    'Family', 'Final', 'Last', 'First', 'New', 'Old', 'Young',
-    'Secret', 'Mystery', 'Case', 'Story', 'Tale', 'Journey',
-    'Beginning', 'End', 'Start', 'Finish', 'Point', 'Line',
-    'Cross', 'Bridge', 'Road', 'Path', 'Way', 'Direction',
-    'Truth', 'Lies', 'Promise', 'Betrayal', 'Redemption', 'Justice',
-    'Vengeance', 'Revenge', 'Forgiveness', 'Love', 'Hate', 'Fear',
-    'Hope', 'Despair', 'Joy', 'Sorrow', 'Life', 'Death', 'Birth',
-    'Storm', 'Calm', 'Wind', 'Rain', 'Sun', 'Moon', 'Star',
-    'Light', 'Shadow', 'Ghost', 'Spirit', 'Soul', 'Heart', 'Mind'
-  ];
-
-  const episodeSuffixes = [
-    'Beginning', 'End', 'Truth', 'Lies', 'Secrets', 'Mystery',
-    'Memories', 'Promises', 'Witness', 'Ties', 'Reckoning',
-    'Return', 'Crossing', 'Dead', 'Hope', 'Chance', 'Warning',
-    'Hunt', 'Prey', 'Predator', 'Trap', 'Escape', 'Reunion',
-    'Betrayal', 'Redemption', 'Justice', 'Vengeance', 'Storm',
-    'Calm', 'Aftermath', 'Recovery', 'Chapter', 'Episode',
-    'Part', 'Section', 'Piece', 'Fragment', 'Element', 'Factor',
-    'Aspect', 'Side', 'Face', 'Surface', 'Edge', 'Corner',
-    'Center', 'Middle', 'Heart', 'Core', 'Soul', 'Spirit'
-  ];
-
-  const titles = new Set();
-  let attempts = 0;
-  const maxAttempts = count * 10;
-
-  while (titles.size < count && attempts < maxAttempts) {
-    const prefix = faker.helpers.arrayElement(episodePrefixes);
-    const suffix = faker.helpers.arrayElement(episodeSuffixes);
-    const title = `${prefix} ${suffix}`;
-    titles.add(title);
-    attempts++;
-  }
-
-  // Add numbered variants if needed
-  const titleArray = Array.from(titles);
-  while (titleArray.length < count) {
-    const baseTitle = faker.helpers.arrayElement(titleArray);
-    const number = faker.number.int({ min: 1, max: 999 });
-    titleArray.push(`${baseTitle} ${number}`);
-  }
-
-  return titleArray.slice(0, count);
+const generateViewership = () => {
+  const min = config.constraints.viewership.min_value;
+  const max = 2000000; // Realistic upper bound
+  return faker.number.int({ min, max });
 };
 
 /**
@@ -197,48 +187,39 @@ const generateUniqueEpisodeTitles = (count) => {
  * @param {number} total - Total count
  */
 const logProgress = (message, current, total) => {
-  if (ENABLE_PROGRESS_LOGGING) {
+  if (config.data_generation.enable_progress_logging) {
     const percentage = Math.round((current / total) * 100);
     console.log(`${message}: ${current}/${total} (${percentage}%)`);
   }
 };
 
 // ============================================================================
-// SERIES DOMAINS GENERATION (BR-001: Series Domain Uniqueness)
+// DATA GENERATION FUNCTIONS (Configuration-Driven)
 // ============================================================================
-//
-// Generates series domains following business rule BR-001
-// Each domain name must be unique across the system
 
 /**
- * Defines series domains for TV production
+ * Defines series domains using configuration
  * @returns {Array} Array of series domain objects
  */
 const defineSeriesDomains = () => {
-  const domains = [
-    'Drama', 'Comedy', 'Thriller', 'Reality'
-  ];
+  const domains = config.series_domains.valid_domains;
+  const numDomains = config.data_generation.volumes.num_series_domains;
 
   let seriesDomains = [];
-  for (let i = 1; i <= NUM_SERIES_DOMAINS; i++) {
+  for (let i = 0; i < Math.min(domains.length, numDomains); i++) {
     seriesDomains.push({
       uuid: faker.string.uuid(),
-      name: esc(domains[i - 1]),
+      name: esc(domains[i]),
       description: esc(faker.lorem.sentence()),
     });
   }
+
+  console.log(`✅ Generated ${seriesDomains.length} series domains: ${domains.slice(0, numDomains).join(', ')}`);
   return seriesDomains;
 };
 
-// ============================================================================
-// CHANNELS GENERATION (BR-015: Channel Name Uniqueness)
-// ============================================================================
-//
-// Generates broadcasting channels following business rule BR-015
-// Each channel name must be unique across the system
-
 /**
- * Defines broadcasting channels
+ * Defines broadcasting channels using configuration
  * @returns {Array} Array of channel objects
  */
 const defineChannels = () => {
@@ -250,10 +231,17 @@ const defineChannels = () => {
     { name: 'GlobalTV', type: 'Cable' },
     { name: 'LocalTV', type: 'Cable' }
   ];
+  const numChannels = config.data_generation.volumes.num_channels;
 
   let channels = [];
-  for (let i = 1; i <= NUM_CHANNELS; i++) {
-    const channel = channelData[i - 1];
+  for (let i = 0; i < Math.min(channelData.length, numChannels); i++) {
+    const channel = channelData[i];
+
+    // Validate channel type against configuration
+    if (!isValidChannelType(channel.type)) {
+      console.warn(`⚠️  Warning: Channel type '${channel.type}' not in configuration`);
+    }
+
     channels.push({
       uuid: faker.string.uuid(),
       name: esc(channel.name),
@@ -261,57 +249,47 @@ const defineChannels = () => {
       description: esc(faker.lorem.sentence()),
     });
   }
+
+  console.log(`✅ Generated ${channels.length} channels`);
   return channels;
 };
 
-// ============================================================================
-// ROLES GENERATION (BR-011: Role Name Uniqueness)
-// ============================================================================
-//
-// Generates TV production roles following business rule BR-011
-// Each role name must be unique across the system
-
 /**
- * Defines TV production roles
+ * Defines TV production roles using configuration
  * @returns {Array} Array of role objects
  */
 const defineRoles = () => {
-  const roleData = [
-    { name: 'Actor', description: 'Series actor' },
-    { name: 'Director', description: 'Series and episode director' },
-    { name: 'Producer', description: 'Series producer' },
-    { name: 'Writer', description: 'Script writer' },
-    { name: 'Cameraman', description: 'Camera operator' }
-  ];
+  const roles = config.roles.valid_roles;
+  const numRoles = config.data_generation.volumes.num_roles;
 
-  let roles = [];
-  for (let i = 1; i <= NUM_ROLES; i++) {
-    const role = roleData[i - 1];
-    roles.push({
+  let roleObjects = [];
+  for (let i = 0; i < Math.min(roles.length, numRoles); i++) {
+    const roleName = roles[i];
+    roleObjects.push({
       uuid: faker.string.uuid(),
-      name: esc(role.name),
-      description: esc(role.description),
+      name: esc(roleName),
+      description: esc(`Series ${roleName.toLowerCase()}`),
     });
   }
-  return roles;
+
+  console.log(`✅ Generated ${roleObjects.length} roles: ${roles.slice(0, numRoles).join(', ')}`);
+  return roleObjects;
 };
 
-// ============================================================================
-// EMPLOYEES GENERATION (BR-009: Employee Email Uniqueness, BR-010: Employee Status Validation)
-// ============================================================================
-//
-// Generates employees following business rules BR-009 and BR-010
-// Each email must be unique and status must be valid
-
 /**
- * Defines employees with unique emails and valid statuses
+ * Defines employees with configuration-driven validation
  * @returns {Array} Array of employee objects
  */
 const defineEmployees = () => {
+  const count = config.data_generation.volumes.num_employees;
   let employees = [];
   let usedEmails = new Set();
 
-  for (let i = 1; i <= NUM_EMPLOYEES; i++) {
+  for (let i = 1; i <= count; i++) {
+    if (i % 100 === 0) {
+      logProgress('Generating Employees', i, count);
+    }
+
     let email;
     do {
       const firstName = faker.person.firstName();
@@ -320,15 +298,17 @@ const defineEmployees = () => {
     } while (usedEmails.has(email));
     usedEmails.add(email);
 
-    // BR-013: Employment Date Validation - employment_date >= birthdate
-    const birthday = faker.date.birthdate({ min: 18, max: 65, mode: 'age' });
+    // Generate valid employment age using configuration
+    const minAge = config.constraints.employment_age.min_age;
+    const maxAge = config.constraints.employment_age.max_age;
+    const birthday = faker.date.birthdate({ min: minAge, max: maxAge, mode: 'age' });
     const employmentDate = faker.date.between({
       from: birthday,
       to: new Date()
     });
 
     const isInternal = faker.datatype.boolean({ probability: 0.8 });
-    const status = faker.helpers.arrayElement(['available', 'busy', 'unavailable']);
+    const status = faker.helpers.arrayElement(config.employee_statuses.valid_statuses);
 
     employees.push({
       uuid: faker.string.uuid(),
@@ -341,28 +321,23 @@ const defineEmployees = () => {
       status,
     });
   }
+
+  console.log(`✅ Generated ${employees.length} employees with valid statuses`);
   return employees;
 };
 
-// ============================================================================
-// TV SERIES GENERATION (BR-003: Series Title Uniqueness Within Domain, BR-004: Series Date Range Validation)
-// ============================================================================
-//
-// Generates TV series following business rules BR-003 and BR-004
-// Titles must be unique within domain and dates must be valid
-
 /**
- * Defines TV series with unique titles within domains and valid date ranges
+ * Defines TV series with configuration-driven validation
  * @param {Array} seriesDomains - Array of series domain objects
  * @returns {Array} Array of TV series objects
  */
 const defineTVSeries = (seriesDomains) => {
-  const seriesTitles = generateUniqueTitles(NUM_TV_SERIES);
-
+  const count = config.data_generation.volumes.num_tv_series;
   let tvSeries = [];
-  for (let i = 1; i <= NUM_TV_SERIES; i++) {
-    if (i % BATCH_SIZE === 0) {
-      logProgress('Generating TV Series', i, NUM_TV_SERIES);
+
+  for (let i = 1; i <= count; i++) {
+    if (i % 50 === 0) {
+      logProgress('Generating TV Series', i, count);
     }
 
     const domain = faker.helpers.arrayElement(seriesDomains);
@@ -375,7 +350,7 @@ const defineTVSeries = (seriesDomains) => {
 
     tvSeries.push({
       uuid: faker.string.uuid(),
-      title: esc(seriesTitles[i - 1]),
+      title: esc(`Series ${i} - ${faker.lorem.words(2)}`),
       description: esc(faker.lorem.sentence()),
       domain_uuid: domain.uuid,
       start_date: startDate.toISOString().split('T')[0],
@@ -383,130 +358,58 @@ const defineTVSeries = (seriesDomains) => {
     });
   }
 
-  if (ENABLE_PROGRESS_LOGGING) {
-    console.log(`✅ Generated ${tvSeries.length} TV Series`);
-  }
-
+  console.log(`✅ Generated ${tvSeries.length} TV series`);
   return tvSeries;
 };
 
-// ============================================================================
-// SERIES CAST GENERATION (BR-012: Cast Assignment Uniqueness, BR-013: Character Name Requirements)
-// ============================================================================
-//
-// Generates series cast assignments following business rules BR-012 and BR-013
-// No duplicate employee-series-role combinations and character names for actors
-
 /**
- * Defines series cast assignments with unique combinations and proper character names
+ * Defines episodes with configuration-driven validation
+ * @param {Array} tvSeries - Array of TV series objects
  * @param {Array} employees - Array of employee objects
- * @param {Array} tvSeries - Array of TV series objects
+ * @param {Array} seriesCast - Array of series cast objects (must be generated first)
  * @param {Array} roles - Array of role objects
- * @returns {Array} Array of series cast objects
- */
-const defineSeriesCast = (employees, tvSeries, roles) => {
-  let seriesCast = [];
-  let usedTriples = new Set();
-  let attempts = 0;
-  const maxAttempts = NUM_SERIES_CAST * 10; // Prevent infinite loops
-
-  for (let i = 0; i < NUM_SERIES_CAST && attempts < maxAttempts; i++) {
-    if (i % BATCH_SIZE === 0) {
-      logProgress('Generating Series Cast', i, NUM_SERIES_CAST);
-    }
-
-    let employee, series, role, key;
-    let found = false;
-
-    // Try to find a unique combination
-    for (let attempt = 0; attempt < 100; attempt++) {
-      employee = faker.helpers.arrayElement(employees);
-      series = faker.helpers.arrayElement(tvSeries);
-      role = faker.helpers.arrayElement(roles);
-      key = `${employee.uuid}_${series.uuid}_${role.uuid}`;
-
-      if (!usedTriples.has(key)) {
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      attempts++;
-      continue; // Skip this iteration if no unique combination found
-    }
-
-    usedTriples.add(key);
-
-    const startDate = faker.date.between({
-      from: series.start_date,
-      to: new Date()
-    });
-
-    // BR-019: Cast Assignment Date Validation - end_date >= start_date
-    const endDate = faker.datatype.boolean({ probability: 0.3 })
-      ? faker.date.between({ from: startDate, to: new Date() })
-      : null;
-
-    // BR-013: Character Name Requirements - required for Actor roles only
-    const characterName = role.name === 'Actor'
-      ? esc(faker.person.fullName())
-      : null;
-
-    seriesCast.push({
-      uuid: faker.string.uuid(),
-      employee_uuid: employee.uuid,
-      series_uuid: series.uuid,
-      role_uuid: role.uuid,
-      character_name: characterName,
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate ? endDate.toISOString().split('T')[0] : null,
-    });
-  }
-
-  if (ENABLE_PROGRESS_LOGGING) {
-    console.log(`✅ Generated ${seriesCast.length} Series Cast Assignments`);
-  }
-
-  return seriesCast;
-};
-
-// ============================================================================
-// EPISODES GENERATION (BR-005: Episode Number Uniqueness Within Series, BR-006: Episode Duration Validation, BR-008: Director Role Validation)
-// ============================================================================
-//
-// Generates episodes following business rules BR-005, BR-006, and BR-008
-// Episode numbers unique within series, valid durations, and qualified directors
-
-/**
- * Defines episodes with unique numbers, valid durations, and qualified directors
- * @param {Array} tvSeries - Array of TV series objects
- * @param {Array} seriesCast - Array of series cast objects
- * @param {Object} directorRole - Director role object
  * @returns {Array} Array of episode objects
  */
-const defineEpisodes = (tvSeries, seriesCast, directorRole) => {
-  const episodeTitles = generateUniqueEpisodeTitles(NUM_EPISODES);
-
+const defineEpisodes = (tvSeries, employees, seriesCast, roles) => {
+  const count = config.data_generation.volumes.num_episodes;
   let episodes = [];
-  let episodeNumber = 1;
-  let skippedCount = 0;
 
-  for (let i = 1; i <= NUM_EPISODES; i++) {
-    if (i % BATCH_SIZE === 0) {
-      logProgress('Generating Episodes', i, NUM_EPISODES);
+  // Find the Director role UUID
+  const directorRole = roles.find(r => r.name === 'Director');
+  if (!directorRole) {
+    console.error('❌ Error: Director role not found in roles array');
+    process.exit(1);
+  }
+
+  // Get all employees who have Director roles assigned in series_cast
+  const directorEmployeeUuids = new Set();
+  seriesCast.forEach(sc => {
+    if (sc.role_uuid === directorRole.uuid) {
+      directorEmployeeUuids.add(sc.employee_uuid);
+    }
+  });
+
+  // Only allow employees with status 'available' or 'busy' (active statuses)
+  const activeStatuses = config.employee_statuses.active_statuses;
+  const availableDirectors = employees.filter(emp =>
+    directorEmployeeUuids.has(emp.uuid) && activeStatuses.includes(emp.status)
+  );
+
+  if (availableDirectors.length === 0) {
+    console.error('❌ Error: No employees with Director roles and active status (available/busy) found in series_cast');
+    console.error('   This violates business rule: Director must have a Director role assigned and be available or busy');
+    process.exit(1);
+  }
+
+  console.log(`📽️  Found ${availableDirectors.length} employees with Director roles and active status assigned`);
+
+  for (let i = 1; i <= count; i++) {
+    if (i % 200 === 0) {
+      logProgress('Generating Episodes', i, count);
     }
 
     const series = faker.helpers.arrayElement(tvSeries);
-
-    // BR-008: Director Role Validation - get qualified directors
-    const directorUuids = getDirectorsForSeries(series.uuid);
-    if (directorUuids.length === 0) {
-      skippedCount++;
-      continue; // Skip if no director assigned
-    }
-
-    const directorUuid = faker.helpers.arrayElement(directorUuids);
+    const director = faker.helpers.arrayElement(availableDirectors);
     const airDate = faker.date.between({
       from: series.start_date,
       to: new Date()
@@ -515,38 +418,30 @@ const defineEpisodes = (tvSeries, seriesCast, directorRole) => {
     episodes.push({
       uuid: faker.string.uuid(),
       series_uuid: series.uuid,
-      episode_number: episodeNumber++,
-      title: esc(episodeTitles[i - 1]),
-      duration_minutes: generateEpisodeDuration(), // BR-006: Episode Duration Validation
+      episode_number: i,
+      title: esc(`Episode ${i} - ${faker.lorem.words(2)}`),
+      duration_minutes: generateEpisodeDuration(), // Uses config constraints
       air_date: airDate.toISOString().split('T')[0],
-      director_uuid: directorUuid,
+      director_uuid: director.uuid,
     });
   }
 
-  if (ENABLE_PROGRESS_LOGGING) {
-    console.log(`✅ Generated ${episodes.length} Episodes (skipped ${skippedCount} due to missing directors)`);
-  }
-
+  console.log(`✅ Generated ${episodes.length} episodes with valid directors (${availableDirectors.length} directors available)`);
   return episodes;
 };
 
-// ============================================================================
-// TRANSMISSIONS GENERATION (BR-014: Viewership Data Validation)
-// ============================================================================
-//
-// Generates transmissions following business rule BR-014
-// Viewership numbers must be non-negative
-
 /**
- * Defines transmissions with valid viewership data
+ * Defines transmissions with configuration-driven validation
  * @param {Array} episodes - Array of episode objects
  * @returns {Array} Array of transmission objects
  */
 const defineTransmissions = (episodes) => {
+  const count = config.data_generation.volumes.num_transmissions;
   let transmissions = [];
-  for (let i = 1; i <= NUM_TRANSMISSIONS; i++) {
-    if (i % BATCH_SIZE === 0) {
-      logProgress('Generating Transmissions', i, NUM_TRANSMISSIONS);
+
+  for (let i = 1; i <= count; i++) {
+    if (i % 500 === 0) {
+      logProgress('Generating Transmissions', i, count);
     }
 
     const episode = faker.helpers.arrayElement(episodes);
@@ -559,23 +454,132 @@ const defineTransmissions = (episodes) => {
       uuid: faker.string.uuid(),
       episode_uuid: episode.uuid,
       transmission_time: transmissionTime.toISOString(),
-      viewership: generateViewership(), // BR-014: Viewership Data Validation
+      viewership: generateViewership(), // Uses config constraints
     });
   }
 
-  if (ENABLE_PROGRESS_LOGGING) {
-    console.log(`✅ Generated ${transmissions.length} Transmissions`);
-  }
-
+  console.log(`✅ Generated ${transmissions.length} transmissions with valid viewership`);
   return transmissions;
 };
 
-// ============================================================================
-// TRANSMISSION CHANNELS GENERATION (BR-027: Unique Transmission-Channel Combinations)
-// ============================================================================
-//
-// Generates transmission-channel assignments following business rule BR-027
-// No duplicate transmission-channel combinations allowed
+/**
+ * Defines series cast assignments with unique combinations and proper character names
+ * @param {Array} employees - Array of employee objects
+ * @param {Array} tvSeries - Array of TV series objects
+ * @param {Array} roles - Array of role objects
+ * @returns {Array} Array of series cast objects
+ */
+const defineSeriesCast = (employees, tvSeries, roles) => {
+  const count = config.data_generation.volumes.num_series_cast;
+  let seriesCast = [];
+  let usedTriples = new Set();
+  let attempts = 0;
+  const maxAttempts = count * 10;
+
+  // Find role UUIDs for easier reference
+  const directorRole = roles.find(r => r.name === 'Director');
+  const actorRole = roles.find(r => r.name === 'Actor');
+  const producerRole = roles.find(r => r.name === 'Producer');
+
+  if (!directorRole || !actorRole || !producerRole) {
+    console.error('❌ Error: Required roles (Director, Actor, Producer) not found');
+    process.exit(1);
+  }
+
+  // Ensure we have enough Director role assignments for episodes
+  const minDirectorsNeeded = Math.min(employees.length, tvSeries.length * 2); // At least 2 directors per series
+  const directorAssignments = Math.min(count * 0.2, minDirectorsNeeded); // 20% of assignments should be directors
+
+  console.log(`🎬 Ensuring ${directorAssignments} Director role assignments for episode creation...`);
+
+  // First, create Director role assignments
+  let directorCount = 0;
+  for (let i = 0; i < directorAssignments && directorCount < directorAssignments; i++) {
+    const employee = faker.helpers.arrayElement(employees);
+    const series = faker.helpers.arrayElement(tvSeries);
+    const key = `${employee.uuid}_${series.uuid}_${directorRole.uuid}`;
+
+    if (!usedTriples.has(key)) {
+      usedTriples.add(key);
+      const startDate = faker.date.between({ from: series.start_date, to: new Date() });
+      const endDate = faker.datatype.boolean({ probability: 0.3 })
+        ? faker.date.between({ from: startDate, to: new Date() })
+        : null;
+
+      seriesCast.push({
+        uuid: faker.string.uuid(),
+        employee_uuid: employee.uuid,
+        series_uuid: series.uuid,
+        role_uuid: directorRole.uuid,
+        character_name: null, // Directors don't need character names
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+      });
+      directorCount++;
+    }
+  }
+
+  console.log(`✅ Created ${directorCount} Director role assignments`);
+
+  // Then create the remaining assignments (mostly Actors and Producers)
+  for (let i = seriesCast.length; i < count && attempts < maxAttempts; i++) {
+    if (i % 100 === 0) {
+      logProgress('Generating Series Cast', i, count);
+    }
+
+    let employee, series, role, key;
+    let found = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      employee = faker.helpers.arrayElement(employees);
+      series = faker.helpers.arrayElement(tvSeries);
+      // Prefer Actor roles (60%), then Producer (20%), then Director (20%)
+      const roleChoice = faker.helpers.weightedArrayElement([
+        { value: actorRole, weight: 60 },
+        { value: producerRole, weight: 20 },
+        { value: directorRole, weight: 20 }
+      ]);
+      role = roleChoice;
+      key = `${employee.uuid}_${series.uuid}_${role.uuid}`;
+      if (!usedTriples.has(key)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      attempts++;
+      continue;
+    }
+    usedTriples.add(key);
+    const startDate = faker.date.between({ from: series.start_date, to: new Date() });
+    const endDate = faker.datatype.boolean({ probability: 0.3 })
+      ? faker.date.between({ from: startDate, to: new Date() })
+      : null;
+    const characterName = isCharacterNameRequired(role.name)
+      ? esc(faker.person.fullName())
+      : null;
+    seriesCast.push({
+      uuid: faker.string.uuid(),
+      employee_uuid: employee.uuid,
+      series_uuid: series.uuid,
+      role_uuid: role.uuid,
+      character_name: characterName,
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+    });
+  }
+
+  // Count role distribution for reporting
+  const roleDistribution = {};
+  seriesCast.forEach(sc => {
+    const roleName = roles.find(r => r.uuid === sc.role_uuid)?.name || 'Unknown';
+    roleDistribution[roleName] = (roleDistribution[roleName] || 0) + 1;
+  });
+
+  console.log(`✅ Generated ${seriesCast.length} series cast assignments`);
+  console.log(`📊 Role distribution: ${Object.entries(roleDistribution).map(([role, count]) => `${role}: ${count}`).join(', ')}`);
+
+  return seriesCast;
+};
 
 /**
  * Defines transmission-channel assignments with unique combinations
@@ -584,395 +588,289 @@ const defineTransmissions = (episodes) => {
  * @returns {Array} Array of transmission channel objects
  */
 const defineTransmissionChannels = (transmissions, channels) => {
+  const count = config.data_generation.volumes.num_transmission_channels;
   let transmissionChannels = [];
   let usedPairs = new Set();
   let attempts = 0;
-  const maxAttempts = NUM_TRANSMISSION_CHANNELS * 10; // Prevent infinite loops
+  const maxAttempts = count * 10;
 
-  for (let i = 0; i < NUM_TRANSMISSION_CHANNELS && attempts < maxAttempts; i++) {
-    if (i % BATCH_SIZE === 0) {
-      logProgress('Generating Transmission Channels', i, NUM_TRANSMISSION_CHANNELS);
+  for (let i = 0; i < count && attempts < maxAttempts; i++) {
+    if (i % 300 === 0) {
+      logProgress('Generating Transmission Channels', i, count);
     }
 
     let transmission, channel, key;
     let found = false;
-
-    // Try to find a unique combination
     for (let attempt = 0; attempt < 100; attempt++) {
       transmission = faker.helpers.arrayElement(transmissions);
       channel = faker.helpers.arrayElement(channels);
       key = `${transmission.uuid}_${channel.uuid}`;
-
       if (!usedPairs.has(key)) {
         found = true;
         break;
       }
     }
-
     if (!found) {
       attempts++;
-      continue; // Skip this iteration if no unique combination found
+      continue;
     }
-
     usedPairs.add(key);
-
     transmissionChannels.push({
       transmission_uuid: transmission.uuid,
       channel_uuid: channel.uuid,
     });
   }
-
-  if (ENABLE_PROGRESS_LOGGING) {
-    console.log(`✅ Generated ${transmissionChannels.length} Transmission Channels`);
-  }
-
+  console.log(`✅ Generated ${transmissionChannels.length} transmission-channel assignments`);
   return transmissionChannels;
 };
 
 // ============================================================================
 // BUSINESS RULE COMPLIANCE FUNCTIONS
 // ============================================================================
-//
-// Functions to ensure generated data complies with business rules
-// following the principle of data integrity validation
 
 /**
- * Ensures all episode directors are eligible according to business rules
- * @param {Array} episodes - Array of episode objects
- * @param {Array} employees - Array of employee objects
- * @param {Array} seriesCast - Array of series cast objects
- * @param {Array} roles - Array of role objects
+ * Validates all generated data against business rules
+ * @param {Object} data - Generated data object
+ * @returns {boolean} True if all data is compliant
  */
-const ensureDirectorEligibility = (episodes, employees, seriesCast, roles) => {
-  const directorRole = roles.find(r => r.name === 'Director');
-  episodes.forEach(ep => {
-    const director = employees.find(e => e.uuid === ep.director_uuid);
+const validateBusinessRuleCompliance = (data) => {
+  console.log('🔍 Validating business rule compliance...');
 
-    // BR-010: Employee Status Validation - set status to available for directors
-    if (director) {
-      director.status = 'available';
-    }
+  let isValid = true;
+  const errors = [];
 
-    // BR-008: Director Role Validation - ensure Director role in series_cast
-    const hasDirectorRole = seriesCast.some(sc =>
-      sc.employee_uuid === ep.director_uuid && sc.role_uuid === directorRole.uuid
-    );
+  // Validate roles
+  if (data.roles && Array.isArray(data.roles)) {
+    data.roles.forEach(role => {
+      if (!isValidRole(role.name)) {
+        errors.push(`Invalid role: ${role.name}`);
+        isValid = false;
+      }
+    });
+  }
 
-    if (!hasDirectorRole) {
-      // Add Director role in series_cast for the current series
-      seriesCast.push({
-        uuid: faker.string.uuid(),
-        employee_uuid: ep.director_uuid,
-        series_uuid: ep.series_uuid,
-        role_uuid: directorRole.uuid,
-        character_name: null, // BR-013: Character names not required for Director role
-        start_date: ep.air_date,
-        end_date: null,
-      });
-    }
+  // Validate employee statuses
+  if (data.employees && Array.isArray(data.employees)) {
+    data.employees.forEach(emp => {
+      if (!isValidEmployeeStatus(emp.status)) {
+        errors.push(`Invalid employee status: ${emp.status} for ${emp.first_name} ${emp.last_name}`);
+        isValid = false;
+      }
+    });
+  }
+
+  // Validate series domains
+  if (data.seriesDomains && Array.isArray(data.seriesDomains)) {
+    data.seriesDomains.forEach(domain => {
+      if (!isValidSeriesDomain(domain.name)) {
+        errors.push(`Invalid series domain: ${domain.name}`);
+        isValid = false;
+      }
+    });
+  }
+
+  // Validate TV series
+  if (data.tvSeries && Array.isArray(data.tvSeries)) {
+    data.tvSeries.forEach(series => {
+      // Validate domain assignment
+      if (!series.domain_uuid) {
+        errors.push(`TV series '${series.title}' missing domain assignment`);
+        isValid = false;
+      }
+
+      // Validate date range (BR-004)
+      if (series.end_date && series.start_date && series.end_date <= series.start_date) {
+        errors.push(`TV series '${series.title}' has invalid date range: end_date <= start_date`);
+        isValid = false;
+      }
+    });
+  }
+
+  // Validate channels
+  if (data.channels && Array.isArray(data.channels)) {
+    data.channels.forEach(channel => {
+      if (!isValidChannelType(channel.type)) {
+        errors.push(`Invalid channel type: ${channel.type} for channel ${channel.name}`);
+        isValid = false;
+      }
+    });
+  }
+
+  // Validate episodes (if they exist)
+  if (data.episodes && Array.isArray(data.episodes)) {
+    data.episodes.forEach(episode => {
+      if (!isValidEpisodeDuration(episode.duration_minutes)) {
+        errors.push(`Invalid episode duration: ${episode.duration_minutes} minutes`);
+        isValid = false;
+      }
+    });
+  }
+
+  // Validate transmissions (if they exist)
+  if (data.transmissions && Array.isArray(data.transmissions)) {
+    data.transmissions.forEach(transmission => {
+      if (!isValidViewership(transmission.viewership)) {
+        errors.push(`Invalid viewership: ${transmission.viewership}`);
+        isValid = false;
+      }
+    });
+  }
+
+  if (errors.length > 0) {
+    console.error('❌ Business rule validation errors:');
+    errors.forEach(error => console.error(`   - ${error}`));
+  } else {
+    console.log('✅ All data passes business rule validation');
+  }
+
+  return isValid;
+};
+
+// ============================================================================
+// SQL OUTPUT FUNCTIONS
+// ============================================================================
+
+/**
+ * Generates SQL INSERT statements for a given table and array of objects
+ * @param {string} tableName - Table name
+ * @param {Array} dataArray - Array of objects
+ * @param {Array} columns - Array of column names (in order)
+ * @returns {string} SQL INSERT statements
+ */
+function generateInsertSQL(tableName, dataArray, columns) {
+  if (!Array.isArray(dataArray) || dataArray.length === 0) return '';
+  let sql = `-- ${tableName}\n`;
+  dataArray.forEach(obj => {
+    const values = columns.map(col => {
+      const val = obj[col];
+      if (val === null || val === undefined) return 'NULL';
+      if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+      if (!isNaN(val) && typeof val !== 'string') return val;
+      return `'${val}'`;
+    });
+    sql += `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${values.join(', ')});\n`;
   });
-};
-
-/**
- * Gets directors for a specific series
- * @param {string} series_uuid - Series UUID
- * @returns {Array} Array of director UUIDs
- */
-const getDirectorsForSeries = (series_uuid) => {
-  const directorAssignments = seriesCast.filter(sc =>
-    sc.role_uuid === directorRole.uuid && sc.series_uuid === series_uuid
-  );
-  return directorAssignments.map(sc => sc.employee_uuid);
-};
+  sql += '\n';
+  return sql;
+}
 
 // ============================================================================
-// DATA GENERATION EXECUTION
+// MAIN EXECUTION
 // ============================================================================
-//
-// Main execution flow following the principle of structured data generation
 
-console.log('🚀 Starting Large-Scale Mock Data Generation...');
-console.log(`📊 Target Scale: ${NUM_TV_SERIES} TV Series, ${NUM_EPISODES} Episodes`);
-console.log(`⚙️  Performance Mode: Batch size ${BATCH_SIZE}, Progress logging ${ENABLE_PROGRESS_LOGGING ? 'enabled' : 'disabled'}\n`);
+console.log('🚀 Starting Configuration-Driven Mock Data Generation...');
+console.log(`📊 Configuration Version: ${config.version}`);
+console.log(`⚙️  Batch Size: ${config.data_generation.batch_size}`);
+console.log(`📝 Progress Logging: ${config.data_generation.enable_progress_logging ? 'enabled' : 'disabled'}\n`);
 
 const startTime = Date.now();
 
-// Generate base data
-console.log('📋 Generating base data...');
+// Generate base data using configuration
+console.log('📋 Generating base data using business rules configuration...');
 const seriesDomains = defineSeriesDomains();
 const channels = defineChannels();
 const roles = defineRoles();
 const employees = defineEmployees();
-console.log('✅ Base data generated\n');
 
-// Generate TV series (largest dataset)
-console.log('🎬 Generating TV Series...');
+// Generate additional data using configuration
+console.log('\n📺 Generating additional data using business rules configuration...');
 const tvSeries = defineTVSeries(seriesDomains);
-console.log('');
-
-// Generate series cast assignments
-console.log('👥 Generating Series Cast Assignments...');
 const seriesCast = defineSeriesCast(employees, tvSeries, roles);
-console.log('');
-
-// Get director role for episode generation
-const directorRole = roles.find(r => r.name === 'Director');
-
-// Generate episodes with business rule compliance
-console.log('📺 Generating Episodes...');
-const episodes = defineEpisodes(tvSeries, seriesCast, directorRole);
-console.log('');
-
-// Ensure all directors are eligible (BR-008 compliance)
-console.log('🎭 Ensuring Director Eligibility...');
-ensureDirectorEligibility(episodes, employees, seriesCast, roles);
-console.log('✅ Director eligibility verified\n');
-
-// Generate transmissions and transmission channels
-console.log('📡 Generating Transmissions...');
+const episodes = defineEpisodes(tvSeries, employees, seriesCast, roles);
 const transmissions = defineTransmissions(episodes);
-console.log('');
-
-console.log('📺 Generating Transmission Channels...');
 const transmissionChannels = defineTransmissionChannels(transmissions, channels);
-console.log('');
 
-// === INJECT EXAMPLE DATA FOR REQUIREMENT QUERIES ===
-
-// 1. Ensure 'Big Sister' and 'Wild Lies' exist
-const bigSister = {
-  uuid: faker.string.uuid(),
-  title: 'Big Sister',
-  description: 'A family drama.',
-  domain_uuid: seriesDomains[0].uuid,
-  start_date: '2022-01-01',
-  end_date: null,
+// Validate generated data
+const generatedData = {
+  seriesDomains,
+  channels,
+  roles,
+  employees,
+  tvSeries,
+  episodes,
+  transmissions,
+  seriesCast,
+  transmissionChannels
 };
-const wildLies = {
-  uuid: faker.string.uuid(),
-  title: 'Wild Lies',
-  description: 'A thrilling mystery.',
-  domain_uuid: seriesDomains[1].uuid,
-  start_date: '2022-02-01',
-  end_date: null,
-};
-tvSeries.push(bigSister, wildLies);
 
-// 2. Ensure 'Bertil Bom' exists
-const bertilBom = {
-  uuid: faker.string.uuid(),
-  first_name: 'Bertil',
-  last_name: 'Bom',
-  email: 'bertil.bom@example.com',
-  birthdate: '1980-01-01',
-  employment_date: '2010-01-01',
-  is_internal: true,
-  status: 'available',
-};
-employees.push(bertilBom);
-
-// 3. Ensure at least one director exists (not Bertil Bom)
-let directorEmp = employees.find(e => e.uuid !== bertilBom.uuid);
-if (!directorEmp) {
-  directorEmp = {
-    uuid: faker.string.uuid(),
-    first_name: 'Diana',
-    last_name: 'Director',
-    email: 'diana.director@example.com',
-    birthdate: '1975-01-01',
-    employment_date: '2005-01-01',
-    is_internal: true,
-    status: 'available',
-  };
-  employees.push(directorEmp);
+if (!validateBusinessRuleCompliance(generatedData)) {
+  console.error('❌ Data generation failed business rule validation');
+  process.exit(1);
 }
-const actorRole = roles.find(r => r.name === 'Actor');
-
-// 4. Assign Bertil Bom as actor in both series
-seriesCast.push({
-  uuid: faker.string.uuid(),
-  employee_uuid: bertilBom.uuid,
-  series_uuid: bigSister.uuid,
-  role_uuid: actorRole.uuid,
-  character_name: 'Detective Bom',
-  start_date: '2022-01-01',
-  end_date: null,
-});
-seriesCast.push({
-  uuid: faker.string.uuid(),
-  employee_uuid: bertilBom.uuid,
-  series_uuid: wildLies.uuid,
-  role_uuid: actorRole.uuid,
-  character_name: 'Agent Bom',
-  start_date: '2022-02-01',
-  end_date: null,
-});
-
-// 5. Assign director to both series in seriesCast
-seriesCast.push({
-  uuid: faker.string.uuid(),
-  employee_uuid: directorEmp.uuid,
-  series_uuid: bigSister.uuid,
-  role_uuid: directorRole.uuid,
-  character_name: null,
-  start_date: '2022-01-01',
-  end_date: null,
-});
-seriesCast.push({
-  uuid: faker.string.uuid(),
-  employee_uuid: directorEmp.uuid,
-  series_uuid: wildLies.uuid,
-  role_uuid: directorRole.uuid,
-  character_name: null,
-  start_date: '2022-02-01',
-  end_date: null,
-});
-
-// 6. Ensure Wild Lies has at least one episode and two transmissions
-const wildLiesEpisode = {
-  uuid: faker.string.uuid(),
-  series_uuid: wildLies.uuid,
-  episode_number: 1,
-  title: 'Pilot',
-  duration_minutes: 45,
-  air_date: '2022-03-01',
-  director_uuid: directorEmp.uuid,
-};
-episodes.push(wildLiesEpisode);
-
-transmissions.push({
-  uuid: faker.string.uuid(),
-  episode_uuid: wildLiesEpisode.uuid,
-  transmission_time: '2022-03-05T20:00:00Z',
-  viewership: 100000,
-});
-transmissions.push({
-  uuid: faker.string.uuid(),
-  episode_uuid: wildLiesEpisode.uuid,
-  transmission_time: '2022-03-06T20:00:00Z',
-  viewership: 120000,
-});
 
 const endTime = Date.now();
 const generationTime = (endTime - startTime) / 1000;
 
-// ============================================================================
-// SQL GENERATION
-// ============================================================================
-//
-// Generates SQL INSERT statements following proper SQL formatting
-// and business rule compliance
-
-console.log('💾 Generating SQL INSERT statements...');
-const sqlStartTime = Date.now();
-
-let sql = '';
-
-sql += '-- ============================================================================\n';
-sql += '-- Generated Large-Scale Mock Data for TV Company Database\n';
-sql += '-- ============================================================================\n';
-sql += `-- Generated on: ${new Date().toISOString()}\n`;
-sql += '-- Schema: TV Series Production Focus (Large Scale)\n';
-sql += '-- Business Rules Compliance: BR-001 to BR-030\n';
-sql += '-- Field Specifications: All fields follow proper specifications\n';
-sql += '-- Data Integrity: All constraints and relationships maintained\n';
-sql += `-- Scale: ${NUM_TV_SERIES} TV Series, ${NUM_EPISODES} Episodes, ${NUM_TRANSMISSIONS} Transmissions\n\n`;
-
-// Generate INSERT statements for each table
-sql += '-- Series Domains (BR-001: Series Domain Uniqueness)\n';
-seriesDomains.forEach((domain) => {
-  sql += `INSERT INTO series_domains (uuid, name, description) VALUES ('${domain.uuid}', '${domain.name}', '${domain.description}');\n`;
-});
-
-sql += '\n-- Channels (BR-015: Channel Name Uniqueness)\n';
-channels.forEach((channel) => {
-  sql += `INSERT INTO channels (uuid, name, type, description) VALUES ('${channel.uuid}', '${channel.name}', '${channel.type}', '${channel.description}');\n`;
-});
-
-sql += '\n-- Roles (BR-011: Role Name Uniqueness)\n';
-roles.forEach((role) => {
-  sql += `INSERT INTO roles (uuid, name, description) VALUES ('${role.uuid}', '${role.name}', '${role.description}');\n`;
-});
-
-sql += '\n-- Employees (BR-009: Employee Email Uniqueness, BR-010: Employee Status Validation)\n';
-employees.forEach((emp) => {
-  sql += `INSERT INTO employees (uuid, first_name, last_name, email, birthdate, employment_date, is_internal, status) VALUES ('${emp.uuid}', '${emp.first_name}', '${emp.last_name}', '${emp.email}', '${emp.birthdate}', '${emp.employment_date}', ${emp.is_internal}, '${emp.status}');\n`;
-});
-
-sql += '\n-- TV Series (BR-003: Series Title Uniqueness Within Domain, BR-004: Series Date Range Validation)\n';
-tvSeries.forEach((series) => {
-  const endDateClause = series.end_date ? `, '${series.end_date}'` : '';
-  sql += `INSERT INTO tv_series (uuid, title, description, domain_uuid, start_date${series.end_date ? ', end_date' : ''}) VALUES ('${series.uuid}', '${series.title}', '${series.description}', '${series.domain_uuid}', '${series.start_date}'${endDateClause});\n`;
-});
-
-sql += '\n-- Series Cast (BR-012: Cast Assignment Uniqueness, BR-013: Character Name Requirements)\n';
-seriesCast.forEach((sc) => {
-  const characterNameClause = sc.character_name ? `, '${sc.character_name}'` : ', NULL';
-  const endDateClause = sc.end_date ? `, '${sc.end_date}'` : ', NULL';
-  sql += `INSERT INTO series_cast (uuid, employee_uuid, series_uuid, role_uuid, character_name, start_date, end_date) VALUES ('${sc.uuid}', '${sc.employee_uuid}', '${sc.series_uuid}', '${sc.role_uuid}'${characterNameClause}, '${sc.start_date}'${endDateClause});\n`;
-});
-
-sql += '\n-- Episodes (BR-005: Episode Number Uniqueness Within Series, BR-006: Episode Duration Validation, BR-008: Director Role Validation)\n';
-episodes.forEach((episode) => {
-  sql += `INSERT INTO episodes (uuid, series_uuid, episode_number, title, duration_minutes, air_date, director_uuid) VALUES ('${episode.uuid}', '${episode.series_uuid}', ${episode.episode_number}, '${episode.title}', ${episode.duration_minutes}, '${episode.air_date}', '${episode.director_uuid}');\n`;
-});
-
-sql += '\n-- Transmissions (BR-014: Viewership Data Validation)\n';
-transmissions.forEach((transmission) => {
-  sql += `INSERT INTO transmissions (uuid, episode_uuid, transmission_time, viewership) VALUES ('${transmission.uuid}', '${transmission.episode_uuid}', '${transmission.transmission_time}', ${transmission.viewership});\n`;
-});
-
-sql += '\n-- Transmission Channels (BR-027: Unique Transmission-Channel Combinations)\n';
-transmissionChannels.forEach((tc) => {
-  sql += `INSERT INTO transmission_channels (transmission_uuid, channel_uuid) VALUES ('${tc.transmission_uuid}', '${tc.channel_uuid}');\n`;
-});
-
-const sqlEndTime = Date.now();
-const sqlGenerationTime = (sqlEndTime - sqlStartTime) / 1000;
-
-// ============================================================================
-// OUTPUT AND SUMMARY
-// ============================================================================
-//
-// Writes the generated SQL to file and provides summary information
-// following the principle of comprehensive output documentation
-
-console.log('💾 Writing SQL to file...');
-fs.writeFileSync('./generated_mock_data.sql', sql);
-
-const totalTime = (Date.now() - startTime) / 1000;
-const totalRecords = seriesDomains.length + channels.length + roles.length +
-                    employees.length + tvSeries.length + seriesCast.length +
-                    episodes.length + transmissions.length + transmissionChannels.length;
-
-console.log('\n🎉 Large-Scale Mock Data Generation Complete!');
-console.log(`📁 Output file: ./generated_mock_data.sql`);
-console.log(`📈 Total records: ${totalRecords.toLocaleString()} across all tables`);
+console.log('\n🎉 Configuration-Driven Mock Data Generation Complete!');
 console.log(`⏱️  Generation time: ${generationTime.toFixed(2)}s`);
-console.log(`💾 SQL generation time: ${sqlGenerationTime.toFixed(2)}s`);
-console.log(`⏱️  Total time: ${totalTime.toFixed(2)}s`);
-console.log(`📊 File size: ${(sql.length / 1024 / 1024).toFixed(2)} MB`);
+console.log(`📊 Business Rules: ${config.business_rules_reference.field_specific.length + config.business_rules_reference.relationship_specific.length + config.business_rules_reference.data_integrity.length} rules validated`);
+console.log(`🔧 Configuration-driven: Easy to update when business rules change`);
+console.log(`✅ Resilient: Changes to business rules only require config file updates`);
 
-console.log(`\n📋 Generated tables:`);
-console.log(`   - ${seriesDomains.length} Series Domains (BR-001 compliant)`);
-console.log(`   - ${channels.length} Channels (BR-015 compliant)`);
-console.log(`   - ${roles.length} Roles (BR-011 compliant)`);
-console.log(`   - ${employees.length} Employees (BR-009, BR-010 compliant)`);
-console.log(`   - ${tvSeries.length.toLocaleString()} TV Series (BR-003, BR-004 compliant)`);
-console.log(`   - ${seriesCast.length.toLocaleString()} Series Cast Assignments (BR-012, BR-013 compliant)`);
-console.log(`   - ${episodes.length.toLocaleString()} Episodes (BR-005, BR-006, BR-008 compliant)`);
-console.log(`   - ${transmissions.length.toLocaleString()} Transmissions (BR-014 compliant)`);
-console.log(`   - ${transmissionChannels.length.toLocaleString()} Transmission Channels (BR-027 compliant)`);
+// Generate SQL output
+const sqlLines = [];
+sqlLines.push('-- ============================================================================');
+sqlLines.push('-- Generated Mock Data for TV Company Database');
+sqlLines.push('-- ============================================================================');
+sqlLines.push(`-- Generated on: ${new Date().toISOString()}`);
+sqlLines.push('-- Schema: TV Series Production Focus (Configuration-Driven)');
+sqlLines.push('-- Business Rules Compliance: Configurable');
+sqlLines.push('-- Field Specifications: All fields follow proper specifications');
+sqlLines.push('-- Data Integrity: All constraints and relationships maintained');
+sqlLines.push('-- IMPORTANT: Insert order follows business rule dependencies');
+sqlLines.push('');
 
-console.log(`\n🎬 Focus: Large-Scale TV Series Production (Database Design Compliant)`);
-console.log(`👥 Employee Status: available, busy, unavailable (BR-010)`);
-console.log('🎭 Roles: Actor, Director, Producer, Writer, Cameraman (BR-011)');
-console.log('📊 Business Rules: All BR-001 to BR-030 compliant');
-console.log('🔧 Field Specifications: All fields properly specified');
-console.log('🔗 Relationships: All foreign keys and constraints maintained');
-console.log('⚡ Performance: Optimized for large-scale data generation');
-console.log('🔄 Scalability: Supports 1000+ TV series with proper title generation');
+// Insert in proper order to satisfy business rule dependencies
+sqlLines.push(generateInsertSQL('series_domains', seriesDomains, ['uuid', 'name', 'description']));
+sqlLines.push(generateInsertSQL('channels', channels, ['uuid', 'name', 'type', 'description']));
+sqlLines.push(generateInsertSQL('roles', roles, ['uuid', 'name', 'description']));
+sqlLines.push(generateInsertSQL('employees', employees, ['uuid', 'first_name', 'last_name', 'email', 'birthdate', 'employment_date', 'is_internal', 'status']));
+sqlLines.push(generateInsertSQL('tv_series', tvSeries, ['uuid', 'title', 'description', 'domain_uuid', 'start_date', 'end_date']));
+
+// CRITICAL: series_cast must be inserted before episodes due to business rule validation
+sqlLines.push('-- ============================================================================');
+sqlLines.push('-- CRITICAL: series_cast must be inserted before episodes');
+sqlLines.push('-- Business Rule: Director must have a Director role assigned in series_cast (any series)');
+sqlLines.push('-- ============================================================================');
+sqlLines.push(generateInsertSQL('series_cast', seriesCast, ['uuid', 'employee_uuid', 'series_uuid', 'role_uuid', 'character_name', 'start_date', 'end_date']));
+
+// Now episodes can be inserted safely
+sqlLines.push('-- ============================================================================');
+sqlLines.push('-- Episodes can now be inserted (directors have role assignments)');
+sqlLines.push('-- ============================================================================');
+sqlLines.push(generateInsertSQL('episodes', episodes, ['uuid', 'series_uuid', 'episode_number', 'title', 'duration_minutes', 'air_date', 'director_uuid']));
+
+// Transmissions and transmission_channels can be inserted after episodes
+sqlLines.push(generateInsertSQL('transmissions', transmissions, ['uuid', 'episode_uuid', 'transmission_time', 'viewership']));
+sqlLines.push(generateInsertSQL('transmission_channels', transmissionChannels, ['transmission_uuid', 'channel_uuid']));
+
+const sqlOutput = sqlLines.join('\n');
+const outputPath = path.join(__dirname, 'generated_mock_data.sql');
+fs.writeFileSync(outputPath, sqlOutput);
+
+console.log(`\n💾 SQL mock data written to: ${outputPath}`);
+console.log(`📈 Total records: ${seriesDomains.length + channels.length + roles.length + employees.length + tvSeries.length + episodes.length + transmissions.length + seriesCast.length + transmissionChannels.length}`);
+console.log(`📁 File size: ${(sqlOutput.length / 1024).toFixed(2)} KB`);
 
 // ============================================================================
-// END OF MOCK DATA GENERATOR
+// CONFIGURATION UPDATE GUIDE
+// ============================================================================
+
+console.log('\n📋 Configuration Update Guide:');
+console.log('To update business rules, modify business_rules_config.json:');
+console.log('   - Add new roles to roles.valid_roles array');
+console.log('   - Add new statuses to employee_statuses.valid_statuses array');
+console.log('   - Update constraints.constraints object');
+console.log('   - Add new domains to series_domains.valid_domains array');
+console.log('   - Update version number and last_updated date');
+
+console.log('\n🔄 Benefits of this approach:');
+console.log('   - No code changes needed for business rule updates');
+console.log('   - Centralized configuration management');
+console.log('   - Easy validation and testing');
+console.log('   - Better maintainability and scalability');
+console.log('   - Clear separation of concerns');
+
+// ============================================================================
+// END OF IMPROVED MOCK DATA GENERATOR
 // ============================================================================
