@@ -95,13 +95,28 @@ CREATE INDEX idx_series_cast_unique_constraint ON series_cast(employee_uuid, ser
 -- These rules enforce constraints on individual field specifications
 -- following the field-level integrity principles
 
+-- BR-001: Series Domain Name Uniqueness
+-- Rule: Each series domain name must be unique across the system
+-- Implementation: Database UNIQUE constraint on series_domains.name
+ALTER TABLE series_domains DROP CONSTRAINT IF EXISTS unique_series_domain_name;
+ALTER TABLE series_domains
+ADD CONSTRAINT unique_series_domain_name
+UNIQUE (name);
+
+-- BR-002: Series Domain Assignment
+-- Rule: Every TV series must be assigned to exactly one domain
+-- Implementation: NOT NULL constraint + FOREIGN KEY to series_domains.uuid
+ALTER TABLE tv_series DROP CONSTRAINT IF EXISTS not_null_series_domain;
+ALTER TABLE tv_series
+ALTER COLUMN domain_uuid SET NOT NULL;
+
 -- BR-004: Series Date Range Validation
 -- Rule: If both start_date and end_date are provided, end_date must be after start_date
 -- Implementation: CHECK constraint on field specification
 ALTER TABLE tv_series DROP CONSTRAINT IF EXISTS check_series_end_date;
 ALTER TABLE tv_series
 ADD CONSTRAINT check_series_end_date
-CHECK (end_date IS NULL OR end_date >= start_date);
+CHECK (end_date IS NULL OR end_date > start_date);
 
 -- BR-006: Episode Duration Validation
 -- Rule: Episode duration must be positive and reasonable (1-300 minutes)
@@ -111,21 +126,70 @@ ALTER TABLE episodes
 ADD CONSTRAINT check_episode_duration
 CHECK (duration_minutes > 0 AND duration_minutes <= 300);
 
--- BR-013: Employment Date Validation
--- Rule: Employment date must be >= birthdate
--- Implementation: CHECK constraint on field specification
-ALTER TABLE employees DROP CONSTRAINT IF EXISTS check_employment_date;
-ALTER TABLE employees
-ADD CONSTRAINT check_employment_date
-CHECK (employment_date >= birthdate);
+-- BR-007: Episode Director Assignment
+-- Rule: Each episode must have exactly one director assigned
+-- Implementation: NOT NULL constraint + FOREIGN KEY to employees.uuid
+ALTER TABLE episodes DROP CONSTRAINT IF EXISTS not_null_episode_director;
+ALTER TABLE episodes
+ALTER COLUMN director_uuid SET NOT NULL;
 
--- BR-019: Cast Assignment Date Validation
--- Rule: If both start_date and end_date are provided, end_date must be after start_date
--- Implementation: CHECK constraint on field specification
-ALTER TABLE series_cast DROP CONSTRAINT IF EXISTS check_series_cast_end_date;
+-- BR-009: Employee Email Uniqueness
+-- Rule: Employee email addresses must be unique across the system
+-- Implementation: Database UNIQUE constraint
+ALTER TABLE employees DROP CONSTRAINT IF EXISTS unique_employee_email;
+ALTER TABLE employees
+ADD CONSTRAINT unique_employee_email
+UNIQUE (email);
+
+-- BR-010: Employee Status Validation
+-- Rule: Employee status must be one of: available, busy, unavailable
+-- Implementation: Database CHECK constraint
+ALTER TABLE employees DROP CONSTRAINT IF EXISTS check_employee_status;
+ALTER TABLE employees
+ADD CONSTRAINT check_employee_status
+CHECK (status IN ('available', 'busy', 'unavailable'));
+
+-- BR-011: Role Name Uniqueness
+-- Rule: Role names must be unique across the system
+-- Implementation: Database UNIQUE constraint
+ALTER TABLE roles DROP CONSTRAINT IF EXISTS unique_role_name;
+ALTER TABLE roles
+ADD CONSTRAINT unique_role_name
+UNIQUE (name);
+
+-- BR-012: Cast Assignment Uniqueness
+-- Rule: No duplicate employee-series-role combinations allowed
+-- Implementation: Database UNIQUE constraint
+ALTER TABLE series_cast DROP CONSTRAINT IF EXISTS unique_cast_assignment;
 ALTER TABLE series_cast
-ADD CONSTRAINT check_series_cast_end_date
-CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date);
+ADD CONSTRAINT unique_cast_assignment
+UNIQUE (employee_uuid, series_uuid, role_uuid);
+
+-- BR-013: Character Name Requirements
+-- Rule: Character names are required for Actor roles, optional for other roles
+-- Implementation: Trigger function for role-specific validation
+DROP TRIGGER IF EXISTS validate_character_name_trigger ON series_cast;
+CREATE OR REPLACE FUNCTION validate_character_name()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- If role is 'Actor', character_name must be provided
+    IF EXISTS (
+        SELECT 1 FROM roles
+        WHERE uuid = NEW.role_uuid
+        AND name = 'Actor'
+        AND deleted = FALSE
+    ) AND (NEW.character_name IS NULL OR TRIM(NEW.character_name) = '') THEN
+        RAISE EXCEPTION 'Character name is required for Actor role';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_character_name_trigger
+    BEFORE INSERT OR UPDATE ON series_cast
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_character_name();
 
 -- BR-014: Viewership Data Validation
 -- Rule: Viewership numbers must be non-negative
@@ -135,6 +199,30 @@ ALTER TABLE transmissions
 ADD CONSTRAINT check_viewership_positive
 CHECK (viewership >= 0);
 
+-- BR-015: Channel Name Uniqueness
+-- Rule: Channel names must be unique across the system
+-- Implementation: Database UNIQUE constraint
+ALTER TABLE channels DROP CONSTRAINT IF EXISTS unique_channel_name;
+ALTER TABLE channels
+ADD CONSTRAINT unique_channel_name
+UNIQUE (name);
+
+-- BR-019: Cast Assignment Date Validation
+-- Rule: If both start_date and end_date are provided, end_date must be after start_date
+-- Implementation: CHECK constraint on field specification
+ALTER TABLE series_cast DROP CONSTRAINT IF EXISTS check_series_cast_end_date;
+ALTER TABLE series_cast
+ADD CONSTRAINT check_series_cast_end_date
+CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date);
+
+-- BR-020: Employment Date Validation
+-- Rule: Employment date must be >= birthdate
+-- Implementation: CHECK constraint on field specification
+ALTER TABLE employees DROP CONSTRAINT IF EXISTS check_employment_date;
+ALTER TABLE employees
+ADD CONSTRAINT check_employment_date
+CHECK (employment_date >= birthdate);
+
 -- ============================================================================
 -- SECTION 3: RELATIONSHIP-SPECIFIC BUSINESS RULES (Database-Oriented)
 -- ============================================================================
@@ -142,34 +230,31 @@ CHECK (viewership >= 0);
 -- These rules enforce constraints on table relationships
 -- following the relationship-level integrity principles
 
--- BR-001: Episode Air Date Validation
--- Rule: Episode air_date must be >= TVSeries.start_date
--- Implementation: Trigger function for complex relationship validation
-DROP TRIGGER IF EXISTS check_episode_air_date_trigger ON episodes;
-DROP FUNCTION IF EXISTS check_episode_air_date_fn();
-CREATE OR REPLACE FUNCTION check_episode_air_date_fn()
-RETURNS TRIGGER AS $$
-DECLARE
-    series_start_date DATE;
-BEGIN
-    IF NEW.air_date IS NOT NULL THEN
-        SELECT start_date INTO series_start_date
-        FROM tv_series
-        WHERE uuid = NEW.series_uuid AND deleted = FALSE;
+-- BR-016: Series Domain Relationship
+-- Rule: Every TV series must be associated with exactly one domain
+-- Implementation: Foreign key constraint with NOT NULL (already implemented in BR-002)
 
-        IF series_start_date IS NOT NULL AND NEW.air_date < series_start_date THEN
-            RAISE EXCEPTION 'Episode air_date (%) cannot be before series start_date (%)',
-                NEW.air_date, series_start_date;
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- BR-017: Episode Series Relationship
+-- Rule: Every episode must belong to exactly one series
+-- Implementation: Foreign key constraint with NOT NULL
+ALTER TABLE episodes DROP CONSTRAINT IF EXISTS not_null_episode_series;
+ALTER TABLE episodes
+ALTER COLUMN series_uuid SET NOT NULL;
 
-CREATE TRIGGER check_episode_air_date_trigger
-    BEFORE INSERT OR UPDATE ON episodes
-    FOR EACH ROW
-    EXECUTE FUNCTION check_episode_air_date_fn();
+-- BR-018: Episode Director Relationship
+-- Rule: Every episode must have exactly one director
+-- Implementation: Foreign key constraint with NOT NULL (already implemented in BR-007)
+
+-- BR-020: Transmission Episode Relationship
+-- Rule: Every transmission must reference a valid episode
+-- Implementation: Foreign key constraint with NOT NULL
+ALTER TABLE transmissions DROP CONSTRAINT IF EXISTS not_null_transmission_episode;
+ALTER TABLE transmissions
+ALTER COLUMN episode_uuid SET NOT NULL;
+
+-- BR-021: Multi-Channel Broadcasting Relationship
+-- Rule: Transmissions can be broadcast on multiple channels simultaneously
+-- Implementation: Linking table with foreign keys (already implemented in schema)
 
 -- ============================================================================
 -- SECTION 4: COMPLEX BUSINESS RULE TRIGGERS (Database-Oriented)
@@ -178,11 +263,64 @@ CREATE TRIGGER check_episode_air_date_trigger
 -- These triggers implement complex business rules that require multi-table validation
 -- following the principle of enforcing business logic at the database level
 
+-- BR-003: Series Title Uniqueness Within Domain
+-- Rule: Series titles must be unique within the same domain
+-- Implementation: Trigger function for domain-specific uniqueness validation
+DROP TRIGGER IF EXISTS validate_series_title_domain_trigger ON tv_series;
+CREATE OR REPLACE FUNCTION validate_series_title_domain()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check for existing series with same title in same domain
+    IF EXISTS (
+        SELECT 1 FROM tv_series
+        WHERE title = NEW.title
+        AND domain_uuid = NEW.domain_uuid
+        AND uuid != COALESCE(NEW.uuid, '00000000-0000-0000-0000-000000000000')
+        AND deleted = FALSE
+    ) THEN
+        RAISE EXCEPTION 'Series title must be unique within the same domain';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_series_title_domain_trigger
+    BEFORE INSERT OR UPDATE ON tv_series
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_series_title_domain();
+
+-- BR-005: Episode Number Uniqueness Within Series
+-- Rule: Episode numbers must be unique within the same series
+-- Implementation: Trigger function for series-specific uniqueness validation
+DROP TRIGGER IF EXISTS validate_episode_number_series_trigger ON episodes;
+CREATE OR REPLACE FUNCTION validate_episode_number_series()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check for existing episode with same number in same series
+    IF EXISTS (
+        SELECT 1 FROM episodes
+        WHERE episode_number = NEW.episode_number
+        AND series_uuid = NEW.series_uuid
+        AND uuid != COALESCE(NEW.uuid, '00000000-0000-0000-0000-000000000000')
+        AND deleted = FALSE
+    ) THEN
+        RAISE EXCEPTION 'Episode number must be unique within the same series';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER validate_episode_number_series_trigger
+    BEFORE INSERT OR UPDATE ON episodes
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_episode_number_series();
+
 -- BR-008: Director Role Validation
 -- Rule: Episode directors must have the "Director" role in the system (any series)
 -- Implementation: Trigger function for cross-table validation
 DROP TRIGGER IF EXISTS validate_director_trigger ON episodes;
-DROP FUNCTION IF EXISTS validate_director_role();
 CREATE OR REPLACE FUNCTION validate_director_role()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -217,38 +355,38 @@ CREATE TRIGGER validate_director_trigger
     FOR EACH ROW
     EXECUTE FUNCTION validate_director_role();
 
--- BR-013: Character Name Requirements
--- Rule: Character names are required for Actor roles, optional for other roles
--- Implementation: Trigger function for role-specific validation
-DROP TRIGGER IF EXISTS validate_character_name_trigger ON series_cast;
-DROP FUNCTION IF EXISTS validate_character_name();
-CREATE OR REPLACE FUNCTION validate_character_name()
+-- BR-022: Episode Air Date Validation
+-- Rule: Episode air_date must be >= TVSeries.start_date
+-- Implementation: Trigger function for complex relationship validation
+DROP TRIGGER IF EXISTS check_episode_air_date_trigger ON episodes;
+CREATE OR REPLACE FUNCTION check_episode_air_date_fn()
 RETURNS TRIGGER AS $$
+DECLARE
+    series_start_date DATE;
 BEGIN
-    -- If role is 'Actor', character_name must be provided
-    IF EXISTS (
-        SELECT 1 FROM roles
-        WHERE uuid = NEW.role_uuid
-        AND name = 'Actor'
-        AND deleted = FALSE
-    ) AND (NEW.character_name IS NULL OR TRIM(NEW.character_name) = '') THEN
-        RAISE EXCEPTION 'Character name is required for Actor role';
-    END IF;
+    IF NEW.air_date IS NOT NULL THEN
+        SELECT start_date INTO series_start_date
+        FROM tv_series
+        WHERE uuid = NEW.series_uuid AND deleted = FALSE;
 
+        IF series_start_date IS NOT NULL AND NEW.air_date < series_start_date THEN
+            RAISE EXCEPTION 'Episode air_date (%) cannot be before series start_date (%)',
+                NEW.air_date, series_start_date;
+        END IF;
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER validate_character_name_trigger
-    BEFORE INSERT OR UPDATE ON series_cast
+CREATE TRIGGER check_episode_air_date_trigger
+    BEFORE INSERT OR UPDATE ON episodes
     FOR EACH ROW
-    EXECUTE FUNCTION validate_character_name();
+    EXECUTE FUNCTION check_episode_air_date_fn();
 
 -- BR-026: Transmission-Channel Assignment Validation
 -- Rule: Every transmission must be assigned to at least one channel
 -- Implementation: Trigger function for mandatory relationship validation
 DROP TRIGGER IF EXISTS validate_transmission_channel_trigger ON transmission_channels;
-DROP FUNCTION IF EXISTS validate_transmission_channel();
 CREATE OR REPLACE FUNCTION validate_transmission_channel()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -287,7 +425,6 @@ CREATE TRIGGER validate_transmission_channel_trigger
 -- Rule: All tables support soft delete operations
 -- Implementation: Trigger function for soft delete validation
 DROP TRIGGER IF EXISTS prevent_channel_deletion_trigger ON channels;
-DROP FUNCTION IF EXISTS prevent_channel_deletion();
 CREATE OR REPLACE FUNCTION prevent_channel_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -314,7 +451,6 @@ CREATE TRIGGER prevent_channel_deletion_trigger
 -- BR-030: Timestamp Management
 -- Rule: All records must have created_time and updated_time timestamps
 -- Implementation: Trigger function for automatic timestamp updates
-DROP FUNCTION IF EXISTS update_updated_time();
 CREATE OR REPLACE FUNCTION update_updated_time()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -323,47 +459,56 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply timestamp triggers to all tables
+-- Apply timestamp triggers to all tables (using IF NOT EXISTS to prevent conflicts)
+DROP TRIGGER IF EXISTS update_series_domains_updated_time ON series_domains;
 CREATE TRIGGER update_series_domains_updated_time
     BEFORE UPDATE ON series_domains
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_tv_series_updated_time ON tv_series;
 CREATE TRIGGER update_tv_series_updated_time
     BEFORE UPDATE ON tv_series
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_episodes_updated_time ON episodes;
 CREATE TRIGGER update_episodes_updated_time
     BEFORE UPDATE ON episodes
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_transmissions_updated_time ON transmissions;
 CREATE TRIGGER update_transmissions_updated_time
     BEFORE UPDATE ON transmissions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_channels_updated_time ON channels;
 CREATE TRIGGER update_channels_updated_time
     BEFORE UPDATE ON channels
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_employees_updated_time ON employees;
 CREATE TRIGGER update_employees_updated_time
     BEFORE UPDATE ON employees
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_roles_updated_time ON roles;
 CREATE TRIGGER update_roles_updated_time
     BEFORE UPDATE ON roles
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_transmission_channels_updated_time ON transmission_channels;
 CREATE TRIGGER update_transmission_channels_updated_time
     BEFORE UPDATE ON transmission_channels
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
+DROP TRIGGER IF EXISTS update_series_cast_updated_time ON series_cast;
 CREATE TRIGGER update_series_cast_updated_time
     BEFORE UPDATE ON series_cast
     FOR EACH ROW
@@ -378,7 +523,6 @@ CREATE TRIGGER update_series_cast_updated_time
 
 -- Function to validate director assignment in series_cast
 -- Supports BR-008: Director Role Validation
-DROP FUNCTION IF EXISTS check_director_in_series_cast();
 CREATE OR REPLACE FUNCTION check_director_in_series_cast()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -401,7 +545,6 @@ $$ LANGUAGE plpgsql;
 
 -- Function to validate employee status for role assignments
 -- Supports BR-010: Employee Status Validation
-DROP FUNCTION IF EXISTS validate_employee_status_for_role();
 CREATE OR REPLACE FUNCTION validate_employee_status_for_role()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -444,9 +587,9 @@ COMMENT ON TABLE tv_series IS 'Main table for TV series information';
 COMMENT ON COLUMN tv_series.uuid IS 'Unique identifier for each TV series (UUID, PK)';
 COMMENT ON COLUMN tv_series.title IS 'Title of the TV series (BR-003: unique within domain)';
 COMMENT ON COLUMN tv_series.description IS 'Description of the TV series';
-COMMENT ON COLUMN tv_series.domain_uuid IS 'Domain to which the series belongs (FK to series_domains, BR-002)';
+COMMENT ON COLUMN tv_series.domain_uuid IS 'Domain to which the series belongs (FK to series_domains, BR-002, BR-016)';
 COMMENT ON COLUMN tv_series.start_date IS 'Date when the series started airing';
-COMMENT ON COLUMN tv_series.end_date IS 'Date when the series ended (nullable, BR-004: >= start_date)';
+COMMENT ON COLUMN tv_series.end_date IS 'Date when the series ended (nullable, BR-004: > start_date)';
 COMMENT ON COLUMN tv_series.deleted IS 'Soft delete flag (TRUE if deleted, BR-029)';
 COMMENT ON COLUMN tv_series.created_time IS 'Timestamp when the record was created (BR-030)';
 COMMENT ON COLUMN tv_series.updated_time IS 'Timestamp when the record was last updated (BR-030)';
@@ -471,7 +614,7 @@ COMMENT ON COLUMN employees.first_name IS 'First name of the employee';
 COMMENT ON COLUMN employees.last_name IS 'Last name of the employee';
 COMMENT ON COLUMN employees.email IS 'Email address of the employee (unique, BR-009)';
 COMMENT ON COLUMN employees.birthdate IS 'Birthdate of the employee';
-COMMENT ON COLUMN employees.employment_date IS 'Date the employee was hired (BR-013: >= birthdate)';
+COMMENT ON COLUMN employees.employment_date IS 'Date the employee was hired (BR-020: >= birthdate)';
 COMMENT ON COLUMN employees.is_internal IS 'TRUE if the employee is internal, FALSE if external';
 COMMENT ON COLUMN employees.status IS 'Employment status (BR-010: available, busy, unavailable)';
 COMMENT ON COLUMN employees.deleted IS 'Soft delete flag (TRUE if deleted, BR-029)';
@@ -487,8 +630,8 @@ COMMENT ON COLUMN episodes.series_uuid IS 'TV series to which the episode belong
 COMMENT ON COLUMN episodes.episode_number IS 'Episode number within the series (unique per series, BR-005)';
 COMMENT ON COLUMN episodes.title IS 'Title of the episode';
 COMMENT ON COLUMN episodes.duration_minutes IS 'Duration of the episode in minutes (BR-006: 1-300)';
-COMMENT ON COLUMN episodes.air_date IS 'Air date of the episode (BR-001: >= series start_date)';
-COMMENT ON COLUMN episodes.director_uuid IS 'Director of the episode (FK to employees, BR-007, BR-008)';
+COMMENT ON COLUMN episodes.air_date IS 'Air date of the episode (BR-022: >= series start_date)';
+COMMENT ON COLUMN episodes.director_uuid IS 'Director of the episode (FK to employees, BR-007, BR-008, BR-018)';
 COMMENT ON COLUMN episodes.deleted IS 'Soft delete flag (TRUE if deleted, BR-029)';
 COMMENT ON COLUMN episodes.created_time IS 'Timestamp when the record was created (BR-030)';
 COMMENT ON COLUMN episodes.updated_time IS 'Timestamp when the record was last updated (BR-030)';
@@ -551,57 +694,33 @@ COMMENT ON COLUMN series_cast.updated_time IS 'Timestamp when the record was las
 /*
 APPLICATION-LEVEL BUSINESS RULES TO BE IMPLEMENTED IN CODE:
 
-1. BR-003: Series Title Uniqueness Within Domain
-   - Application-level validation + database trigger
+1. BR-023: Series Title Uniqueness Within Domain (Alternative Implementation)
+   - Application-level validation as backup to database trigger
    - Check for existing series with same title in domain
 
-2. BR-005: Episode Number Uniqueness Within Series
-   - Application-level validation + database trigger
+2. BR-024: Episode Number Uniqueness Within Series (Alternative Implementation)
+   - Application-level validation as backup to database trigger
    - Check for existing episode with same number in series
 
-3. BR-016: Series Domain Relationship
-   - Foreign key constraint with NOT NULL (already implemented)
-   - Application-level validation for domain existence
+3. BR-025: Director Role Validation (Alternative Implementation)
+   - Application-level validation as backup to database trigger
+   - Ensure director has Director role in series_cast
 
-4. BR-017: Episode Series Relationship
-   - Foreign key constraint with NOT NULL (already implemented)
-   - Application-level validation for series existence
+4. BR-027: Unique Transmission-Channel Combinations
+   - Composite primary key (already implemented)
+   - Application-level validation to prevent duplicates
 
-5. BR-018: Episode Director Relationship
-   - Foreign key constraint with NOT NULL (already implemented)
-   - Application-level validation for director existence
+5. BR-028: Multi-Channel Broadcasting Support
+   - No constraint (allows multiple channels per transmission)
+   - Application logic supports multiple channel assignments
 
-6. BR-019: Series Cast Relationship
-   - Foreign key constraints (already implemented)
-   - Application-level validation for employee, series, and role existence
+6. BR-029: Soft Delete Implementation
+   - Application logic filters out deleted records
+   - Soft delete operations handled in application code
 
-7. BR-020: Transmission Episode Relationship
-   - Foreign key constraint with NOT NULL (already implemented)
-   - Application-level validation for episode existence
-
-8. BR-021: Multi-Channel Broadcasting Relationship
-   - Linking table with foreign keys (already implemented)
-   - Application-level validation for transmission and channel existence
-
-9. BR-026: Transmission-Channel Assignment
-   - Application-level validation
-   - At least one record in transmission_channels for each transmission
-
-10. BR-027: Unique Transmission-Channel Combinations
-    - Composite primary key (already implemented)
-    - Application-level validation to prevent duplicates
-
-11. BR-028: Multi-Channel Broadcasting Support
-    - No constraint (allows multiple channels per transmission)
-    - Application logic supports multiple channel assignments
-
-12. BR-029: Soft Delete Implementation
-    - Application logic filters out deleted records
-    - Soft delete operations handled in application code
-
-13. BR-030: Timestamp Management
-    - Automatic timestamp management (already implemented)
-    - Application-level audit trail for all data changes
+7. BR-030: Timestamp Management
+   - Automatic timestamp management (already implemented)
+   - Application-level audit trail for all data changes
 
 These rules ensure the integrity, consistency, and proper operation of the TV Company Database
 for TV series production and broadcasting operations.

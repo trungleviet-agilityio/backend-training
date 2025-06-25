@@ -1,5 +1,5 @@
--- TV Company Database Views
--- This file creates all the views for different user access patterns
+-- TV Company Database Views - CORRECTED VERSION
+-- This file creates all the views with proper DISTINCT usage to prevent duplicate data
 -- Based on Chapter 12: Views - Data, Aggregate, and Validation views
 
 -- ============================================================================
@@ -17,7 +17,7 @@ SELECT
     s.end_date,
     sd.name as domain_name,
     sd.description as domain_description,
-    COUNT(e.uuid) as episode_count,
+    COUNT(DISTINCT e.uuid) as episode_count,
     AVG(e.duration_minutes) as avg_episode_duration,
     MIN(e.air_date) as first_episode_air_date,
     MAX(e.air_date) as last_episode_air_date,
@@ -46,7 +46,7 @@ SELECT
     emp.first_name as director_first_name,
     emp.last_name as director_last_name,
     emp.email as director_email,
-    COUNT(t.uuid) as transmission_count,
+    COUNT(DISTINCT t.uuid) as transmission_count,
     SUM(t.viewership) as total_viewership,
     AVG(t.viewership) as avg_viewership,
     e.created_time,
@@ -61,7 +61,7 @@ GROUP BY e.uuid, e.episode_number, e.title, e.duration_minutes, e.air_date,
          s.uuid, s.title, sd.name, emp.uuid, emp.first_name, emp.last_name, emp.email,
          e.created_time, e.updated_time;
 
--- 3. Cast and Crew View (Data View)
+-- 3. Cast and Crew View (Data View) - CORRECT (no changes needed)
 DROP VIEW IF EXISTS v_series_cast_details CASCADE;
 CREATE VIEW v_series_cast_details AS
 SELECT
@@ -87,7 +87,7 @@ JOIN employees emp ON sc.employee_uuid = emp.uuid AND emp.deleted = false
 JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = false
 WHERE sc.deleted = false;
 
--- 4. Employee Participation View (Aggregate View)
+-- 4. Employee Participation View (Aggregate View) - CORRECT (already has DISTINCT)
 DROP VIEW IF EXISTS v_employee_participation CASCADE;
 CREATE VIEW v_employee_participation AS
 SELECT
@@ -113,7 +113,7 @@ WHERE emp.deleted = false
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email,
          emp.status, emp.employment_date, emp.created_time, emp.updated_time;
 
--- 5. Available Employees View (Data View with Filter)
+-- 5. Available Employees View (Data View with Filter) - CORRECT (already has DISTINCT)
 DROP VIEW IF EXISTS v_available_employees CASCADE;
 CREATE VIEW v_available_employees AS
 SELECT
@@ -145,9 +145,9 @@ SELECT
     s.uuid as series_uuid,
     s.title as series_title,
     sd.name as domain_name,
-    STRING_AGG(c.name, ', ') as channels,
-    STRING_AGG(c.type, ', ') as channel_types,
-    COUNT(tc.channel_uuid) as channel_count,
+    STRING_AGG(DISTINCT c.name, ', ') as channels,
+    STRING_AGG(DISTINCT c.type, ', ') as channel_types,
+    COUNT(DISTINCT tc.channel_uuid) as channel_count,
     t.created_time,
     t.updated_time
 FROM transmissions t
@@ -271,7 +271,6 @@ FROM episodes e
 WHERE e.director_uuid IS NULL AND e.deleted = false
 
 UNION ALL
-
 SELECT
     'transmissions_without_channels' as issue_type,
     t.uuid as record_uuid,
@@ -298,7 +297,7 @@ WHERE r.name = 'Actor' AND sc.character_name IS NULL
 -- 12. Valid Employee Roles View (Validation View)
 DROP VIEW IF EXISTS v_valid_employee_roles CASCADE;
 CREATE VIEW v_valid_employee_roles AS
-SELECT
+SELECT DISTINCT
     emp.uuid as employee_uuid,
     emp.first_name,
     emp.last_name,
@@ -307,16 +306,13 @@ SELECT
     r.uuid as role_uuid,
     r.name as role_name,
     r.description as role_description,
-    COUNT(DISTINCT sc.series_uuid) as series_involved,
     sc.character_name,
     sc.start_date as role_start,
     sc.end_date as role_end
 FROM employees emp
 LEFT JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = false
 LEFT JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = false
-WHERE emp.deleted = false
-GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email, emp.status,
-         r.uuid, r.name, r.description, sc.character_name, sc.start_date, sc.end_date;
+WHERE emp.deleted = false;
 
 -- 13. Valid Transmission Channels View (Validation View)
 DROP VIEW IF EXISTS v_valid_transmission_channels CASCADE;
@@ -337,37 +333,3 @@ JOIN tv_series s ON e.series_uuid = s.uuid AND s.deleted = false
 JOIN transmission_channels tc ON t.uuid = tc.transmission_uuid AND tc.deleted = false
 JOIN channels c ON tc.channel_uuid = c.uuid AND c.deleted = false
 WHERE t.deleted = false;
-
--- ============================================================================
--- VIEW USAGE EXAMPLES AND DOCUMENTATION
--- ============================================================================
-
-/*
-VIEW TYPES AND USAGE:
-
-1. DATA VIEWS (v_episode_details, v_series_cast_details, v_transmission_schedule):
-   - Used for examining and manipulating data
-   - Can be modified (changes flow to base tables)
-   - Provide current information from multiple tables
-
-2. AGGREGATE VIEWS (v_series_overview, v_employee_participation, v_series_performance):
-   - Used for reports and statistical information
-   - Cannot be modified (all fields are grouping or calculated)
-   - Use aggregate functions: COUNT, SUM, AVG, MAX, MIN
-
-3. VALIDATION VIEWS (v_data_quality_check, v_valid_employee_roles):
-   - Help implement data integrity
-   - Enforce business rules
-   - Provide valid range of values for fields
-
-PERFORMANCE CONSIDERATIONS:
-- All views include proper deleted = false filters
-- Views use appropriate JOIN types (INNER vs LEFT)
-- GROUP BY clauses only include necessary fields
-- Views are read-only for business users (except data views)
-
-SECURITY CONSIDERATIONS:
-- Views provide data access control
-- Sensitive data can be filtered out
-- Role-based access can be implemented through views
-*/
