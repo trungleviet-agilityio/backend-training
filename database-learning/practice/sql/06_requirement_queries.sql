@@ -4,37 +4,37 @@
 -- Question 1: Which actors play in the series Big Sister?
 SELECT
     CONCAT(emp.first_name, ' ', emp.last_name) as actor_name,
-    esr.character_name,
+    sc.character_name,
     s.title as series_title
-FROM employee_series_roles esr
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN roles r ON esr.role_uuid = r.uuid
+FROM series_cast sc
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN tv_series s ON sc.series_uuid = s.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
 WHERE s.title = 'Big Sister'
     AND r.name = 'Actor'
-    AND esr.deleted = FALSE
-    AND s.deleted = FALSE
-    AND emp.deleted = FALSE
-    AND r.deleted = FALSE
+    AND sc.deleted = false
+    AND s.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false
 ORDER BY emp.first_name, emp.last_name;
 
 -- Question 2: In which series does the actor Bertil Bom participate?
 SELECT
     CONCAT(emp.first_name, ' ', emp.last_name) as actor_name,
     s.title as series_title,
-    esr.character_name,
+    sc.character_name,
     s.start_date,
     s.end_date
-FROM employee_series_roles esr
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN roles r ON esr.role_uuid = r.uuid
+FROM series_cast sc
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN tv_series s ON sc.series_uuid = s.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
 WHERE emp.first_name = 'Bertil' AND emp.last_name = 'Bom'
     AND r.name = 'Actor'
-    AND esr.deleted = FALSE
-    AND s.deleted = FALSE
-    AND emp.deleted = FALSE
-    AND r.deleted = FALSE
+    AND sc.deleted = false
+    AND s.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false
 ORDER BY s.start_date;
 
 -- Question 3: Which actors participate in more than one series?
@@ -42,15 +42,15 @@ SELECT
     CONCAT(emp.first_name, ' ', emp.last_name) as actor_name,
     COUNT(DISTINCT s.uuid) as series_count,
     STRING_AGG(s.title, ', ') as series_list
-FROM employee_series_roles esr
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN roles r ON esr.role_uuid = r.uuid
+FROM series_cast sc
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN tv_series s ON sc.series_uuid = s.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
 WHERE r.name = 'Actor'
-    AND esr.deleted = FALSE
-    AND s.deleted = FALSE
-    AND emp.deleted = FALSE
-    AND r.deleted = FALSE
+    AND sc.deleted = false
+    AND s.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false
 GROUP BY emp.uuid, emp.first_name, emp.last_name
 HAVING COUNT(DISTINCT s.uuid) > 1
 ORDER BY series_count DESC, emp.first_name, emp.last_name;
@@ -65,27 +65,26 @@ SELECT
     STRING_AGG(c.name, ', ') as channels
 FROM episodes e
 JOIN tv_series s ON e.series_uuid = s.uuid
-LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = FALSE
-LEFT JOIN transmission_channels tc ON t.uuid = tc.transmission_uuid AND tc.deleted = FALSE
-LEFT JOIN channels c ON tc.channel_uuid = c.uuid AND c.deleted = FALSE
+LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = false
+LEFT JOIN transmission_channels tc ON t.uuid = tc.transmission_uuid AND tc.deleted = false
+LEFT JOIN channels c ON tc.channel_uuid = c.uuid AND c.deleted = false
 WHERE s.title = 'Wild Lies'
     AND e.episode_number = 1
-    AND e.deleted = FALSE
-    AND s.deleted = FALSE
+    AND e.deleted = false
+    AND s.deleted = false
 GROUP BY s.title, e.episode_number, e.title;
 
 -- Question 5: How many directors are employed by the company?
 SELECT
     COUNT(DISTINCT emp.uuid) as director_count
 FROM employees emp
-JOIN employee_roles er ON emp.uuid = er.employee_uuid
-JOIN roles r ON er.role_uuid = r.uuid
+JOIN series_cast sc ON emp.uuid = sc.employee_uuid
+JOIN roles r ON sc.role_uuid = r.uuid
 WHERE r.name = 'Director'
-    AND er.is_active = TRUE
-    AND emp.status = 'active'
-    AND emp.deleted = FALSE
-    AND er.deleted = FALSE
-    AND r.deleted = FALSE;
+    AND emp.status = 'available'
+    AND emp.deleted = false
+    AND sc.deleted = false
+    AND r.deleted = false;
 
 -- Question 6: Which director has directed the greatest number of episodes?
 SELECT
@@ -96,10 +95,10 @@ SELECT
 FROM employees emp
 JOIN episodes e ON emp.uuid = e.director_uuid
 JOIN tv_series s ON e.series_uuid = s.uuid
-WHERE e.deleted = FALSE
-    AND s.deleted = FALSE
-    AND emp.deleted = FALSE
-    AND emp.status = 'active'
+WHERE e.deleted = false
+    AND s.deleted = false
+    AND emp.deleted = false
+    AND emp.status = 'available'
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email
 ORDER BY episodes_directed DESC
 LIMIT 1;
@@ -115,10 +114,10 @@ SELECT
     SUM(t.viewership) as total_viewership
 FROM tv_series s
 JOIN series_domains sd ON s.domain_uuid = sd.uuid
-LEFT JOIN episodes e ON s.uuid = e.series_uuid AND e.deleted = FALSE
-LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = FALSE
-WHERE s.deleted = FALSE
-    AND sd.deleted = FALSE
+LEFT JOIN episodes e ON s.uuid = e.series_uuid AND e.deleted = false
+LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = false
+WHERE s.deleted = false
+    AND sd.deleted = false
 GROUP BY s.uuid, s.title, sd.name
 ORDER BY avg_viewership DESC NULLS LAST;
 
@@ -135,11 +134,11 @@ JOIN episodes e ON t.episode_uuid = e.uuid
 JOIN tv_series s ON e.series_uuid = s.uuid
 JOIN transmission_channels tc ON t.uuid = tc.transmission_uuid
 JOIN channels c ON tc.channel_uuid = c.uuid
-WHERE t.deleted = FALSE
-    AND e.deleted = FALSE
-    AND s.deleted = FALSE
-    AND tc.deleted = FALSE
-    AND c.deleted = FALSE
+WHERE t.deleted = false
+    AND e.deleted = false
+    AND s.deleted = false
+    AND tc.deleted = false
+    AND c.deleted = false
 GROUP BY s.title, e.episode_number, e.title, t.uuid, t.transmission_time
 HAVING COUNT(tc.channel_uuid) > 1
 ORDER BY channel_count DESC, t.transmission_time;
@@ -148,17 +147,16 @@ ORDER BY channel_count DESC, t.transmission_time;
 SELECT
     CONCAT(emp.first_name, ' ', emp.last_name) as employee_name,
     emp.email,
-    COUNT(DISTINCT er.role_uuid) as company_roles,
-    COUNT(DISTINCT esr.series_uuid) as series_participation,
+    COUNT(DISTINCT sc.role_uuid) as roles_played,
+    COUNT(DISTINCT sc.series_uuid) as series_participation,
     STRING_AGG(DISTINCT r.name, ', ') as roles_held
 FROM employees emp
-LEFT JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-LEFT JOIN employee_series_roles esr ON emp.uuid = esr.employee_uuid AND esr.deleted = FALSE
-LEFT JOIN roles r ON er.role_uuid = r.uuid AND r.deleted = FALSE
-WHERE emp.deleted = FALSE
-    AND emp.status = 'active'
+LEFT JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = false
+LEFT JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = false
+WHERE emp.deleted = false
+    AND emp.status = 'available'
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email
-ORDER BY company_roles DESC, series_participation DESC;
+ORDER BY roles_played DESC, series_participation DESC;
 
 -- Bonus 4: Show series performance by domain with transmission statistics
 SELECT
@@ -169,10 +167,10 @@ SELECT
     ROUND(AVG(t.viewership), 0) as avg_viewership_per_transmission,
     SUM(t.viewership) as total_viewership
 FROM series_domains sd
-LEFT JOIN tv_series s ON sd.uuid = s.domain_uuid AND s.deleted = FALSE
-LEFT JOIN episodes e ON s.uuid = e.series_uuid AND e.deleted = FALSE
-LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = FALSE
-WHERE sd.deleted = FALSE
+LEFT JOIN tv_series s ON sd.uuid = s.domain_uuid AND s.deleted = false
+LEFT JOIN episodes e ON s.uuid = e.series_uuid AND e.deleted = false
+LEFT JOIN transmissions t ON e.uuid = t.episode_uuid AND t.deleted = false
+WHERE sd.deleted = false
 GROUP BY sd.uuid, sd.name
 ORDER BY total_viewership DESC NULLS LAST;
 
@@ -180,61 +178,94 @@ ORDER BY total_viewership DESC NULLS LAST;
 SELECT
     CONCAT(emp.first_name, ' ', emp.last_name) as employee_name,
     emp.status,
-    COUNT(DISTINCT er.role_uuid) as active_company_roles,
-    COUNT(DISTINCT esr.series_uuid) as series_participation,
-    STRING_AGG(DISTINCT r.name, ', ') as company_roles,
-    STRING_AGG(DISTINCT esr.character_name, ', ') as characters_played
+    COUNT(DISTINCT sc.role_uuid) as roles_played,
+    COUNT(DISTINCT sc.series_uuid) as series_participation,
+    STRING_AGG(DISTINCT r.name, ', ') as roles_held,
+    STRING_AGG(DISTINCT sc.character_name, ', ') as characters_played
 FROM employees emp
-LEFT JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-LEFT JOIN employee_series_roles esr ON emp.uuid = esr.employee_uuid AND esr.deleted = FALSE
-LEFT JOIN roles r ON er.role_uuid = r.uuid AND r.deleted = FALSE
-WHERE emp.deleted = FALSE
+LEFT JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = false
+LEFT JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = false
+WHERE emp.deleted = false
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.status
-HAVING COUNT(DISTINCT er.role_uuid) > 1 OR COUNT(DISTINCT esr.series_uuid) > 1
-ORDER BY active_company_roles DESC, series_participation DESC;
+HAVING COUNT(DISTINCT sc.role_uuid) > 1 OR COUNT(DISTINCT sc.series_uuid) > 1
+ORDER BY roles_played DESC, series_participation DESC;
 
 -- =====================
--- Demonstration Queries: Why role_uuid in employee_series_roles is NOT redundant
+-- Demonstration Queries: Why role_uuid in series_cast is NOT redundant
 -- =====================
 
--- Example 1: CORRECT - Querying the actual role of an employee in each series (using role_uuid in employee_series_roles)
--- This query shows the real role of each employee in each series, as explicitly recorded in employee_series_roles.
+-- Example 1: CORRECT - Querying the actual role of an employee in each series (using role_uuid in series_cast)
 SELECT
-    CONCAT(emp.first_name, ' ', emp.last_name) AS employee_name,
-    s.title AS series_title,
-    r.name AS role_name,
-    esr.character_name
-FROM employee_series_roles esr
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN roles r ON esr.role_uuid = r.uuid
-WHERE emp.deleted = FALSE AND s.deleted = FALSE AND r.deleted = FALSE AND esr.deleted = FALSE
-ORDER BY employee_name, series_title, role_name;
+    CONCAT(emp.first_name, ' ', emp.last_name) as employee_name,
+    s.title as series_title,
+    r.name as role_in_series,
+    sc.character_name
+FROM series_cast sc
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN tv_series s ON sc.series_uuid = s.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
+WHERE emp.first_name = 'Bertil' AND emp.last_name = 'Bom'
+    AND sc.deleted = false
+    AND s.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false;
 
--- Example 2: INCORRECT - If employee_series_roles does NOT have role_uuid, and you try to infer the role by joining employee_roles
--- This query simulates the scenario where you only know which employees participate in which series, and try to get their roles from employee_roles (company-wide roles)
--- This will produce incorrect results if an employee has multiple roles in the company, because it cannot tell which role applies to which series.
--- For example, Bertil Bom is both Actor and Director in the company, but in 'Big Sister' he is only Actor. This query would show him as both Actor and Director in all series he participates in.
---
--- IMPORTANT: Even if you filter by r.name = 'Actor', this query will return all employees who participate in a series and have the 'Actor' role in the company,
--- regardless of whether they actually acted in that specific series.
--- For example, if Bertil Bom is a Director in 'Big Sister' but has the 'Actor' role in the company, this query will still list him as Actor in 'Big Sister', which is incorrect.
+-- Example 2: Show all employees who are both actors and directors in different series
 SELECT
-    CONCAT(emp.first_name, ' ', emp.last_name) AS employee_name,
-    s.title AS series_title,
-    r.name AS company_role_name
-FROM employee_series_roles esr
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-JOIN roles r ON er.role_uuid = r.uuid AND r.deleted = FALSE
-WHERE emp.deleted = FALSE AND s.deleted = FALSE
-ORDER BY employee_name, series_title, company_role_name;
+    CONCAT(emp.first_name, ' ', emp.last_name) as employee_name,
+    emp.email,
+    STRING_AGG(DISTINCT r.name, ', ') as roles_played,
+    COUNT(DISTINCT sc.series_uuid) as series_count
+FROM employees emp
+JOIN series_cast sc ON emp.uuid = sc.employee_uuid
+JOIN roles r ON sc.role_uuid = r.uuid
+WHERE r.name IN ('Actor', 'Director')
+    AND sc.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false
+GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email
+HAVING COUNT(DISTINCT r.name) > 1
+ORDER BY series_count DESC;
 
--- Explanation:
--- The first query (CORRECT) uses the role_uuid in employee_series_roles to show the actual role of the employee in each series.
--- The second query (INCORRECT) shows what happens if you try to infer the role from employee_roles: it will list all company roles for each series, which is not accurate for real-world scenarios where employees have different roles in different series.
--- This demonstrates that having role_uuid in employee_series_roles is NOT redundant, but necessary for correct business logic and reporting.
+-- Example 3: Show series with their cast breakdown by role
+SELECT
+    s.title as series_title,
+    r.name as role_name,
+    COUNT(sc.employee_uuid) as employee_count,
+    STRING_AGG(CONCAT(emp.first_name, ' ', emp.last_name), ', ') as employees
+FROM tv_series s
+JOIN series_cast sc ON s.uuid = sc.series_uuid
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
+WHERE s.deleted = false
+    AND sc.deleted = false
+    AND emp.deleted = false
+    AND r.deleted = false
+GROUP BY s.uuid, s.title, r.uuid, r.name
+ORDER BY s.title, r.name;
+
+-- Example 4: Show episodes with their directors and cast
+SELECT
+    s.title as series_title,
+    e.episode_number,
+    e.title as episode_title,
+    CONCAT(dir.first_name, ' ', dir.last_name) as director,
+    COUNT(sc.employee_uuid) as cast_size,
+    STRING_AGG(CONCAT(emp.first_name, ' ', emp.last_name, ' (', r.name, ')'), ', ') as cast_members
+FROM episodes e
+JOIN tv_series s ON e.series_uuid = s.uuid
+JOIN employees dir ON e.director_uuid = dir.uuid
+LEFT JOIN series_cast sc ON s.uuid = sc.series_uuid
+LEFT JOIN employees emp ON sc.employee_uuid = emp.uuid
+LEFT JOIN roles r ON sc.role_uuid = r.uuid
+WHERE e.deleted = false
+    AND s.deleted = false
+    AND dir.deleted = false
+    AND (sc.deleted = false OR sc.deleted IS NULL)
+    AND (emp.deleted = false OR emp.deleted IS NULL)
+    AND (r.deleted = false OR r.deleted IS NULL)
+GROUP BY s.uuid, s.title, e.uuid, e.episode_number, e.title, dir.uuid, dir.first_name, dir.last_name
+ORDER BY s.title, e.episode_number;
 
 -- =====================
 -- End of demonstration

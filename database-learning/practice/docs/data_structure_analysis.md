@@ -103,7 +103,7 @@ From TV series requirements analysis, the following fields were initially identi
 | air_date | First air date | User | Episode | Non-key | Single | Non-unique |
 | director_uuid | Reference to director | System | Episode | Foreign | Single | Non-unique; must be assigned as Director in SeriesCast for this series |
 
-> **Note:** The director_uuid for an episode must reference an employee who is assigned the Director role for the same series in the SeriesCast table. This is enforced by a business rule or trigger.
+> **Note:** The director_uuid for an episode must reference an employee who is assigned the Director role for the same series in the SeriesCast table. This is enforced by a business rule or trigger. Different episodes within the same series may be directed by different directors, providing creative flexibility.
 
 #### Employee Fields (Actors and Directors)
 | Field | Description | Source | Table | Key Type | Key Structure | Uniqueness |

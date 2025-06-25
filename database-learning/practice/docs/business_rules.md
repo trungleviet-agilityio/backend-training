@@ -98,6 +98,13 @@ This document defines all business rules for the TV series database system, orga
 - **Enforcement**: Trigger on episodes table or application logic.
 - **Function**: `validate_director_in_series_cast()`
 
+#### Director Assignment Requirements
+- **Rule**: Each episode must have exactly one director assigned
+- **Rule**: Different episodes within the same series may be directed by different directors
+- **Rule**: A director can direct multiple episodes across different series
+- **Rule**: Directors must be assigned to the series (via SeriesCast) before they can direct episodes
+- **Enforcement**: Schema constraints and business rule triggers
+
 #### Character Name Validation
 - **Rule**: Character name required for Actor role, NULL for others
 - **Enforcement**: Trigger on series_cast table

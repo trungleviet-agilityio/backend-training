@@ -10,14 +10,11 @@ DELETE FROM transmission_channels;
 -- Delete Transmissions
 DELETE FROM transmissions;
 
--- Delete Employee Series Roles (linking table)
-DELETE FROM employee_series_roles;
-
--- Delete Employee Roles (linking table)
-DELETE FROM employee_roles;
-
 -- Delete Episodes
 DELETE FROM episodes;
+
+-- Delete Series Cast (linking table)
+DELETE FROM series_cast;
 
 -- Delete TV Series
 DELETE FROM tv_series;
@@ -31,9 +28,6 @@ DELETE FROM roles;
 -- Delete Channels
 DELETE FROM channels;
 
--- Delete Departments
-DELETE FROM departments;
-
 -- Delete Series Domains
 DELETE FROM series_domains;
 
@@ -43,13 +37,13 @@ DELETE FROM series_domains;
 -- Verify all tables are empty
 SELECT 'series_domains' as table_name, COUNT(*) as record_count FROM series_domains
 UNION ALL
-SELECT 'departments', COUNT(*) FROM departments
-UNION ALL
 SELECT 'tv_series', COUNT(*) FROM tv_series
 UNION ALL
 SELECT 'roles', COUNT(*) FROM roles
 UNION ALL
 SELECT 'employees', COUNT(*) FROM employees
+UNION ALL
+SELECT 'series_cast', COUNT(*) FROM series_cast
 UNION ALL
 SELECT 'episodes', COUNT(*) FROM episodes
 UNION ALL
@@ -58,8 +52,4 @@ UNION ALL
 SELECT 'transmissions', COUNT(*) FROM transmissions
 UNION ALL
 SELECT 'transmission_channels', COUNT(*) FROM transmission_channels
-UNION ALL
-SELECT 'employee_roles', COUNT(*) FROM employee_roles
-UNION ALL
-SELECT 'employee_series_roles', COUNT(*) FROM employee_series_roles
 ORDER BY table_name;

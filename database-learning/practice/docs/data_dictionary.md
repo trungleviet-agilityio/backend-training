@@ -43,7 +43,7 @@
 | created_time    | TIMESTAMP | When the record was created | Record creation time                   |
 | updated_time    | TIMESTAMP | When the record was last updated | Last update time                       |
 
-> **Note:** director_uuid must reference an employee who is assigned the Director role for the same series in the SeriesCast table. This is enforced by a business rule or trigger.
+> **Note:** director_uuid must reference an employee who is assigned the Director role for the same series in the SeriesCast table. This is enforced by a business rule or trigger. Different episodes within the same series may be directed by different directors, providing creative flexibility.
 
 ### Transmission
 | Field            | Type        | Description | Notes                                |

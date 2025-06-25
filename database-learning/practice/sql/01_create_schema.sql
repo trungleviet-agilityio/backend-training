@@ -8,8 +8,7 @@ CREATE SCHEMA IF NOT EXISTS tv_company;
 SET search_path TO tv_company, public;
 
 -- Drop tables in dependency order (linking tables first)
-DROP TABLE IF EXISTS employee_series_roles CASCADE;
-DROP TABLE IF EXISTS employee_roles CASCADE;
+DROP TABLE IF EXISTS series_cast CASCADE;
 DROP TABLE IF EXISTS transmission_channels CASCADE;
 DROP TABLE IF EXISTS transmissions CASCADE;
 DROP TABLE IF EXISTS episodes CASCADE;
@@ -17,7 +16,6 @@ DROP TABLE IF EXISTS channels CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS tv_series CASCADE;
-DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS series_domains CASCADE;
 
 -- Create tables in dependency order
@@ -32,17 +30,7 @@ CREATE TABLE series_domains (
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Department (validation table)
-CREATE TABLE departments (
-    uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    deleted BOOLEAN DEFAULT FALSE,
-    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. TVSeries
+-- 2. TVSeries
 CREATE TABLE tv_series (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
@@ -55,18 +43,17 @@ CREATE TABLE tv_series (
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Role
+-- 3. Role (TV production roles)
 CREATE TABLE roles (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) UNIQUE NOT NULL,
-    department_uuid UUID NOT NULL REFERENCES departments(uuid),
     description TEXT,
     deleted BOOLEAN DEFAULT FALSE,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Employee
+-- 4. Employee
 CREATE TABLE employees (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     first_name VARCHAR(100) NOT NULL,
@@ -75,13 +62,13 @@ CREATE TABLE employees (
     birthdate DATE NOT NULL,
     employment_date DATE NOT NULL,
     is_internal BOOLEAN DEFAULT TRUE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'on_leave', 'terminated')),
+    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'busy', 'unavailable')),
     deleted BOOLEAN DEFAULT FALSE,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Episode
+-- 5. Episode
 CREATE TABLE episodes (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     series_uuid UUID NOT NULL REFERENCES tv_series(uuid),
@@ -97,7 +84,10 @@ CREATE TABLE episodes (
     UNIQUE(series_uuid, episode_number)
 );
 
--- 7. Channel (validation table)
+-- director_uuid must reference an employee who is assigned the Director role for the same series in the series_cast table.
+-- Enforced by trigger: trg_check_director_in_series_cast (see 02_business_rules.sql)
+
+-- 6. Channel (validation table)
 CREATE TABLE channels (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) UNIQUE NOT NULL,
@@ -108,7 +98,7 @@ CREATE TABLE channels (
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. Transmission
+-- 7. Transmission
 CREATE TABLE transmissions (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     episode_uuid UUID NOT NULL REFERENCES episodes(uuid),
@@ -119,7 +109,7 @@ CREATE TABLE transmissions (
     updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. TransmissionChannel (linking table)
+-- 8. TransmissionChannel (linking table)
 CREATE TABLE transmission_channels (
     transmission_uuid UUID NOT NULL REFERENCES transmissions(uuid),
     channel_uuid UUID NOT NULL REFERENCES channels(uuid),
@@ -129,28 +119,17 @@ CREATE TABLE transmission_channels (
     PRIMARY KEY (transmission_uuid, channel_uuid)
 );
 
--- 10. EmployeeRole (linking table)
-CREATE TABLE employee_roles (
-    employee_uuid UUID NOT NULL REFERENCES employees(uuid),
-    role_uuid UUID NOT NULL REFERENCES roles(uuid),
-    assigned_at DATE,
-    is_active BOOLEAN DEFAULT TRUE,
-    deleted BOOLEAN DEFAULT FALSE,
-    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (employee_uuid, role_uuid)
-);
-
--- 11. EmployeeSeriesRole (linking table)
-CREATE TABLE employee_series_roles (
+-- 9. SeriesCast (linking table for employees participating in series)
+CREATE TABLE series_cast (
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_uuid UUID NOT NULL REFERENCES employees(uuid),
     series_uuid UUID NOT NULL REFERENCES tv_series(uuid),
     role_uuid UUID NOT NULL REFERENCES roles(uuid),
-    character_name VARCHAR(255),
+    character_name VARCHAR(100),
     start_date DATE,
     end_date DATE,
     deleted BOOLEAN DEFAULT FALSE,
-    created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (employee_uuid, series_uuid, role_uuid)
+    created_time TIMESTAMP DEFAULT NOW(),
+    updated_time TIMESTAMP DEFAULT NOW(),
+    UNIQUE(employee_uuid, series_uuid, role_uuid)
 );

@@ -69,6 +69,8 @@ The database must support the following general tasks:
 - **Series ↔ Episode**: 1:N (each series has multiple episodes)
 - **Episode ↔ Transmission**: 1:N (each episode can be transmitted multiple times)
 
+> **Note:** Director assignment flexibility - Different episodes within the same series may be directed by different directors, allowing for creative diversity and scheduling flexibility.
+
 ### 3.3. Required Queries (from requirements)
 - Which actors play in a specific series?
 - In which series does a specific actor participate?

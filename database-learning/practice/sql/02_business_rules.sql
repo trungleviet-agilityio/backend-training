@@ -15,18 +15,12 @@ DROP INDEX IF EXISTS idx_episodes_director_uuid;
 CREATE INDEX idx_episodes_director_uuid ON episodes(director_uuid);
 DROP INDEX IF EXISTS idx_transmissions_episode_uuid;
 CREATE INDEX idx_transmissions_episode_uuid ON transmissions(episode_uuid);
-DROP INDEX IF EXISTS idx_roles_department_uuid;
-CREATE INDEX idx_roles_department_uuid ON roles(department_uuid);
-DROP INDEX IF EXISTS idx_employee_roles_employee_uuid;
-CREATE INDEX idx_employee_roles_employee_uuid ON employee_roles(employee_uuid);
-DROP INDEX IF EXISTS idx_employee_roles_role_uuid;
-CREATE INDEX idx_employee_roles_role_uuid ON employee_roles(role_uuid);
-DROP INDEX IF EXISTS idx_employee_series_roles_employee_uuid;
-CREATE INDEX idx_employee_series_roles_employee_uuid ON employee_series_roles(employee_uuid);
-DROP INDEX IF EXISTS idx_employee_series_roles_series_uuid;
-CREATE INDEX idx_employee_series_roles_series_uuid ON employee_series_roles(series_uuid);
-DROP INDEX IF EXISTS idx_employee_series_roles_role_uuid;
-CREATE INDEX idx_employee_series_roles_role_uuid ON employee_series_roles(role_uuid);
+DROP INDEX IF EXISTS idx_series_cast_employee_uuid;
+CREATE INDEX idx_series_cast_employee_uuid ON series_cast(employee_uuid);
+DROP INDEX IF EXISTS idx_series_cast_series_uuid;
+CREATE INDEX idx_series_cast_series_uuid ON series_cast(series_uuid);
+DROP INDEX IF EXISTS idx_series_cast_role_uuid;
+CREATE INDEX idx_series_cast_role_uuid ON series_cast(role_uuid);
 DROP INDEX IF EXISTS idx_transmission_channels_transmission_uuid;
 CREATE INDEX idx_transmission_channels_transmission_uuid ON transmission_channels(transmission_uuid);
 DROP INDEX IF EXISTS idx_transmission_channels_channel_uuid;
@@ -41,6 +35,8 @@ DROP INDEX IF EXISTS idx_employees_deleted;
 CREATE INDEX idx_employees_deleted ON employees(deleted);
 DROP INDEX IF EXISTS idx_transmissions_deleted;
 CREATE INDEX idx_transmissions_deleted ON transmissions(deleted);
+DROP INDEX IF EXISTS idx_series_cast_deleted;
+CREATE INDEX idx_series_cast_deleted ON series_cast(deleted);
 
 -- Common query pattern indexes
 DROP INDEX IF EXISTS idx_episodes_series_episode;
@@ -49,8 +45,8 @@ DROP INDEX IF EXISTS idx_transmissions_time;
 CREATE INDEX idx_transmissions_time ON transmissions(transmission_time);
 DROP INDEX IF EXISTS idx_employees_status;
 CREATE INDEX idx_employees_status ON employees(status);
-DROP INDEX IF EXISTS idx_employee_roles_active;
-CREATE INDEX idx_employee_roles_active ON employee_roles(is_active);
+DROP INDEX IF EXISTS idx_series_cast_unique_constraint;
+CREATE INDEX idx_series_cast_unique_constraint ON series_cast(employee_uuid, series_uuid, role_uuid);
 
 -- ============================================================================
 -- FIELD-LEVEL CONSTRAINTS (Schema Logic)
@@ -91,10 +87,10 @@ ALTER TABLE employees
 ADD CONSTRAINT check_employment_date
 CHECK (employment_date >= birthdate);
 
--- 4. EmployeeSeriesRole end_date must be >= start_date (if both are present)
-ALTER TABLE employee_series_roles DROP CONSTRAINT IF EXISTS check_employee_series_end_date;
-ALTER TABLE employee_series_roles
-ADD CONSTRAINT check_employee_series_end_date
+-- 4. SeriesCast end_date must be >= start_date (if both are present)
+ALTER TABLE series_cast DROP CONSTRAINT IF EXISTS check_series_cast_end_date;
+ALTER TABLE series_cast
+ADD CONSTRAINT check_series_cast_end_date
 CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date);
 
 -- ============================================================================
@@ -107,27 +103,26 @@ DROP FUNCTION IF EXISTS validate_director_role();
 CREATE OR REPLACE FUNCTION validate_director_role()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Check if the director has an active 'Director' role
+    -- Check if the director has a 'Director' role in series_cast
     IF NOT EXISTS (
-        SELECT 1 FROM employee_roles er
-        JOIN roles r ON er.role_uuid = r.uuid
-        WHERE er.employee_uuid = NEW.director_uuid
+        SELECT 1 FROM series_cast sc
+        JOIN roles r ON sc.role_uuid = r.uuid
+        WHERE sc.employee_uuid = NEW.director_uuid
         AND r.name = 'Director'
-        AND er.is_active = TRUE
-        AND er.deleted = FALSE
+        AND sc.deleted = FALSE
         AND r.deleted = FALSE
     ) THEN
-        RAISE EXCEPTION 'Director must have an active Director role';
+        RAISE EXCEPTION 'Director must have a Director role assigned in series_cast';
     END IF;
 
-    -- Check if director is active employee
+    -- Check if director is available employee
     IF NOT EXISTS (
         SELECT 1 FROM employees
         WHERE uuid = NEW.director_uuid
-        AND status = 'active'
+        AND status IN ('available', 'busy')
         AND deleted = FALSE
     ) THEN
-        RAISE EXCEPTION 'Director must be an active employee';
+        RAISE EXCEPTION 'Director must be an available or busy employee';
     END IF;
 
     RETURN NEW;
@@ -139,7 +134,7 @@ CREATE TRIGGER validate_director_trigger
     EXECUTE FUNCTION validate_director_role();
 
 -- Character name validation trigger
-DROP TRIGGER IF EXISTS validate_character_name_trigger ON employee_series_roles;
+DROP TRIGGER IF EXISTS validate_character_name_trigger ON series_cast;
 DROP FUNCTION IF EXISTS validate_character_name();
 CREATE OR REPLACE FUNCTION validate_character_name()
 RETURNS TRIGGER AS $$
@@ -154,21 +149,11 @@ BEGIN
         RAISE EXCEPTION 'Character name is required for Actor role';
     END IF;
 
-    -- If role is not 'Actor', character_name must be NULL
-    IF NOT EXISTS (
-        SELECT 1 FROM roles
-        WHERE uuid = NEW.role_uuid
-        AND name = 'Actor'
-        AND deleted = FALSE
-    ) AND NEW.character_name IS NOT NULL THEN
-        RAISE EXCEPTION 'Character name should be NULL for non-Actor roles';
-    END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE TRIGGER validate_character_name_trigger
-    BEFORE INSERT OR UPDATE ON employee_series_roles
+    BEFORE INSERT OR UPDATE ON series_cast
     FOR EACH ROW
     EXECUTE FUNCTION validate_character_name();
 
@@ -198,10 +183,10 @@ CREATE TRIGGER prevent_channel_deletion_trigger
     EXECUTE FUNCTION prevent_channel_deletion();
 
 -- ============================================================================
--- AUDIT FIELD TRIGGERS (Schema Logic)
+-- AUTOMATIC TIMESTAMP UPDATES (Schema Logic)
 -- ============================================================================
 
--- Automatic updated_time function
+-- Function to automatically update updated_time
 DROP FUNCTION IF EXISTS update_updated_time();
 CREATE OR REPLACE FUNCTION update_updated_time()
 RETURNS TRIGGER AS $$
@@ -211,99 +196,108 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Schema Logic: Database automatically updates audit fields on all table modifications
-DROP TRIGGER IF EXISTS update_series_domains_updated_time ON series_domains;
+-- Apply timestamp triggers to all tables
 CREATE TRIGGER update_series_domains_updated_time
     BEFORE UPDATE ON series_domains
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_tv_series_updated_time ON tv_series;
 CREATE TRIGGER update_tv_series_updated_time
     BEFORE UPDATE ON tv_series
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_episodes_updated_time ON episodes;
 CREATE TRIGGER update_episodes_updated_time
     BEFORE UPDATE ON episodes
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_transmissions_updated_time ON transmissions;
 CREATE TRIGGER update_transmissions_updated_time
     BEFORE UPDATE ON transmissions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_channels_updated_time ON channels;
 CREATE TRIGGER update_channels_updated_time
     BEFORE UPDATE ON channels
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_employees_updated_time ON employees;
 CREATE TRIGGER update_employees_updated_time
     BEFORE UPDATE ON employees
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_roles_updated_time ON roles;
 CREATE TRIGGER update_roles_updated_time
     BEFORE UPDATE ON roles
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_departments_updated_time ON departments;
-CREATE TRIGGER update_departments_updated_time
-    BEFORE UPDATE ON departments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_time();
-
-DROP TRIGGER IF EXISTS update_transmission_channels_updated_time ON transmission_channels;
 CREATE TRIGGER update_transmission_channels_updated_time
     BEFORE UPDATE ON transmission_channels
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
-DROP TRIGGER IF EXISTS update_employee_roles_updated_time ON employee_roles;
-CREATE TRIGGER update_employee_roles_updated_time
-    BEFORE UPDATE ON employee_roles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_time();
-
-DROP TRIGGER IF EXISTS update_employee_series_roles_updated_time ON employee_series_roles;
-CREATE TRIGGER update_employee_series_roles_updated_time
-    BEFORE UPDATE ON employee_series_roles
+CREATE TRIGGER update_series_cast_updated_time
+    BEFORE UPDATE ON series_cast
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_time();
 
 -- ============================================================================
--- NOTES ON APPLICATION LOGIC (NOT ENFORCED HERE)
+-- ADDITIONAL BUSINESS RULES (Schema Logic)
+-- ============================================================================
+
+-- 1. Episode number uniqueness within series (already enforced by UNIQUE constraint)
+-- 2. Employee email uniqueness (already enforced by UNIQUE constraint)
+-- 3. Series title uniqueness within domain (application-level enforcement)
+-- 4. Channel name uniqueness (already enforced by UNIQUE constraint)
+-- 5. Role name uniqueness (already enforced by UNIQUE constraint)
+
+-- ============================================================================
+-- AUDIT AND VALIDATION FUNCTIONS (Schema Logic)
+-- ============================================================================
+
+-- Function to validate director assignment in series_cast
+DROP FUNCTION IF EXISTS check_director_in_series_cast();
+CREATE OR REPLACE FUNCTION check_director_in_series_cast()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the director is assigned to the series with Director role
+    IF NOT EXISTS (
+        SELECT 1 FROM series_cast sc
+        JOIN roles r ON sc.role_uuid = r.uuid
+        WHERE sc.employee_uuid = NEW.director_uuid
+        AND sc.series_uuid = NEW.series_uuid
+        AND r.name = 'Director'
+        AND sc.deleted = FALSE
+        AND r.deleted = FALSE
+    ) THEN
+        RAISE EXCEPTION 'Director must be assigned to the series with Director role in series_cast';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_check_director_in_series_cast
+BEFORE INSERT OR UPDATE ON episodes
+FOR EACH ROW EXECUTE FUNCTION check_director_in_series_cast();
+
+-- ============================================================================
+-- NOTES ON APPLICATION-LEVEL BUSINESS RULES
 -- ============================================================================
 
 /*
-APPLICATION LOGIC RULES (enforced in application code, NOT in this file):
+The following business rules are enforced at the application level:
 
-1. Soft Delete Referential Integrity:
-   - Application queries must filter deleted = FALSE
-   - No reference to deleted records across tables
+1. Series title uniqueness within domain
+2. Complex validation workflows
+3. Soft delete operations
+4. User access control
+5. Business process validation
+6. Cross-table validation that cannot be expressed as triggers
+7. External system integration validation
 
-2. Business Workflow Rules:
-   - Only active employees can be assigned to new episodes/series
-   - First episode of each series must have episode_number = 1
-   - A TV series must have at least one episode
-
-3. Complex Validation:
-   - Email format validation
-   - Channel name uniqueness across active channels
-   - Employee must have at least one active role
-
-4. Reporting and Analytics:
-   - All queries must filter deleted records unless explicitly required
-   - Complex aggregations and business metrics
-
-These rules are implemented in application code, service layers, and business logic.
+These rules are implemented in the application code and service layers.
 */
 
 -- =============================
@@ -315,16 +309,6 @@ COMMENT ON COLUMN series_domains.description IS 'Description of the series domai
 COMMENT ON COLUMN series_domains.deleted IS 'Soft delete flag (TRUE if deleted)';
 COMMENT ON COLUMN series_domains.created_time IS 'Timestamp when the record was created';
 COMMENT ON COLUMN series_domains.updated_time IS 'Timestamp when the record was last updated';
-
--- =============================
--- departments table
--- =============================
-COMMENT ON COLUMN departments.uuid IS 'Unique identifier for each department (UUID, PK)';
-COMMENT ON COLUMN departments.name IS 'Name of the department (unique)';
-COMMENT ON COLUMN departments.description IS 'Description of the department';
-COMMENT ON COLUMN departments.deleted IS 'Soft delete flag (TRUE if deleted)';
-COMMENT ON COLUMN departments.created_time IS 'Timestamp when the record was created';
-COMMENT ON COLUMN departments.updated_time IS 'Timestamp when the record was last updated';
 
 -- =============================
 -- tv_series table
@@ -344,7 +328,6 @@ COMMENT ON COLUMN tv_series.updated_time IS 'Timestamp when the record was last 
 -- =============================
 COMMENT ON COLUMN roles.uuid IS 'Unique identifier for each role (UUID, PK)';
 COMMENT ON COLUMN roles.name IS 'Name of the role (unique, e.g., Actor, Director)';
-COMMENT ON COLUMN roles.department_uuid IS 'Department to which the role belongs (FK to departments)';
 COMMENT ON COLUMN roles.description IS 'Description of the role';
 COMMENT ON COLUMN roles.deleted IS 'Soft delete flag (TRUE if deleted)';
 COMMENT ON COLUMN roles.created_time IS 'Timestamp when the record was created';
@@ -360,7 +343,7 @@ COMMENT ON COLUMN employees.email IS 'Email address of the employee (unique)';
 COMMENT ON COLUMN employees.birthdate IS 'Birthdate of the employee';
 COMMENT ON COLUMN employees.employment_date IS 'Date the employee was hired';
 COMMENT ON COLUMN employees.is_internal IS 'TRUE if the employee is internal, FALSE if external';
-COMMENT ON COLUMN employees.status IS 'Employment status (active, on_leave, terminated)';
+COMMENT ON COLUMN employees.status IS 'Employment status (available, busy, unavailable)';
 COMMENT ON COLUMN employees.deleted IS 'Soft delete flag (TRUE if deleted)';
 COMMENT ON COLUMN employees.created_time IS 'Timestamp when the record was created';
 COMMENT ON COLUMN employees.updated_time IS 'Timestamp when the record was last updated';
@@ -411,25 +394,14 @@ COMMENT ON COLUMN transmission_channels.updated_time IS 'Timestamp when the reco
 COMMENT ON COLUMN transmission_channels.deleted IS 'Soft delete flag (TRUE if deleted)';
 
 -- =============================
--- employee_roles table
+-- series_cast table
 -- =============================
-COMMENT ON COLUMN employee_roles.employee_uuid IS 'Employee assigned to the role (FK, PK)';
-COMMENT ON COLUMN employee_roles.role_uuid IS 'Role assigned to the employee (FK, PK)';
-COMMENT ON COLUMN employee_roles.assigned_at IS 'Date when the role was assigned';
-COMMENT ON COLUMN employee_roles.is_active IS 'TRUE if the role assignment is active';
-COMMENT ON COLUMN employee_roles.deleted IS 'Soft delete flag (TRUE if deleted)';
-COMMENT ON COLUMN employee_roles.created_time IS 'Timestamp when the record was created';
-COMMENT ON COLUMN employee_roles.updated_time IS 'Timestamp when the record was last updated';
-
--- =============================
--- employee_series_roles table
--- =============================
-COMMENT ON COLUMN employee_series_roles.employee_uuid IS 'Employee assigned to the series and role (FK, PK)';
-COMMENT ON COLUMN employee_series_roles.series_uuid IS 'TV series for the role assignment (FK, PK)';
-COMMENT ON COLUMN employee_series_roles.role_uuid IS 'Role assigned in the series (FK, PK)';
-COMMENT ON COLUMN employee_series_roles.character_name IS 'Character name (required for Actor role, NULL otherwise)';
-COMMENT ON COLUMN employee_series_roles.start_date IS 'Start date of the role assignment in the series';
-COMMENT ON COLUMN employee_series_roles.end_date IS 'End date of the role assignment in the series';
-COMMENT ON COLUMN employee_series_roles.deleted IS 'Soft delete flag (TRUE if deleted)';
-COMMENT ON COLUMN employee_series_roles.created_time IS 'Timestamp when the record was created';
-COMMENT ON COLUMN employee_series_roles.updated_time IS 'Timestamp when the record was last updated';
+COMMENT ON COLUMN series_cast.employee_uuid IS 'Employee assigned to the role (FK, PK)';
+COMMENT ON COLUMN series_cast.series_uuid IS 'TV series for the role assignment (FK, PK)';
+COMMENT ON COLUMN series_cast.role_uuid IS 'Role assigned in the series (FK, PK)';
+COMMENT ON COLUMN series_cast.character_name IS 'Character name (required for Actor role, NULL otherwise)';
+COMMENT ON COLUMN series_cast.start_date IS 'Start date of the role assignment in the series';
+COMMENT ON COLUMN series_cast.end_date IS 'End date of the role assignment in the series';
+COMMENT ON COLUMN series_cast.deleted IS 'Soft delete flag (TRUE if deleted)';
+COMMENT ON COLUMN series_cast.created_time IS 'Timestamp when the record was created';
+COMMENT ON COLUMN series_cast.updated_time IS 'Timestamp when the record was last updated';

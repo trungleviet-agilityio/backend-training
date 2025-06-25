@@ -8,54 +8,24 @@ INSERT INTO series_domains (uuid, name, description) VALUES
 ('550e8400-e29b-41d4-a716-446655440003', 'Thriller', 'Thriller and suspense series'),
 ('550e8400-e29b-41d4-a716-446655440004', 'Reality', 'Reality television series');
 
--- Insert Departments
-INSERT INTO departments (uuid, name, description) VALUES
-('550e8400-e29b-41d4-a716-446655440101', 'Production', 'Production and direction department'),
-('550e8400-e29b-41d4-a716-446655440102', 'Acting', 'Acting and performance department'),
-('550e8400-e29b-41d4-a716-446655440103', 'Technical', 'Technical and crew department'),
-('550e8400-e29b-41d4-a716-446655440104', 'Management', 'Management and administration');
-
--- Insert Roles
-INSERT INTO roles (uuid, name, department_uuid, description) VALUES
-('550e8400-e29b-41d4-a716-446655440201', 'Director', '550e8400-e29b-41d4-a716-446655440101', 'Series and episode director'),
-('550e8400-e29b-41d4-a716-446655440202', 'Actor', '550e8400-e29b-41d4-a716-446655440102', 'Series actor'),
-('550e8400-e29b-41d4-a716-446655440203', 'Producer', '550e8400-e29b-41d4-a716-446655440101', 'Series producer'),
-('550e8400-e29b-41d4-a716-446655440204', 'Writer', '550e8400-e29b-41d4-a716-446655440101', 'Script writer'),
-('550e8400-e29b-41d4-a716-446655440205', 'Cameraman', '550e8400-e29b-41d4-a716-446655440103', 'Camera operator');
+-- Insert Roles (TV production roles)
+INSERT INTO roles (uuid, name, description) VALUES
+('550e8400-e29b-41d4-a716-446655440201', 'Director', 'Series and episode director'),
+('550e8400-e29b-41d4-a716-446655440202', 'Actor', 'Series actor'),
+('550e8400-e29b-41d4-a716-446655440203', 'Producer', 'Series producer'),
+('550e8400-e29b-41d4-a716-446655440204', 'Writer', 'Script writer'),
+('550e8400-e29b-41d4-a716-446655440205', 'Cameraman', 'Camera operator');
 
 -- Insert Employees
 INSERT INTO employees (uuid, first_name, last_name, email, birthdate, employment_date, is_internal, status) VALUES
-('550e8400-e29b-41d4-a716-446655440301', 'Bertil', 'Bom', 'bertil.bom@tvcompany.com', '1980-05-15', '2015-03-01', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440302', 'Anna', 'Andersson', 'anna.andersson@tvcompany.com', '1985-08-22', '2016-07-15', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440303', 'Carl', 'Carlsson', 'carl.carlsson@tvcompany.com', '1975-12-10', '2010-01-20', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440304', 'Diana', 'Dahl', 'diana.dahl@tvcompany.com', '1990-03-28', '2018-09-10', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440305', 'Erik', 'Eriksson', 'erik.eriksson@tvcompany.com', '1982-11-05', '2012-06-01', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440306', 'Frida', 'Fredriksson', 'frida.fredriksson@tvcompany.com', '1988-07-14', '2017-04-20', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440307', 'Gustav', 'Gustafsson', 'gustav.gustafsson@tvcompany.com', '1978-09-30', '2011-02-15', TRUE, 'active'),
-('550e8400-e29b-41d4-a716-446655440308', 'Helena', 'Holm', 'helena.holm@tvcompany.com', '1983-04-12', '2014-08-05', TRUE, 'active');
-
--- Insert Employee Roles
-INSERT INTO employee_roles (employee_uuid, role_uuid, assigned_at, is_active) VALUES
--- Directors
-('550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440201', '2015-03-01', TRUE),
-('550e8400-e29b-41d4-a716-446655440303', '550e8400-e29b-41d4-a716-446655440201', '2010-01-20', TRUE),
-('550e8400-e29b-41d4-a716-446655440305', '550e8400-e29b-41d4-a716-446655440201', '2012-06-01', TRUE),
-('550e8400-e29b-41d4-a716-446655440307', '550e8400-e29b-41d4-a716-446655440201', '2011-02-15', TRUE),
-
--- Actors
-('550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440202', '2015-03-01', TRUE),
-('550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440202', '2016-07-15', TRUE),
-('550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440202', '2018-09-10', TRUE),
-('550e8400-e29b-41d4-a716-446655440306', '550e8400-e29b-41d4-a716-446655440202', '2017-04-20', TRUE),
-('550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440202', '2014-08-05', TRUE),
-
--- Producers
-('550e8400-e29b-41d4-a716-446655440303', '550e8400-e29b-41d4-a716-446655440203', '2010-01-20', TRUE),
-('550e8400-e29b-41d4-a716-446655440305', '550e8400-e29b-41d4-a716-446655440203', '2012-06-01', TRUE),
-
--- Writers
-('550e8400-e29b-41d4-a716-446655440307', '550e8400-e29b-41d4-a716-446655440204', '2011-02-15', TRUE),
-('550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440204', '2014-08-05', TRUE);
+('550e8400-e29b-41d4-a716-446655440301', 'Bertil', 'Bom', 'bertil.bom@tvcompany.com', '1980-05-15', '2015-03-01', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440302', 'Anna', 'Andersson', 'anna.andersson@tvcompany.com', '1985-08-22', '2016-07-15', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440303', 'Carl', 'Carlsson', 'carl.carlsson@tvcompany.com', '1975-12-10', '2010-01-20', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440304', 'Diana', 'Dahl', 'diana.dahl@tvcompany.com', '1990-03-28', '2018-09-10', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440305', 'Erik', 'Eriksson', 'erik.eriksson@tvcompany.com', '1982-11-05', '2012-06-01', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440306', 'Frida', 'Fredriksson', 'frida.fredriksson@tvcompany.com', '1988-07-14', '2017-04-20', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440307', 'Gustav', 'Gustafsson', 'gustav.gustafsson@tvcompany.com', '1978-09-30', '2011-02-15', TRUE, 'available'),
+('550e8400-e29b-41d4-a716-446655440308', 'Helena', 'Holm', 'helena.holm@tvcompany.com', '1983-04-12', '2014-08-05', TRUE, 'available');
 
 -- Insert TV Series
 INSERT INTO tv_series (uuid, title, description, domain_uuid, start_date, end_date) VALUES
@@ -63,6 +33,31 @@ INSERT INTO tv_series (uuid, title, description, domain_uuid, start_date, end_da
 ('550e8400-e29b-41d4-a716-446655440402', 'Wild Lies', 'A thriller about deception and betrayal', '550e8400-e29b-41d4-a716-446655440003', '2021-03-10', NULL),
 ('550e8400-e29b-41d4-a716-446655440403', 'Laugh Factory', 'A comedy show about everyday life', '550e8400-e29b-41d4-a716-446655440002', '2019-06-01', '2021-05-30'),
 ('550e8400-e29b-41d4-a716-446655440404', 'Reality Check', 'A reality show about personal growth', '550e8400-e29b-41d4-a716-446655440004', '2022-01-01', NULL);
+
+-- Insert Series Cast (employees participating in series with roles)
+INSERT INTO series_cast (uuid, employee_uuid, series_uuid, role_uuid, character_name, start_date, end_date) VALUES
+-- Big Sister cast
+('550e8400-e29b-41d4-a716-446655440801', '550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440201', NULL, '2020-01-15', '2022-12-20'),
+('550e8400-e29b-41d4-a716-446655440802', '550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'John Smith', '2020-01-15', '2022-12-20'),
+('550e8400-e29b-41d4-a716-446655440803', '550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'Sarah Johnson', '2020-01-15', '2022-12-20'),
+('550e8400-e29b-41d4-a716-446655440804', '550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'Mike Wilson', '2020-01-15', '2022-12-20'),
+
+-- Wild Lies cast
+('550e8400-e29b-41d4-a716-446655440805', '550e8400-e29b-41d4-a716-446655440303', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440201', NULL, '2021-03-10', NULL),
+('550e8400-e29b-41d4-a716-446655440806', '550e8400-e29b-41d4-a716-446655440305', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440201', NULL, '2021-03-10', NULL),
+('550e8400-e29b-41d4-a716-446655440807', '550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Detective Brown', '2021-03-10', NULL),
+('550e8400-e29b-41d4-a716-446655440808', '550e8400-e29b-41d4-a716-446655440306', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Lisa Davis', '2021-03-10', NULL),
+('550e8400-e29b-41d4-a716-446655440809', '550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Tom Anderson', '2021-03-10', NULL),
+
+-- Laugh Factory cast
+('550e8400-e29b-41d4-a716-446655440810', '550e8400-e29b-41d4-a716-446655440305', '550e8400-e29b-41d4-a716-446655440403', '550e8400-e29b-41d4-a716-446655440201', NULL, '2019-06-01', '2021-05-30'),
+('550e8400-e29b-41d4-a716-446655440811', '550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440403', '550e8400-e29b-41d4-a716-446655440202', 'Comedian Alice', '2019-06-01', '2021-05-30'),
+('550e8400-e29b-41d4-a716-446655440812', '550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440403', '550e8400-e29b-41d4-a716-446655440202', 'Comedian Bob', '2019-06-01', '2021-05-30'),
+
+-- Reality Check cast
+('550e8400-e29b-41d4-a716-446655440813', '550e8400-e29b-41d4-a716-446655440307', '550e8400-e29b-41d4-a716-446655440404', '550e8400-e29b-41d4-a716-446655440201', NULL, '2022-01-01', NULL),
+('550e8400-e29b-41d4-a716-446655440814', '550e8400-e29b-41d4-a716-446655440306', '550e8400-e29b-41d4-a716-446655440404', '550e8400-e29b-41d4-a716-446655440202', 'Host Emma', '2022-01-01', NULL),
+('550e8400-e29b-41d4-a716-446655440815', '550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440404', '550e8400-e29b-41d4-a716-446655440202', 'Coach David', '2022-01-01', NULL);
 
 -- Insert Episodes
 INSERT INTO episodes (uuid, series_uuid, episode_number, title, duration_minutes, air_date, director_uuid) VALUES
@@ -83,26 +78,6 @@ INSERT INTO episodes (uuid, series_uuid, episode_number, title, duration_minutes
 -- Reality Check episodes
 ('550e8400-e29b-41d4-a716-446655440509', '550e8400-e29b-41d4-a716-446655440404', 1, 'New Beginnings', 60, '2022-01-01', '550e8400-e29b-41d4-a716-446655440307'),
 ('550e8400-e29b-41d4-a716-446655440510', '550e8400-e29b-41d4-a716-446655440404', 2, 'Challenges', 60, '2022-01-08', '550e8400-e29b-41d4-a716-446655440307');
-
--- Insert Employee Series Roles
-INSERT INTO employee_series_roles (employee_uuid, series_uuid, role_uuid, character_name, start_date, end_date) VALUES
--- Big Sister cast
-('550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'John Smith', '2020-01-15', '2022-12-20'),
-('550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'Sarah Johnson', '2020-01-15', '2022-12-20'),
-('550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440401', '550e8400-e29b-41d4-a716-446655440202', 'Mike Wilson', '2020-01-15', '2022-12-20'),
-
--- Wild Lies cast
-('550e8400-e29b-41d4-a716-446655440301', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Detective Brown', '2021-03-10', NULL),
-('550e8400-e29b-41d4-a716-446655440306', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Lisa Davis', '2021-03-10', NULL),
-('550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440402', '550e8400-e29b-41d4-a716-446655440202', 'Tom Anderson', '2021-03-10', NULL),
-
--- Laugh Factory cast
-('550e8400-e29b-41d4-a716-446655440302', '550e8400-e29b-41d4-a716-446655440403', '550e8400-e29b-41d4-a716-446655440202', 'Comedian Alice', '2019-06-01', '2021-05-30'),
-('550e8400-e29b-41d4-a716-446655440304', '550e8400-e29b-41d4-a716-446655440403', '550e8400-e29b-41d4-a716-446655440202', 'Comedian Bob', '2019-06-01', '2021-05-30'),
-
--- Reality Check cast
-('550e8400-e29b-41d4-a716-446655440306', '550e8400-e29b-41d4-a716-446655440404', '550e8400-e29b-41d4-a716-446655440202', 'Host Emma', '2022-01-01', NULL),
-('550e8400-e29b-41d4-a716-446655440308', '550e8400-e29b-41d4-a716-446655440404', '550e8400-e29b-41d4-a716-446655440202', 'Coach David', '2022-01-01', NULL);
 
 -- Insert Channels
 INSERT INTO channels (uuid, name, type, description) VALUES
