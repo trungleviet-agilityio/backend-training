@@ -1,7 +1,7 @@
 # 🔍 Schema Logic vs Application Logic
 
 ## Overview
-This document clearly explains the distinction between **schema logic** (database-enforced) and **application logic** (code-enforced) business rules in the TV company database system.
+This document clearly explains the distinction between **schema logic** (database-enforced) and **application logic** (code-enforced) business rules in the TV series database system.
 
 ---
 
@@ -27,7 +27,7 @@ Constraints, triggers, and rules enforced directly by the database management sy
 - `01_create_schema.sql` - Table structures, primary keys, foreign keys
 - `02_business_rules.sql` - CHECK constraints, triggers, indexes
 
-### Examples from TV Company Database
+### Examples from TV Series Database
 
 #### Field-Level Constraints
 ```sql
@@ -48,11 +48,11 @@ CHECK (employment_date >= birthdate);
 CREATE TRIGGER validate_director_trigger
     BEFORE INSERT OR UPDATE ON episodes
     FOR EACH ROW
-    EXECUTE FUNCTION validate_director_role();
+    EXECUTE FUNCTION validate_director_in_series_cast();
 
 -- Character name validation for actors
 CREATE TRIGGER validate_character_name_trigger
-    BEFORE INSERT OR UPDATE ON employee_series_roles
+    BEFORE INSERT OR UPDATE ON series_cast
     FOR EACH ROW
     EXECUTE FUNCTION validate_character_name();
 ```
@@ -60,7 +60,7 @@ CREATE TRIGGER validate_character_name_trigger
 #### Performance Indexes
 ```sql
 -- Foreign key indexes for join performance
-CREATE INDEX idx_episodes_series_id ON episodes(series_id);
+CREATE INDEX idx_episodes_series_uuid ON episodes(series_uuid);
 CREATE INDEX idx_employees_deleted ON employees(deleted);
 ```
 
@@ -88,14 +88,14 @@ Business rules and validation logic implemented in application code, service lay
 - User interface validation
 - Reporting and analytics services
 
-### Examples from TV Company Database
+### Examples from TV Series Database
 
 #### Soft Delete Referential Integrity
 ```python
 # Application must filter deleted records
-def get_active_episodes(series_id):
+def get_active_episodes(series_uuid):
     return Episode.objects.filter(
-        series_id=series_id,
+        series_uuid=series_uuid,
         deleted=False
     )
 ```
@@ -103,10 +103,10 @@ def get_active_episodes(series_id):
 #### Business Workflow Rules
 ```python
 # First episode must have episode_number = 1
-def create_episode(series_id, episode_number, **kwargs):
+def create_episode(series_uuid, episode_number, **kwargs):
     if episode_number == 1:
         existing = Episode.objects.filter(
-            series_id=series_id,
+            series_uuid=series_uuid,
             episode_number=1,
             deleted=False
         )
@@ -114,7 +114,7 @@ def create_episode(series_id, episode_number, **kwargs):
             raise ValidationError("Episode 1 already exists")
 
     return Episode.objects.create(
-        series_id=series_id,
+        series_uuid=series_uuid,
         episode_number=episode_number,
         **kwargs
     )
@@ -172,36 +172,36 @@ def validate_employee_email(email):
 ALTER TABLE episodes
 ADD CONSTRAINT check_episode_air_date
 CHECK (air_date IS NULL OR air_date >= (
-    SELECT start_date FROM tv_series WHERE id = episodes.series_id
+    SELECT start_date FROM tv_series WHERE uuid = episodes.series_uuid
 ));
 
 -- 2. Create triggers for complex validation
 CREATE TRIGGER validate_director_trigger
     BEFORE INSERT OR UPDATE ON episodes
     FOR EACH ROW
-    EXECUTE FUNCTION validate_director_role();
+    EXECUTE FUNCTION validate_director_in_series_cast();
 
 -- 3. Add performance indexes
-CREATE INDEX idx_episodes_series_episode ON episodes(series_id, episode_number);
+CREATE INDEX idx_episodes_series_episode ON episodes(series_uuid, episode_number);
 ```
 
 ### Application Logic Implementation
 ```python
 # 1. Service layer validation
 class EpisodeService:
-    def create_episode(self, series_id, episode_number, **kwargs):
+    def create_episode(self, series_uuid, episode_number, **kwargs):
         # Validate business rules
-        self._validate_episode_number(series_id, episode_number)
-        self._validate_series_active(series_id)
+        self._validate_episode_number(series_uuid, episode_number)
+        self._validate_series_active(series_uuid)
 
         # Create episode
         return Episode.objects.create(
-            series_id=series_id,
+            series_uuid=series_uuid,
             episode_number=episode_number,
             **kwargs
         )
 
-    def _validate_episode_number(self, series_id, episode_number):
+    def _validate_episode_number(self, series_uuid, episode_number):
         # Application logic for episode numbering
         pass
 

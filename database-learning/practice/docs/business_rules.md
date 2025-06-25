@@ -1,9 +1,9 @@
-# 📜 Business Rules for TV Company Database
+# 📜 Business Rules for TV Series Database
 
 ---
 
 ## 1. Introduction
-This document defines all business rules for the TV company database system, organized by enforcement type and table. Rules are categorized as **schema logic** (enforced by database constraints/triggers) or **application logic** (enforced by application code) based on database design best practices.
+This document defines all business rules for the TV series database system, organized by enforcement type and table. Rules are categorized as **schema logic** (enforced by database constraints/triggers) or **application logic** (enforced by application code) based on database design best practices.
 
 **Key Distinction:**
 - **Schema Logic**: Enforced at database level (constraints, triggers, foreign keys)
@@ -55,14 +55,15 @@ This document defines all business rules for the TV company database system, org
 - **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
 - **created_time, updated_time**: Set automatically (enforced by triggers)
 
-#### Employee
+#### Employee (Actors and Directors)
 - **uuid**: UUID PRIMARY KEY (enforced by schema)
-- **name**: NOT NULL (enforced by schema)
+- **first_name**: NOT NULL (enforced by schema)
+- **last_name**: NOT NULL (enforced by schema)
 - **email**: UNIQUE NOT NULL (enforced by schema)
 - **birthdate**: NOT NULL (enforced by schema)
 - **employment_date**: Must be >= birthdate (enforced by CHECK constraint)
 - **is_internal**: BOOLEAN DEFAULT TRUE (enforced by schema)
-- **status**: ENUM('active', 'on_leave', 'terminated') (enforced by schema)
+- **status**: ENUM('available', 'busy', 'unavailable') (enforced by schema)
 - **deleted**: BOOLEAN DEFAULT FALSE (enforced by schema)
 - **created_time, updated_time**: Set automatically (enforced by triggers)
 
@@ -83,8 +84,7 @@ This document defines all business rules for the TV company database system, org
 
 #### Composite Unique Constraints
 - **Episode**: (series_uuid, episode_number) UNIQUE (enforced by schema)
-- **EmployeeRole**: (employee_uuid, role_uuid) PRIMARY KEY (enforced by schema)
-- **EmployeeSeriesRole**: (employee_uuid, series_uuid, role_uuid) PRIMARY KEY (enforced by schema)
+- **SeriesCast**: (employee_uuid, series_uuid, role_uuid) UNIQUE (enforced by schema)
 - **TransmissionChannel**: (transmission_uuid, channel_uuid) PRIMARY KEY (enforced by schema)
 
 #### Foreign Key Constraints
@@ -94,13 +94,13 @@ This document defines all business rules for the TV company database system, org
 ### 2.3. Business Rule Triggers
 
 #### Director Validation
-- **Rule**: Director must have active 'Director' role and be active employee
-- **Enforcement**: Trigger on episodes table
-- **Function**: `validate_director_role()`
+- **Rule**: The director_uuid for an episode must reference an employee who is assigned the 'Director' role for the same series in the series_cast table.
+- **Enforcement**: Trigger on episodes table or application logic.
+- **Function**: `validate_director_in_series_cast()`
 
 #### Character Name Validation
 - **Rule**: Character name required for Actor role, NULL for others
-- **Enforcement**: Trigger on employee_series_roles table
+- **Enforcement**: Trigger on series_cast table
 - **Function**: `validate_character_name()`
 
 #### Channel Deletion Prevention
@@ -131,10 +131,10 @@ This document defines all business rules for the TV company database system, org
 - **Examples**:
   - Episodes cannot reference deleted TVSeries
   - Transmissions cannot reference deleted Episodes
-  - EmployeeSeriesRoles cannot reference deleted Employees/Series/Roles
+  - SeriesCast cannot reference deleted Employees/Series/Roles
 
 #### Business Workflow Rules
-- **Rule**: Only active employees can be assigned to new episodes/series
+- **Rule**: Only available employees can be assigned to new episodes/series
 - **Enforcement**: Application validation before database operations
 - **Rule**: First episode of each series must have episode_number = 1
 - **Enforcement**: Application logic during episode creation
@@ -142,8 +142,6 @@ This document defines all business rules for the TV company database system, org
 #### Complex Business Rules
 - **Rule**: A TV series must have at least one episode
 - **Enforcement**: Application/reporting logic, not database constraint
-- **Rule**: An employee must have at least one active role
-- **Enforcement**: Application validation during role management
 
 ### 3.2. User Interface Rules
 - **Rule**: Channel names must be unique across active channels
@@ -212,7 +210,7 @@ This document defines all business rules for the TV company database system, org
 ---
 
 ## 6. References
-- Project requirements
+- TV Series Production Requirements
 - Chapter 9: Field Specifications (Database Design Book)
 - Chapter 10: Table Relationships (Database Design Book)
 - Chapter 11: Business Rules (Database Design Book)

@@ -38,12 +38,12 @@
 | title           | VARCHAR   | Title of the episode | Not unique; duplicate titles allowed  |
 | duration_minutes| INT       | Length of the episode in minutes | 1-600                                  |
 | air_date        | DATE      | Date the episode was first aired | Optional, must be >= TVSeries.start_date |
-| director_uuid     | UUID      | Reference to the director (employee) | FK → Employee(uuid)                   |
+| director_uuid     | UUID      | Reference to the director (employee) | FK → Employee(uuid); must also be assigned as Director in SeriesCast for this series |
 | deleted         | BOOLEAN   | Marks record as deleted without physical removal | Soft delete                            |
 | created_time    | TIMESTAMP | When the record was created | Record creation time                   |
 | updated_time    | TIMESTAMP | When the record was last updated | Last update time                       |
 
-> **Note:** Episode.title is not unique. Use (series_uuid, episode_number) as a unique identifier for episodes within a series.
+> **Note:** director_uuid must reference an employee who is assigned the Director role for the same series in the SeriesCast table. This is enforced by a business rule or trigger.
 
 ### Transmission
 | Field            | Type        | Description | Notes                                |
@@ -86,7 +86,7 @@
 | birthdate       | DATE      | Date of birth of the employee |                             |
 | employment_date | DATE      | Date the employee was hired |                             |
 | is_internal     | BOOLEAN   | Whether the employee is internal (true) or external/freelance (false) | Default: TRUE               |
-| status          | ENUM      | Employee status (active, on_leave, terminated) | Default: active             |
+| status          | ENUM      | Production status (available, busy, unavailable) | Default: available         |
 | deleted         | BOOLEAN   | Marks record as deleted without physical removal | Soft delete                 |
 | created_time    | TIMESTAMP | When the record was created | Record creation time        |
 | updated_time    | TIMESTAMP | When the record was last updated | Last update time            |
@@ -112,28 +112,21 @@
 | created_time | TIMESTAMP | When the record was created | Record creation time        |
 | updated_time | TIMESTAMP | When the record was last updated | Last update time            |
 
-### EmployeeRole (Global: employee & company-wide role)
-| Field        | Type      | Description | Notes                                  |
-|-------------|-----------|-------------|----------------------------------------|
-| employee_uuid | UUID      | Reference to the employee | 🔑 Composite PK, FK → Employee(uuid)  |
-| role_uuid     | UUID      | Reference to the role | 🔑 Composite PK, FK → Role(uuid)      |
-| assigned_at | DATE      | Date the role was assigned to the employee | Optional                               |
-| is_active   | BOOLEAN   | Whether the role assignment is currently active | Default: true                          |
-| created_time| TIMESTAMP | When the record was created | Record creation time                   |
-| updated_time| TIMESTAMP | When the record was last updated | Last update time                       |
-
-### EmployeeSeriesRole (employee participates in TVSeries)
+### SeriesCast (employee participates in TVSeries)
 | Field          | Type      | Description | Notes                                  |
 |---------------|-----------|-------------|----------------------------------------|
-| employee_uuid   | UUID      | Reference to the employee | 🔑 Composite PK, FK → Employee(uuid)  |
-| series_uuid     | UUID      | Reference to the TV series | 🔑 Composite PK, FK → TVSeries(uuid)  |
-| role_uuid       | UUID      | Reference to the role in the series (e.g., Actor, Director) | 🔑 Composite PK, FK → Role(uuid)      |
+| uuid           | UUID      | Unique identifier for the cast record | 🔑 Primary Key                         |
+| employee_uuid   | UUID      | Reference to the employee | FK → Employee(uuid)                    |
+| series_uuid     | UUID      | Reference to the TV series | FK → TVSeries(uuid)                    |
+| role_uuid       | UUID      | Reference to the role in the series (e.g., Actor, Director) | FK → Role(uuid)                        |
 | character_name| VARCHAR   | Name of the character played (if applicable) | Required if role is 'Actor', NULL otherwise |
 | start_date    | DATE      | Date the employee started participating in the series | Optional                               |
 | end_date      | DATE      | Date the employee stopped participating in the series | Optional                               |
 | deleted       | BOOLEAN   | Marks record as deleted without physical removal | Soft delete                            |
 | created_time  | TIMESTAMP | When the record was created | Record creation time                   |
 | updated_time  | TIMESTAMP | When the record was last updated | Last update time                       |
+
+> **Note:** (employee_uuid, series_uuid, role_uuid) has a UNIQUE constraint to prevent duplicate assignments.
 
 ### ValidationLog / AuditLog (Optional)
 | Field         | Type      | Description | Notes                        |
@@ -150,25 +143,24 @@
 
 ## 2. Adjacency Matrix (Table Relationships)
 
-|                   | SeriesDomain | TVSeries | Episode | Employee | Role | Department | EmployeeRole | EmployeeSeriesRole | TransmissionChannel | Transmission | Channel |
-|-------------------|:-----------:|:--------:|:-------:|:--------:|:----:|:----------:|:------------:|:------------------:|:------------------:|:------------:|:-------:|
-| **SeriesDomain**        |      -      |   1:N    |         |          |      |            |              |                    |                    |              |         |
-| **TVSeries**            |    N:1      |    -     |   1:N   |          |      |            |              |        1:N         |                    |              |         |
-| **Episode**             |             |   N:1    |    -    |   N:1*   |      |            |              |                    |                    |     1:N      |         |
-| **Employee**            |             |          |   1:N*  |    -     |      |     1:N    |     1:N      |        1:N         |                    |              |         |
-| **Role**                |             |          |         |          |  -   |    N:1     |     1:N      |        1:N         |                    |              |         |
-| **Department**          |             |          |         |          |  1:N |     -      |              |                    |                    |              |         |
-| **EmployeeRole**        |             |          |         |   N:1    |  N:1 |            |      -       |                    |                    |              |         |
-| **EmployeeSeriesRole**  |             |   N:1    |         |   N:1    |  N:1 |            |              |         -          |                    |              |         |
-| **TransmissionChannel** |             |          |         |          |      |            |              |                    |        -           |     N:1      |   N:1   |
-| **Transmission**        |             |          |   N:1   |          |      |            |              |                    |        1:N         |      -       |         |
-| **Channel**             |             |          |         |          |      |            |              |                    |        1:N         |              |    -    |
+|                   | SeriesDomain | TVSeries | Episode | Employee | Role | Department | SeriesCast | TransmissionChannel | Transmission | Channel |
+|-------------------|:-----------:|:--------:|:-------:|:--------:|:----:|:----------:|:----------:|:------------------:|:------------:|:-------:|
+| **SeriesDomain**        |      -      |   1:N    |         |          |      |            |            |                    |              |         |
+| **TVSeries**            |    N:1      |    -     |   1:N   |          |      |            |    1:N     |                    |              |         |
+| **Episode**             |             |   N:1    |    -    |   N:1*   |      |            |            |                    |     1:N      |         |
+| **Employee**            |             |          |   1:N*  |    -     |      |     1:N    |    1:N     |                    |              |         |
+| **Role**                |             |          |         |          |  -   |    N:1     |    1:N     |                    |              |         |
+| **Department**          |             |          |         |          |  1:N |     -      |            |                    |              |         |
+| **SeriesCast**          |             |   N:1    |         |   N:1    |  N:1 |            |     -      |                    |              |         |
+| **TransmissionChannel** |             |          |         |          |      |            |            |        -           |     N:1      |   N:1   |
+| **Transmission**        |             |          |   N:1   |          |      |            |            |        1:N         |      -       |         |
+| **Channel**             |             |          |         |          |      |            |            |        1:N         |              |    -    |
 
 - **1:N**: Row table has one, column table has many (e.g., TVSeries 1:N Episode)
 - **N:1**: Row table has many, column table has one (e.g., Episode N:1 TVSeries)
 - **N:1\***: Episode.director_uuid → Employee.uuid (each episode has one director, an employee)
 
-> **Note:** All M:N relationships in the logical model are implemented as two 1:N relationships via linking (junction) tables in the physical schema. For example, EmployeeSeriesRole links Employee and TVSeries with two 1:N relationships.
+> **Note:** All M:N relationships in the logical model are implemented as two 1:N relationships via linking (junction) tables in the physical schema. For example, SeriesCast links Employee and TVSeries with two 1:N relationships.
 
 ---
 
@@ -183,5 +175,5 @@
 - Use TIMESTAMPTZ for all timestamps that may be global (e.g., transmission_time, audit logs).
 - TVSeries.title and Episode.title are not unique; use composite keys or UUIDs for uniqueness.
 - Channel is a validation table for allowed transmission channels; Transmission.channel_uuid must reference Channel.uuid (FK).
-- Employee.status supports reporting and admin logic (active, on_leave, terminated).
+- Employee.status supports production scheduling (available, busy, unavailable).
 - Consider using a ValidationLog or AuditLog table for tracking changes, editors, and reasons.

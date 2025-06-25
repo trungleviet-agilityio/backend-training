@@ -1,15 +1,15 @@
-# 🎯 Mission Statement & Objectives for TV Company Database
+# 🎯 Mission Statement & Objectives for TV Series Database
 
 ---
 
 ## 1. Mission Statement
 
-**"Maintain comprehensive data to support the production, management, and broadcasting of television series, including employee management, episode tracking, and multi-channel transmission analytics for the TV company."**
+**"Maintain comprehensive data to support the production and broadcasting of TV series, including actor and director participation, episode management, and transmission tracking for the TV company."**
 
 ### Mission Statement Analysis
-- **Purpose:** Defines the specific purpose of the database
-- **Scope:** Covers production, management, broadcasting, and analytics
-- **Focus:** Provides direction for all design decisions
+- **Purpose:** Defines the specific purpose of the database for TV series production
+- **Scope:** Covers series, episodes, actors, directors, and transmissions
+- **Focus:** Provides direction for all design decisions in TV series domain
 - **Stakeholder Agreement:** Should be reviewed and approved by TV company management
 
 ---
@@ -18,7 +18,7 @@
 
 The database must support the following general tasks:
 
-### 2.1. Series Management
+### 2.1. TV Series Management
 - **Maintain complete information about TV series** (title, description, domain/genre, production dates)
 - **Track series lifecycle** (start date, end date, ongoing status)
 - **Manage series categorization** (domains/genres for content organization)
@@ -28,11 +28,11 @@ The database must support the following general tasks:
 - **Track episode production details** (director assignments, series relationships)
 - **Manage episode sequencing** (episode numbers within series)
 
-### 2.3. Employee Management
-- **Maintain complete employee information** (personal details, employment status, roles)
-- **Track employee participation in series** (actors, directors, crew assignments)
-- **Manage employee roles and departments** (organizational structure)
-- **Support multi-role employees** (actors who are also directors, etc.)
+### 2.3. Actor and Director Management
+- **Maintain actor and director information** (personal details, employment status)
+- **Track actor participation in series** (which actors play in which series)
+- **Track director assignments to episodes** (which director directs which episode)
+- **Support multi-series participation** (actors and directors can work on multiple series)
 
 ### 2.4. Transmission & Broadcasting
 - **Track all episode transmissions** (broadcast times, channels, viewership)
@@ -54,37 +54,28 @@ The database must support the following general tasks:
 
 ---
 
-## 3. Stakeholder Interviews Summary
+## 3. Requirements Analysis
 
-### 3.1. Management Interviews
-**Conducted with:** TV Company Executives, Production Managers
+### 3.1. Core Entities (from requirements)
+- **TV Series**: The main content produced by the company
+- **Episodes**: Individual parts of TV series
+- **Actors**: Employees who play roles in series
+- **Directors**: Employees who direct episodes
+- **Transmissions**: Broadcasting events of episodes
 
-**Key Requirements Identified:**
-- Need to track series from concept to completion
-- Must support global broadcasting operations
-- Require employee performance analytics
-- Need flexible role management (multi-role employees)
-- Must support both current and historical data
+### 3.2. Key Relationships (from requirements)
+- **Actor ↔ Series**: M:N (actors participate in multiple series, series have multiple actors)
+- **Director ↔ Episode**: 1:N (each episode has one director, directors can direct multiple episodes)
+- **Series ↔ Episode**: 1:N (each series has multiple episodes)
+- **Episode ↔ Transmission**: 1:N (each episode can be transmitted multiple times)
 
-**Business Priorities:**
-- Content management efficiency
-- Employee productivity tracking
-- Global audience reach measurement
-- Regulatory compliance (employment records)
-
-### 3.2. User Interviews
-**Conducted with:** Production Staff, HR Personnel, Analytics Team
-
-**Daily Work Requirements:**
-- **Production Staff:** Episode tracking, director assignments, series management
-- **HR Personnel:** Employee records, role management, department oversight
-- **Analytics Team:** Viewership reports, performance metrics, trend analysis
-
-**Data Access Patterns:**
-- Series and episode lookups
-- Employee role assignments
-- Transmission scheduling
-- Performance reporting
+### 3.3. Required Queries (from requirements)
+- Which actors play in a specific series?
+- In which series does a specific actor participate?
+- Which actors participate in more than one series?
+- How many times has an episode been transmitted and when?
+- How many directors are employed by the company?
+- Which director has directed the greatest number of episodes?
 
 ---
 
@@ -92,10 +83,11 @@ The database must support the following general tasks:
 
 ### 4.1. Functional Requirements
 - [ ] All series and episodes can be tracked from creation to completion
-- [ ] Employee roles and participation are accurately recorded
-- [ ] Multi-channel transmissions are properly managed
+- [ ] Actor and director participation is accurately recorded
+- [ ] Multi-series participation is properly managed
+- [ ] Episode transmissions are tracked with timing information
 - [ ] Business rules are enforced automatically
-- [ ] Reports can be generated efficiently
+- [ ] Required queries can be executed efficiently
 
 ### 4.2. Performance Requirements
 - [ ] Database supports concurrent access by multiple users
@@ -114,14 +106,15 @@ The database must support the following general tasks:
 ## 5. Scope Boundaries
 
 ### 5.1. In Scope
-- Series and episode management
-- Employee and role management
-- Transmission and broadcasting tracking
+- TV series and episode management
+- Actor and director participation tracking
+- Episode transmission and broadcasting
 - Multi-channel support
-- Analytics and reporting
+- Analytics and reporting for TV series domain
 - Data integrity and validation
 
 ### 5.2. Out of Scope
+- General employee management (beyond actors and directors)
 - Financial management (budgets, costs)
 - Equipment and asset tracking
 - Marketing and promotion data
@@ -133,5 +126,5 @@ The database must support the following general tasks:
 
 ## 6. References
 - Chapter 5: Starting the Process (Database Design Book)
-- TV Company Business Requirements
+- TV Series Production Requirements
 - Stakeholder Interview Notes

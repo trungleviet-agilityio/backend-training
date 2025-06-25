@@ -1,10 +1,10 @@
-# 👁️ Database Views for TV Company Database
+# 👁️ Database Views for TV Series Database
 
 ---
 
 ## 1. Introduction
 
-This document defines the views needed to support different user access patterns and reporting requirements for the TV company database. Views provide a way to present data in different formats for various user groups while maintaining data security and simplifying complex queries.
+This document defines the views needed to support different user access patterns and reporting requirements for the TV series database. Views provide a way to present data in different formats for various user groups while maintaining data security and simplifying complex queries.
 
 ---
 
@@ -13,8 +13,8 @@ This document defines the views needed to support different user access patterns
 ### 2.1. Production Views
 Views for production staff to manage series and episodes.
 
-### 2.2. HR Views
-Views for human resources personnel to manage employees and roles.
+### 2.2. Cast Management Views
+Views for managing actors and directors participating in series.
 
 ### 2.3. Analytics Views
 Views for analytics team to generate reports and performance metrics.
@@ -81,7 +81,7 @@ GROUP BY e.uuid, e.episode_number, e.title, e.duration_minutes, e.air_date, s.ti
 **Use Cases:** Episode tracking, director assignments, production scheduling
 
 ### 3.3. Cast and Crew View
-**Purpose:** Display all employees participating in a specific series with their roles and characters.
+**Purpose:** Display all actors and directors participating in a specific series with their roles and characters.
 
 ```sql
 CREATE VIEW cast_and_crew AS
@@ -90,34 +90,34 @@ SELECT
     emp.first_name || ' ' || emp.last_name as employee_name,
     emp.email as employee_email,
     r.name as role_name,
-    esr.character_name,
-    esr.start_date,
-    esr.end_date,
+    sc.character_name,
+    sc.start_date,
+    sc.end_date,
     d.name as department_name
-FROM employee_series_roles esr
-JOIN tv_series s ON esr.series_uuid = s.uuid
-JOIN employees emp ON esr.employee_uuid = emp.uuid
-JOIN roles r ON esr.role_uuid = r.uuid
+FROM series_cast sc
+JOIN tv_series s ON sc.series_uuid = s.uuid
+JOIN employees emp ON sc.employee_uuid = emp.uuid
+JOIN roles r ON sc.role_uuid = r.uuid
 JOIN departments d ON r.department_uuid = d.uuid
-WHERE esr.deleted = FALSE
+WHERE sc.deleted = FALSE
     AND s.deleted = FALSE
     AND emp.deleted = FALSE
     AND r.deleted = FALSE
 ORDER BY s.title, r.name, emp.first_name, emp.last_name;
 ```
 
-**Access:** Production Staff, HR Personnel
+**Access:** Production Staff, Cast Management
 **Use Cases:** Cast management, role assignments, character tracking
 
 ---
 
-## 4. HR Views
+## 4. Cast Management Views
 
-### 4.1. Employee Directory View
-**Purpose:** Provide HR with complete employee information including current roles and status.
+### 4.1. Actor and Director Directory View
+**Purpose:** Provide complete information about actors and directors including their series participation.
 
 ```sql
-CREATE VIEW employee_directory AS
+CREATE VIEW actor_director_directory AS
 SELECT
     emp.uuid,
     emp.first_name || ' ' || emp.last_name as employee_name,
@@ -126,65 +126,63 @@ SELECT
     emp.employment_date,
     emp.is_internal,
     emp.status,
-    STRING_AGG(r.name, ', ') as current_roles,
-    STRING_AGG(d.name, ', ') as departments
+    STRING_AGG(DISTINCT r.name, ', ') as roles_in_series,
+    COUNT(DISTINCT sc.series_uuid) as series_participation_count
 FROM employees emp
-LEFT JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-LEFT JOIN roles r ON er.role_uuid = r.uuid
-LEFT JOIN departments d ON r.department_uuid = d.uuid
+LEFT JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = FALSE
+LEFT JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = FALSE
 WHERE emp.deleted = FALSE
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email, emp.birthdate, emp.employment_date, emp.is_internal, emp.status;
 ```
 
-**Access:** HR Personnel, Management
-**Use Cases:** Employee management, role tracking, organizational reporting
+**Access:** Cast Management, Production Staff
+**Use Cases:** Actor and director management, participation tracking, availability checking
 
-### 4.2. Active Employees View
-**Purpose:** Show only active employees for current operations.
+### 4.2. Available Cast View
+**Purpose:** Show only available actors and directors for current production needs.
 
 ```sql
-CREATE VIEW active_employees AS
+CREATE VIEW available_cast AS
 SELECT
     emp.uuid,
     emp.first_name || ' ' || emp.last_name as employee_name,
     emp.email,
     emp.employment_date,
     emp.is_internal,
-    STRING_AGG(r.name, ', ') as roles
+    STRING_AGG(DISTINCT r.name, ', ') as roles
 FROM employees emp
-JOIN employee_roles er ON emp.uuid = er.employee_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-JOIN roles r ON er.role_uuid = r.uuid
+JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = FALSE
+JOIN roles r ON sc.role_uuid = r.uuid AND r.deleted = FALSE
 WHERE emp.deleted = FALSE
-    AND emp.status = 'active'
-    AND r.deleted = FALSE
+    AND emp.status = 'available'
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email, emp.employment_date, emp.is_internal;
 ```
 
-**Access:** HR Personnel, Production Staff
-**Use Cases:** Active employee lookups, role assignments, availability checking
+**Access:** Production Staff, Cast Management
+**Use Cases:** Available actor/director lookups, role assignments, availability checking
 
-### 4.3. Employee Performance View
-**Purpose:** Track employee participation across series and episodes.
+### 4.3. Cast Performance View
+**Purpose:** Track actor and director participation across series and episodes.
 
 ```sql
-CREATE VIEW employee_performance AS
+CREATE VIEW cast_performance AS
 SELECT
     emp.uuid,
     emp.first_name || ' ' || emp.last_name as employee_name,
     emp.email,
     r.name as role_name,
-    COUNT(DISTINCT esr.series_uuid) as series_participation_count,
+    COUNT(DISTINCT sc.series_uuid) as series_participation_count,
     COUNT(DISTINCT e.uuid) as episodes_directed,
     MAX(e.air_date) as last_episode_date
 FROM employees emp
-LEFT JOIN employee_series_roles esr ON emp.uuid = esr.employee_uuid AND esr.deleted = FALSE
-LEFT JOIN roles r ON esr.role_uuid = r.uuid
+LEFT JOIN series_cast sc ON emp.uuid = sc.employee_uuid AND sc.deleted = FALSE
+LEFT JOIN roles r ON sc.role_uuid = r.uuid
 LEFT JOIN episodes e ON emp.uuid = e.director_uuid AND e.deleted = FALSE
-WHERE emp.deleted = FALSE AND emp.status = 'active'
+WHERE emp.deleted = FALSE AND emp.status = 'available'
 GROUP BY emp.uuid, emp.first_name, emp.last_name, emp.email, r.name;
 ```
 
-**Access:** HR Personnel, Management
+**Access:** Cast Management, Production Staff
 **Use Cases:** Performance evaluation, career development, resource planning
 
 ---
@@ -289,11 +287,11 @@ CREATE VIEW executive_dashboard AS
 SELECT
     (SELECT COUNT(*) FROM tv_series WHERE deleted = FALSE) as active_series,
     (SELECT COUNT(*) FROM episodes WHERE deleted = FALSE) as total_episodes,
-    (SELECT COUNT(*) FROM employees WHERE deleted = FALSE AND status = 'active') as active_employees,
+    (SELECT COUNT(*) FROM employees WHERE deleted = FALSE AND status = 'available') as available_cast,
     (SELECT COUNT(*) FROM transmissions WHERE deleted = FALSE) as total_transmissions,
     (SELECT SUM(viewership) FROM transmissions WHERE deleted = FALSE) as total_viewership,
     (SELECT COUNT(*) FROM channels WHERE deleted = FALSE) as active_channels,
-    (SELECT COUNT(DISTINCT series_uuid) FROM employee_series_roles WHERE deleted = FALSE) as series_with_employees;
+    (SELECT COUNT(DISTINCT series_uuid) FROM series_cast WHERE deleted = FALSE) as series_with_cast;
 ```
 
 **Access:** Executive Management
@@ -310,16 +308,16 @@ SELECT
     d.description,
     COUNT(DISTINCT r.uuid) as roles_count,
     COUNT(DISTINCT emp.uuid) as employees_count,
-    COUNT(DISTINCT CASE WHEN emp.status = 'active' THEN emp.uuid END) as active_employees
+    COUNT(DISTINCT CASE WHEN emp.status = 'available' THEN emp.uuid END) as available_employees
 FROM departments d
 LEFT JOIN roles r ON d.uuid = r.department_uuid AND r.deleted = FALSE
-LEFT JOIN employee_roles er ON r.uuid = er.role_uuid AND er.is_active = TRUE AND er.deleted = FALSE
-LEFT JOIN employees emp ON er.employee_uuid = emp.uuid AND emp.deleted = FALSE
+LEFT JOIN series_cast sc ON r.uuid = sc.role_uuid AND sc.deleted = FALSE
+LEFT JOIN employees emp ON sc.employee_uuid = emp.uuid AND emp.deleted = FALSE
 WHERE d.deleted = FALSE
 GROUP BY d.uuid, d.name, d.description;
 ```
 
-**Access:** Management, HR Personnel
+**Access:** Management, Cast Management
 **Use Cases:** Organizational planning, resource allocation, department management
 
 ---
@@ -328,13 +326,13 @@ GROUP BY d.uuid, d.name, d.description;
 
 ### 7.1. Access Control
 - **Production Views:** Access for production staff only
-- **HR Views:** Access for HR personnel and management
+- **Cast Management Views:** Access for cast management and production staff
 - **Analytics Views:** Access for analytics team and management
 - **Management Views:** Access for executive management only
 
 ### 7.2. Data Filtering
 - All views automatically filter out deleted records
-- Employee views respect status-based access (active employees only)
+- Employee views respect status-based access (available employees only)
 - Sensitive information (birthdates, emails) restricted to appropriate views
 
 ### 7.3. Row-Level Security
@@ -366,5 +364,5 @@ GROUP BY d.uuid, d.name, d.description;
 ## 9. References
 - Chapter 4: Conceptual Overview (Database Design Book)
 - Mission Statement & Objectives Document
-- Stakeholder Interview Notes
+- TV Series Production Requirements
 - User Access Pattern Analysis
