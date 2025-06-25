@@ -65,31 +65,16 @@ employees: {
 roles: {
   shape: sql_table
   uuid: uuid {constraint: primary_key}
-  department_uuid: uuid {constraint: foreign_key}
   name: varchar {constraint: unique}
   description: text
 }
 
-departments: {
+series_cast: {
   shape: sql_table
   uuid: uuid {constraint: primary_key}
-  name: varchar {constraint: unique}
-  description: text
-}
-
-employee_roles: {
-  shape: sql_table
-  employee_uuid: uuid {constraint: [foreign_key; primary_key]}
-  role_uuid: uuid {constraint: [foreign_key; primary_key]}
-  assigned_at: date
-  is_active: boolean
-}
-
-employee_series_roles: {
-  shape: sql_table
-  employee_uuid: uuid {constraint: [foreign_key; primary_key]}
-  series_uuid: uuid {constraint: [foreign_key; primary_key]}
-  role_uuid: uuid {constraint: [foreign_key; primary_key]}
+  employee_uuid: uuid {constraint: foreign_key}
+  series_uuid: uuid {constraint: foreign_key}
+  role_uuid: uuid {constraint: foreign_key}
   character_name: varchar
   start_date: date
   end_date: date
@@ -117,33 +102,18 @@ employees.uuid -> episodes.director_uuid: {
   style: dashed
 }
 
-tv_series.uuid -> employee_series_roles.series_uuid: {
+tv_series.uuid -> series_cast.series_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-employees.uuid -> employee_series_roles.employee_uuid: {
+employees.uuid -> series_cast.employee_uuid: {
   label: "1:N"
   style.stroke-width: 2
 }
 
-roles.uuid -> employee_series_roles.role_uuid: {
+roles.uuid -> series_cast.role_uuid: {
   label: "1:N"
-  style.stroke-width: 2
-}
-
-employees.uuid -> employee_roles.employee_uuid: {
-  label: "1:N"
-  style.stroke-width: 2
-}
-
-roles.uuid -> employee_roles.role_uuid: {
-  label: "1:N"
-  style.stroke-width: 2
-}
-
-roles.department_uuid -> departments.uuid: {
-  label: "N:1"
   style.stroke-width: 2
 }
 
@@ -174,18 +144,16 @@ legend: {
     - **TVSeries → SeriesDomain**: N:1 – Each series belongs to one domain
     - **TVSeries → Episode**: 1:N – Each series has many episodes
     - **Episode → Transmission**: 1:N – Each episode can have multiple transmissions
-    - **Role → Department**: N:1 – Each role belongs to one department
     - **Episode → Director (Employee)**: N:1 – Each episode has one director
 
     ### M:N Relationships (via linking tables)
-    - **TVSeries ↔ Employee**: M:N – Through EmployeeSeriesRole (employees participate in series)
-    - **Employee ↔ Role (company-wide)**: M:N – Through EmployeeRole (employees can have multiple roles)
+    - **TVSeries ↔ Employee**: M:N – Through SeriesCast (actors and directors participate in series)
     - **Transmission ↔ Channel**: M:N – Through TransmissionChannel (transmissions can be on multiple channels)
 
     ### Note:
-    - Each tables automatically has a soft delete flag (deleted) and a created_time and updated_time column.
-      - The soft delete flag is used to mark a record as deleted.
-      - The created_time is the time the record was created.
-      - The updated_time is the time the record was last updated.
+    - Each table automatically has a soft delete flag (deleted) and created_time and updated_time columns.
+    - SeriesCast has a unique constraint on (employee_uuid, series_uuid, role_uuid) to prevent duplicate assignments.
+    - Different episodes within the same series may be directed by different directors.
+    - Roles are focused on TV production (Actor, Director, etc.) without HR department structure.
     |
 }
