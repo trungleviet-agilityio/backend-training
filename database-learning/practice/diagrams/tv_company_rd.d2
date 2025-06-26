@@ -1,0 +1,156 @@
+direction: right
+
+series_domains: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  name: varchar {constraint: unique}
+  description: text
+}
+
+tv_series: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  domain_uuid: uuid {constraint: foreign_key}
+  title: varchar
+  description: text
+  start_date: date
+  end_date: date
+}
+
+episodes: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  series_uuid: uuid {constraint: foreign_key}
+  director_uuid: uuid {constraint: foreign_key}
+  episode_number: int
+  title: varchar
+  duration_minutes: int
+  air_date: date
+}
+
+transmissions: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  episode_uuid: uuid {constraint: foreign_key}
+  transmission_time: timestamptz
+  viewership: bigint
+}
+
+channels: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  name: varchar {constraint: unique}
+  type: varchar
+  description: text
+}
+
+transmission_channels: {
+  shape: sql_table
+  transmission_uuid: uuid {constraint: [foreign_key; primary_key]}
+  channel_uuid: uuid {constraint: [foreign_key; primary_key]}
+}
+
+employees: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  first_name: varchar
+  last_name: varchar
+  email: varchar {constraint: unique}
+  birthdate: date
+  employment_date: date
+  is_internal: boolean
+  status: enum
+}
+
+roles: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  name: varchar {constraint: unique}
+  description: text
+}
+
+series_cast: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  employee_uuid: uuid {constraint: foreign_key}
+  series_uuid: uuid {constraint: foreign_key}
+  role_uuid: uuid {constraint: foreign_key}
+  character_name: varchar
+  start_date: date
+  end_date: date
+}
+
+# Relationships with better styling
+series_domains.uuid -> tv_series.domain_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+tv_series.uuid -> episodes.series_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+episodes.uuid -> transmissions.episode_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+employees.uuid -> episodes.director_uuid: {
+  label: "1:N (director)"
+  style.stroke-width: 2
+  style: dashed
+}
+
+tv_series.uuid -> series_cast.series_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+employees.uuid -> series_cast.employee_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+roles.uuid -> series_cast.role_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+# New relationships for Channel and TransmissionChannel
+transmissions.uuid -> transmission_channels.transmission_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+channels.uuid -> transmission_channels.channel_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+}
+
+# Enhanced legend with better styling
+legend: {
+  style.font-size: 16
+  shape: text
+  style.fill: "#f7fafc"
+  style.stroke: "#2d3748"
+  style.stroke-width: 1
+  style.border-radius: 8
+  style.shadow: true
+  label: |md
+    ## 🎬 Database Relationship Diagram
+
+    ### 1:N Relationships
+    - **TVSeries → SeriesDomain**: N:1 – Each series belongs to one domain
+    - **TVSeries → Episode**: 1:N – Each series has many episodes
+    - **Episode → Transmission**: 1:N – Each episode can have multiple transmissions
+    - **Episode → Director (Employee)**: N:1 – Each episode has one director
+
+    ### M:N Relationships (via linking tables)
+    - **TVSeries ↔ Employee**: M:N – Through SeriesCast (actors and directors participate in series)
+    - **Transmission ↔ Channel**: M:N – Through TransmissionChannel (transmissions can be on multiple channels)
+
+    ### Note:
+    - Each table automatically has a soft delete flag (deleted) and created_time and updated_time columns.
+  |
+}

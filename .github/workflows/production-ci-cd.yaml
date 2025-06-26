@@ -17,6 +17,10 @@ on:
 env:
   DOCKER_IMAGE: docker-practice-app
   DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+  VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
 jobs:
   shared-ci:
@@ -25,12 +29,7 @@ jobs:
       target-branch: main
       skip-on-no-changes: false
       run-docker-compose: false
-      container_name: docker-practice-app
-      healthcheck_url: http://localhost:8000/health/
-    secrets:
-      VPS_HOST: ${{ secrets.VPS_HOST }}
-      VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
-      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+    secrets: inherit
 
   build-and-push:
     needs: shared-ci
@@ -128,8 +127,23 @@ jobs:
     with:
       target-branch: main
       container_name: docker-practice-app
-      healthcheck_url: http://localhost:8080/health/
-    secrets:
-      VPS_HOST: ${{ secrets.VPS_HOST }}
-      VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
-      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      healthcheck_url: http://localhost:8000/health/
+    secrets: inherit
+
+  cleanup:
+    needs: health-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cleanup old images
+        run: docker image prune -f
+
+  cleanup-old-images:
+    needs: health-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cleanup old images
+        run: docker image prune -f
