@@ -366,3 +366,45 @@ LEFT JOIN tv_series s ON e.series_uuid = s.uuid AND s.deleted = false
 WHERE c.deleted = false
 GROUP BY c.uuid, c.name, c.type
 ORDER BY total_viewership DESC NULLS LAST;
+
+
+-- Query: How many employees participated in the specific channel A
+SELECT *
+FROM tv_company.series_cast sc
+JOIN tv_company.episodes e ON sc.series_uuid = e.series_uuid
+JOIN tv_company.transmissions t ON e.uuid = t.episode_uuid
+JOIN tv_company.transmission_channels tc ON t.uuid = tc.transmission_uuid
+JOIN tv_company.channels c ON tc.channel_uuid = c.uuid
+WHERE c.name = 'TV1'  -- Replace 'Channel A' with the actual channel name
+  AND sc.deleted = FALSE
+  AND e.deleted = FALSE
+  AND t.deleted = FALSE
+  AND tc.deleted = FALSE
+  AND c.deleted = FALSE;
+
+
+-- How many employees with role "Actor" participated in series transmitted on channel "TV1"
+SELECT DISTINCT
+    e.first_name,
+    e.last_name,
+    e.email,
+    r.name as role_name,
+    ts.title as series_title
+FROM tv_company.series_cast sc
+JOIN tv_company.employees e ON sc.employee_uuid = e.uuid
+JOIN tv_company.roles r ON sc.role_uuid = r.uuid
+JOIN tv_company.tv_series ts ON sc.series_uuid = ts.uuid
+JOIN tv_company.episodes ep ON sc.series_uuid = ep.series_uuid
+JOIN tv_company.transmissions t ON ep.uuid = t.episode_uuid
+JOIN tv_company.transmission_channels tc ON t.uuid = tc.transmission_uuid
+JOIN tv_company.channels c ON tc.channel_uuid = c.uuid
+WHERE c.name = 'TV1' AND r.name = 'Actor'
+  AND sc.deleted = FALSE
+  AND e.deleted = FALSE
+  AND r.deleted = FALSE
+  AND ts.deleted = FALSE
+  AND ep.deleted = FALSE
+  AND t.deleted = FALSE
+  AND tc.deleted = FALSE
+  AND c.deleted = FALSE
+ORDER BY e.last_name, e.first_name;

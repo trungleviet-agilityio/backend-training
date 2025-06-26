@@ -16,9 +16,6 @@
 -- - Application-Oriented Rules: Documented here but implemented in application code
 -- - Validation Tables: Used for complex value sets and business logic
 --
--- Author: Database Design Team
--- Created: 2024
--- Last Updated: 2024
 -- ============================================================================
 
 -- Set search path to use tv_company schema
