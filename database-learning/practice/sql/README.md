@@ -75,7 +75,7 @@ docker exec -i tv_company_db psql -U tv_company_user -d tv_company_db < sql/05_d
 - **Data Dictionary:** [../docs/data_dictionary.md](../docs/data_dictionary.md)
 - **Business Rules:** [../docs/business_rules.md](../docs/business_rules.md)
 - **Data Structure Analysis:** [../docs/data_structure_analysis.md](../docs/data_structure_analysis.md)
-- **View
+- **View:** [../docs/database_views.md](../docs/database_views.md)
 
 ## Troubleshooting
 - **Foreign Key Violations:** Ensure files are run in the correct order
