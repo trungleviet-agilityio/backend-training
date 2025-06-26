@@ -2,13 +2,15 @@
 
 ## 📖 Summary
 
-This chapter addresses the fundamental question of system component dependencies and introduces proper datastore architecture patterns that support business logic changes rather than constraining them.
+This chapter addresses the fundamental question of system component dependencies through a team discussion and introduces proper datastore architecture patterns that support business logic changes rather than constraining them.
 
-### The Dependency Puzzle
-- **Question:** Which component depends on which in a three-component system (UI, Business Logic, Datastore)?
-- **Common Misconception:** Business Logic depends on Datastore because "Datastore is hardest to change"
+### The Team Discussion: Dependency Puzzle
+- **Scenario:** Team asked to determine dependencies between three components (UI, Business Logic, Datastore)
+- **Tom's Initial Answer:** UI depends on Business Logic, Business Logic depends on Datastore
+- **Team's Reasoning:** "Datastore is hardest to change, so Business Logic must depend on it"
+- **The Trap:** Team fell into thinking Datastore should be the most stable component
 - **Correct Answer:** Both UI and Datastore must depend on Business Logic
-- **Reasoning:** Business Logic is the core value-generating component; everything else serves it
+- **Key Insight:** Business Logic is the core value-generating component; everything else serves it
 
 ### Dependency Definition
 - **Component A depends on Component B** if changes to B may trigger changes to A
@@ -19,7 +21,7 @@ This chapter addresses the fundamental question of system component dependencies
 
 #### Incorrect Implementation (Business Logic depends on Datastore)
 ```typescript
-// datastore.ts
+// module datastore.ts
 export interface UserProfile {
     userId: string;
     firstName: string;
@@ -27,10 +29,10 @@ export interface UserProfile {
     age: number;
 };
 export const readUserProfile = (userId: string): UserProfile => {
-    // read user from database
+    // read user from the database
 };
 
-// business-logic.ts
+// module business-logic.ts
 import { readUserProfile, UserProfile } from './datastore';
 const printUser = (userId: string): void => {
     let user: UserProfile = readUserProfile(userId);
@@ -40,7 +42,7 @@ const printUser = (userId: string): void => {
 
 #### Correct Implementation (Datastore depends on Business Logic)
 ```typescript
-// business-logic-defs.ts
+// module business-logic-defs.ts
 export interface UserProfile {
     userId: string;
     firstName: string;
@@ -51,18 +53,18 @@ export interface UserDataAccess {
     readUserProfile(userId: string): UserProfile;
 };
 
-// business-logic-impl.ts
+// module business-logic-impl.ts
 import { UserDataAccess, UserProfile } from './business-logic-defs';
 const printUser = (da: UserDataAccess, userId: string): void => {
     let user: UserProfile = da.readUserProfile(userId);
     console.log(`user: ${user.userId} ${user.firstName}`);
 };
 
-// datastore.ts
+// module datastore.ts
 import { UserDataAccess, UserProfile } from './business-logic-defs';
 export class UserDataAccessImpl implements UserDataAccess {
     readUserProfile(userId: string): UserProfile {
-        // read user from database
+        // read user from the database
     }
 };
 ```
@@ -74,17 +76,24 @@ export class UserDataAccessImpl implements UserDataAccess {
 - **Origin:** Days of scarce computing resources, limited disk space, slow databases
 - **Example:** Shopping cart as set of records (Cart and CartItem tables)
 - **Problem:** Inherent design flaw - same data structure for all operations
-- **Limitation:** Changes to data model break traditional CRUD paradigm
+- **Specific Issues:**
+  - Must update Cart record every time CartItem is manipulated (inefficient)
+  - totalPrice should be excluded and recomputed
+  - price for CartItem could be calculated automatically
+  - cartItemId could be auto-generated
+  - Limiting updates breaks traditional CRUD paradigm
 
 #### CQRS (Command Query Responsibility Segregation)
 - **Definition:** Two separate data models instead of one
-- **Query Model:** Responsible for data retrieval (Read operations)
+- **Query Model:** Responsible for data retrieval (Read action from CRUD)
 - **Command Model:** Manipulates data by processing commands
 - **Benefits:**
   - Separate models for different operations
   - Commands accept only relevant data
   - Clearer interfaces
   - More flexible than CRUD
+  - totalPrice and price available from Query Model only (calculated)
+  - Different commands accept only relevant data
 
 #### Event Store Pattern
 - **Definition:** Stores all commands/events directly in database
@@ -92,6 +101,7 @@ export class UserDataAccessImpl implements UserDataAccess {
 - **Key Principle:** Only events are recorded, not current state
 - **Operation Mode:** Append-only (immutable)
 - **State Reconstruction:** Query Model rebuilds state by "replaying" events
+- **Implementation:** Commands through Command Model stored directly in database
 
 ### Event Store Benefits
 - **Natural Fit:** Banking (credits/debits), accounting (immutable transactions)
@@ -99,9 +109,18 @@ export class UserDataAccessImpl implements UserDataAccess {
 - **Flexibility:** Same events can construct different application states
 - **Scalability:** Better performance, less locking, fewer transaction isolation issues
 - **Storage Options:** Beyond traditional relational engines
+- **Business Examples:** Banking data with credits/debits, accounting data models
+
+### Event Store Practical Considerations
+- **Event Filtering:** Query Model doesn't need entire history, only relevant events
+- **Example:** Shopping cart only needs events for specific cart/user since last order
+- **Multiple Views:** Same events can construct different application states
+- **Use Cases:** Online users, business intelligence, accounting
+- **Flexibility:** Modify model without restructuring stored data
 
 ### Performance Optimization: Snapshot Builder
 - **Problem:** Query Model processing too many events affects performance
+- **Example:** Bank looking at 10 years of transactions just to show balance
 - **Solution:** Asynchronous Snapshot Builder creates periodic state snapshots
 - **Process:**
   1. Snapshot Builder creates persistent state periodically
@@ -110,6 +129,7 @@ export class UserDataAccessImpl implements UserDataAccess {
   4. Serves final current state to Business Logic
 - **Benefits:** Query Model only processes recent events
 - **Flexibility:** Multiple snapshot stores for different purposes
+- **Compatibility:** Full application state in relational database enables third-party tools (reporting, analytics, ETL)
 
 ### Key Architectural Principles
 1. **Business Logic is King:** Everything serves the business logic, not the other way around
@@ -117,24 +137,26 @@ export class UserDataAccessImpl implements UserDataAccess {
 3. **Event Store Flexibility:** Allows model changes without data restructuring
 4. **Performance Balance:** Snapshots optimize event processing
 5. **Immutable Data:** Append-only approach for reliability and audit trails
+6. **NoSQL Limitation:** Schema-less databases are a band-aid, not a real solution
 
 ### Pattern Selection Guidelines
 - **Ditch CRUD:** In favor of CQRS for better flexibility
 - **Consider Event Store:** For systems requiring audit trails and flexibility
 - **Use Snapshots:** When performance becomes an issue with pure event sourcing
 - **Multiple Models:** Different views for different purposes (online users, BI, accounting)
+- **Snapshot Rebuilding:** Can be rebuilt anytime if data model changes
 
 ## Review Questions
-1. Why should the Datastore depend on Business Logic instead of the other way around?
-2. What is the definition of dependency between components?
-3. How does Dependency Inversion solve the datastore dependency problem?
-4. What are the three main data persistence patterns discussed?
-5. What is the fundamental problem with the CRUD approach?
-6. How does CQRS solve the limitations of CRUD?
-7. What is the Event Store pattern and how does it work?
-8. Why is the Event Store particularly suitable for banking and accounting systems?
-9. What is the purpose of the Asynchronous Snapshot Builder?
-10. How do snapshots help with performance in Event Store implementations?
+1. What was the team's initial answer to the dependency puzzle and why was it wrong?
+2. Why should the Datastore depend on Business Logic instead of the other way around?
+3. What is the definition of dependency between components?
+4. How does Dependency Inversion solve the datastore dependency problem?
+5. What are the three main data persistence patterns discussed?
+6. What is the fundamental problem with the CRUD approach in the shopping cart example?
+7. How does CQRS solve the limitations of CRUD?
+8. What is the Event Store pattern and how does it work?
+9. Why is the Event Store particularly suitable for banking and accounting systems?
+10. What is the purpose of the Asynchronous Snapshot Builder and when should it be used?
 
 ## Key Concepts
 
