@@ -1,0 +1,113 @@
+{
+  "version": "1.1.0",
+  "description": "Business Rules Configuration for TV Company Database Mock Data Generator",
+  "last_updated": "2024-12-25",
+
+  "roles": {
+    "valid_roles": ["Actor", "Director", "Producer"],
+    "character_name_required": ["Actor"],
+    "description": "BR-011: Role Name Uniqueness, BR-013: Character Name Requirements"
+  },
+
+  "employee_statuses": {
+    "valid_statuses": ["available", "busy", "unavailable"],
+    "active_statuses": ["available", "busy"],
+    "description": "BR-010: Employee Status Validation"
+  },
+
+  "series_domains": {
+    "valid_domains": ["Drama", "Comedy", "Thriller", "Reality"],
+    "description": "BR-001: Series Domain Uniqueness"
+  },
+
+  "channel_types": {
+    "valid_types": ["Cable", "OTT", "Web", "Satellite", "Broadcast"],
+    "description": "Channel type validation"
+  },
+
+  "constraints": {
+    "episode_duration": {
+      "min_minutes": 1,
+      "max_minutes": 300,
+      "description": "BR-006: Episode Duration Validation"
+    },
+    "viewership": {
+      "min_value": 0,
+      "description": "BR-014: Viewership Data Validation"
+    },
+    "employment_age": {
+      "min_age": 18,
+      "max_age": 65,
+      "description": "BR-020: Employment Date Validation"
+    }
+  },
+
+  "data_generation": {
+    "batch_size": 1000,
+    "enable_progress_logging": true,
+    "title_generation": {
+      "max_attempts_multiplier": 10,
+      "numbered_variant_max": 999
+    },
+    "volumes": {
+      "num_series_domains": 4,
+      "num_channels": 6,
+      "num_roles": 3,
+      "num_employees": 100,
+      "num_tv_series": 20,
+      "num_episodes": 1000,
+      "num_transmissions": 2000,
+      "num_series_cast": 500,
+      "num_transmission_channels": 1500
+    }
+  },
+
+  "example_data": {
+    "required_series": ["Big Sister", "Wild Lies"],
+    "required_employee": {
+      "first_name": "Bertil",
+      "last_name": "Bom",
+      "email": "bertil.bom@example.com"
+    },
+    "required_director": {
+      "first_name": "Diana",
+      "last_name": "Director",
+      "email": "diana.director@example.com"
+    }
+  },
+
+  "business_rules_reference": {
+    "field_specific": [
+      "BR-001: Series Domain Name Uniqueness",
+      "BR-002: Series Domain Assignment",
+      "BR-003: Series Title Uniqueness Within Domain",
+      "BR-004: Series Date Range Validation",
+      "BR-005: Episode Number Uniqueness Within Series",
+      "BR-006: Episode Duration Validation",
+      "BR-007: Episode Director Assignment",
+      "BR-008: Director Role Validation",
+      "BR-009: Employee Email Uniqueness",
+      "BR-010: Employee Status Validation",
+      "BR-011: Role Name Uniqueness",
+      "BR-012: Cast Assignment Uniqueness",
+      "BR-013: Character Name Requirements",
+      "BR-014: Viewership Data Validation",
+      "BR-015: Channel Name Uniqueness"
+    ],
+    "relationship_specific": [
+      "BR-016: Series Domain Relationship",
+      "BR-017: Episode Series Relationship",
+      "BR-018: Episode Director Relationship",
+      "BR-019: Series Cast Relationship",
+      "BR-020: Transmission Episode Relationship",
+      "BR-021: Multi-Channel Broadcasting Relationship"
+    ],
+    "data_integrity": [
+      "BR-022: Episode Air Date Validation",
+      "BR-026: Transmission-Channel Assignment Validation",
+      "BR-027: Unique Transmission-Channel Combinations",
+      "BR-029: Soft Delete Implementation",
+      "BR-030: Timestamp Management"
+    ]
+  }
+}
