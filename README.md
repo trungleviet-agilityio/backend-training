@@ -5,7 +5,7 @@ This repository contains comprehensive training materials and practice projects 
 ## 📚 Learning Paths
 
 ### 1. 🐳 Docker Learning
-A comprehensive collection of Docker learning materials and hands-on practice projects.
+A comprehensive collection of Docker learning materials and hands-on practice projects, from fundamentals to production-ready applications.
 
 **Practice Projects:**
 - **[Docker Flask Practice](docker-learning/practice/docker-flask-practice/)** - Learn Docker fundamentals with a simple Flask app
@@ -20,24 +20,21 @@ A comprehensive collection of Docker learning materials and hands-on practice pr
   - Environment management
   - Development vs production configurations
 
+- **[Django Docker Practice](docker-learning/docker-practice/)** - Production Django project with comprehensive workflow
+  - Django REST framework with comprehensive API
+  - Docker containerization with best practices
+  - Code quality tools (Ruff, Black, isort)
+  - Pre-commit hooks and GPG commit signing
+  - Automated CI/CD with PythonAnywhere deployment
+  - Book management system with authors, categories, and relationships
+
 **Shared Resources:**
 - [Docker Basics](docker-learning/shared/docker/) - Docker fundamentals
 - [Docker Compose](docker-learning/shared/docker-compose/) - Docker Compose guides
 
-### 2. 🚀 Docker Practice (Django)
-A Django-based project demonstrating production-ready Docker containerization and development workflow.
+[View All Docker Projects →](docker-learning/README.md)
 
-**Key Features:**
-- Django REST framework with comprehensive API
-- Docker containerization with best practices
-- Code quality tools (Ruff, Black, isort)
-- Pre-commit hooks and GPG commit signing
-- Automated CI/CD with PythonAnywhere deployment
-- Book management system with authors, categories, and relationships
-
-[View Project →](docker-practice/README.md)
-
-### 3. 🔌 REST API Design Learning
+### 2. 🔌 REST API Design Learning
 Master REST API design principles, best practices, and implementation patterns.
 
 **Core Resources:**
@@ -59,7 +56,7 @@ Master REST API design principles, best practices, and implementation patterns.
 
 [View Learning Path →](restapi-design-learning/README.md)
 
-### 4. 🗄️ Database Learning
+### 3. 🗄️ Database Learning
 Comprehensive database design and SQL learning path with hands-on practice.
 
 **Theory (Reading):**
@@ -79,7 +76,7 @@ Comprehensive database design and SQL learning path with hands-on practice.
 
 [View Learning Path →](database-learning/README.md)
 
-### 5. 🏗️ System Design Learning
+### 4. 🏗️ System Design Learning
 Master system architecture, scalability, and design patterns for building large-scale applications.
 
 **Core Resources:**
@@ -114,7 +111,7 @@ Master system architecture, scalability, and design patterns for building large-
 2. **Choose your learning path:**
    - **Docker fundamentals**: Start with `docker-learning/practice/docker-flask-practice/`
    - **Docker production**: Try `docker-learning/practice/docker-compose-practice/`
-   - **Django with Docker**: Explore `docker-practice/`
+   - **Django with Docker**: Explore `docker-learning/docker-practice/`
    - **REST API design**: Study `restapi-design-learning/reading/`
    - **Database design**: Begin with `database-learning/reading/`
    - **System design**: Start with `system-design-learning/demo/url-shortener/`

@@ -8,7 +8,7 @@ A Django-based project demonstrating best practices for Docker containerization,
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd docker-practice
+cd docker-learning/docker-practice
 
 # Start the application
 docker-compose up --build
@@ -18,7 +18,7 @@ docker-compose up --build
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd docker-practice
+cd docker-learning/docker-practice
 
 # Set up virtual environment
 uv venv
@@ -63,7 +63,7 @@ python manage.py runserver
 ## 📦 Project Structure
 
 ```
-docker-practice/
+docker-learning/docker-practice/
 ├── books/          # Book management app
 ├── core/           # Core functionality
 ├── docs/           # Documentation
