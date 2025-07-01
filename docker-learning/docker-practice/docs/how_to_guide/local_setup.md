@@ -13,7 +13,7 @@ This guide will help you set up your local development environment for the Djang
 ### 1. Clone the Repository
 ```bash
 git clone <repository-url>
-cd backend-training/docker-practice
+cd backend-training/docker-learning/docker-practice
 ```
 
 ### 2. Set up Virtual Environment with uv
@@ -195,7 +195,7 @@ docker-compose exec web python manage.py createsuperuser
 ### Common Issues
 
 1. **Python version mismatch**: Ensure you're using Python 3.10+
-2. **Virtual environment not activated**: Make sure you see `(docker-practice)` in your terminal prompt
+2. **Virtual environment not activated**: Make sure you see `(docker-learning/docker-practice)` in your terminal prompt
 3. **Pre-commit hooks failing**: Run `pre-commit run --all-files` to see detailed error messages
 4. **Package installation issues**: Make sure `uv` is installed and up to date
 5. **Commit signing issues**:
@@ -211,7 +211,7 @@ docker-compose exec web python manage.py createsuperuser
 
 ## Project Structure
 ```
-docker-practice/
+docker-learning/docker-practice/
 ├── books/          # Django app for book management
 ├── core/           # Django project settings
 ├── docs/           # Project documentation
