@@ -216,5 +216,5 @@ GET  /api/v1/users/urls     # Get user's URLs
 5. Deploy and monitor
 
 ## Resources
-- [Chapter 8 Notes](../reading/system-design-interview/chapter-08-design-a-url-shortener/notes.md)
+- [Chapter 8 Notes](../../reading/system-design-interview/chapter-08-design-a-url-shortener/notes.md)
 - [System Design Interview Book](https://www.amazon.com/System-Design-Interview-Insiders-Guide/dp/1736049119)

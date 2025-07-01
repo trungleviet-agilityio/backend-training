@@ -273,7 +273,7 @@ CREATE TABLE notification_templates (
 6. Deploy and optimize
 
 ## Resources
-- [Chapter 10 Notes](../reading/system-design-interview/chapter-10-design-a-notification-system/notes.md)
+- [Chapter 10 Notes](../../reading/system-design-interview/chapter-10-design-a-notification-system/notes.md)
 - [System Design Interview Book](https://www.amazon.com/System-Design-Interview-Insiders-Guide/dp/1736049119)
 - [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
 - [SendGrid Documentation](https://sendgrid.com/docs/)

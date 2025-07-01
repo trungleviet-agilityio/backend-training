@@ -217,7 +217,7 @@ PUT    /api/v1/users/profile         # Update profile
 6. Deploy and monitor
 
 ## Resources
-- [Chapter 15 Notes](../reading/system-design-interview/chapter-15-design-google-drive/notes.md)
+- [Chapter 15 Notes](../../reading/system-design-interview/chapter-15-design-google-drive/notes.md)
 - [System Design Interview Book](https://www.amazon.com/System-Design-Interview-Insiders-Guide/dp/1736049119)
 - [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
 - [Google Cloud Storage Documentation](https://cloud.google.com/storage/docs)

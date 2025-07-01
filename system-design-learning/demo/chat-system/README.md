@@ -365,7 +365,7 @@ function sendMessageToConversation(message, conversationId) {
 - **Delta Sync**: Only sync new messages
 
 ## Resources
-- [Chapter 12 Notes](../reading/system-design-interview/chapter-12-design-a-chat-system/notes.md)
+- [Chapter 12 Notes](../../reading/system-design-interview/chapter-12-design-a-chat-system/notes.md)
 - [System Design Interview Book](https://www.amazon.com/System-Design-Interview-Insiders-Guide/dp/1736049119)
 - [Socket.io Documentation](https://socket.io/docs/)
 - [WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
