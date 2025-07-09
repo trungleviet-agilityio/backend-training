@@ -5,11 +5,21 @@ Main file is used to define the main file for the application.
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
+import { HttpExceptionFilter } from './commons/exception_filter';
+import { ValidationPipe } from './core/pipes';
+import { SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder } from '@nestjs/swagger';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Global pipes
+  app.useGlobalPipes(new ValidationPipe());
 
   // Global CORS middleware
   app.use((req, res, next) => {
@@ -39,6 +49,6 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 Blog Engine API is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/v1`);
+  console.log(`📚 API Documentation: http://localhost:${port}`);
 }
 bootstrap();
