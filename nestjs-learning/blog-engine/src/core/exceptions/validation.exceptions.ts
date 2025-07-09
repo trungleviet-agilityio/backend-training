@@ -4,12 +4,13 @@ Validation exceptions are used to define the validation exceptions for the appli
 
 import { HttpStatus } from '@nestjs/common';
 import { BaseException } from './base.exception';
+import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
 
 /*
 ValidationException is an exception that provides the validation exception functionality for the application.
 */
 export class ValidationException extends BaseException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: IValidationDetails) {
     super(
       message,
       HttpStatus.BAD_REQUEST,
@@ -23,7 +24,7 @@ export class ValidationException extends BaseException {
 InvalidInputException is an exception that provides the invalid input exception functionality for the application.
 */
 export class InvalidInputException extends BaseException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: IValidationDetails) {
     super(
       message,
       HttpStatus.BAD_REQUEST,

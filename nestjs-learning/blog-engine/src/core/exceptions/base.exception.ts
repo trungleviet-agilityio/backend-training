@@ -3,6 +3,7 @@ Base exception is used to define the base exception for the application.
 */
 
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
 
 /*
 BaseException is a base exception that provides the base exception functionality for the application.
@@ -12,7 +13,7 @@ export abstract class BaseException extends HttpException {
     message: string,
     statusCode: HttpStatus,
     public readonly errorCode?: string,
-    public readonly details?: any
+    public readonly details?: IValidationDetails
   ) {
     super(
       {
@@ -35,7 +36,7 @@ export abstract class BaseException extends HttpException {
   /*
   getDetails is a method that returns the details.
   */
-  getDetails(): any {
+  getDetails(): IValidationDetails | undefined {
     return this.details;
   }
 }

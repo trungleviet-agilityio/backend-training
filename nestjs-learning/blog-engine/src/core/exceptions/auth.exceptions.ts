@@ -4,12 +4,13 @@ Auth exceptions are used to define the auth exceptions for the application.
 
 import { HttpStatus } from '@nestjs/common';
 import { BaseException } from './base.exception';
+import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
 
 /*
 AuthenticationException is an exception that provides the authentication exception functionality for the application.
 */
 export class AuthenticationException extends BaseException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: IValidationDetails) {
     super(
       message,
       HttpStatus.UNAUTHORIZED,
@@ -23,7 +24,7 @@ export class AuthenticationException extends BaseException {
 AuthorizationException is an exception that provides the authorization exception functionality for the application.
 */
 export class AuthorizationException extends BaseException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: IValidationDetails) {
     super(
       message,
       HttpStatus.FORBIDDEN,

@@ -1,26 +1,33 @@
-/*
-App module is used to define the module for the application.
-*/
-
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { AuthsModule } from './auths/auths.module';
-import { ConfigModule } from '@nestjs/config';
-import { BlogsModule } from './blogs/blogs.module';
 
-/*
-AppModule is a module that provides the app functionality for the application.
-*/
+// Feature modules
+import { UsersModule } from './modules/users/users.module';
+import { BlogsModule } from './modules/blogs/blogs.module';
+import { AuthModule } from './modules/auth/auth.module';
+
+// Database configuration
+import { DatabaseModule } from './database/database.module';
+
 @Module({
   imports: [
-    UsersModule,
-    AuthsModule,
-    BlogsModule,
+    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.local', '.env'],
     }),
+    
+    // Database
+    DatabaseModule,
+
+    // Feature modules
+    UsersModule,
+    BlogsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

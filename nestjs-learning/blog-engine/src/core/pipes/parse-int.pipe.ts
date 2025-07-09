@@ -14,14 +14,14 @@ ParseIntPipe is a pipe that provides the parse int functionality for the applica
 */
 @Injectable()
 export class ParseIntPipe implements PipeTransform {
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     // Check if value exists
     if (value === undefined || value === null) {
       throw new BadRequestException('Value is required');
     }
 
     // Convert to number
-    const parsedValue = parseInt(value, 10);
+    const parsedValue = parseInt(String(value), 10);
 
     // Check if the conversion was successful
     if (isNaN(parsedValue)) {

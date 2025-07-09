@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { MissingTokenException, InvalidTokenException } from '../exceptions';
+import { IJwtPayload } from '../../shared/interfaces/jwt-payload.interface';
 
 /*
 AuthGuard is a guard that provides the authentication functionality for the application.
@@ -44,10 +45,16 @@ export class AuthGuard implements CanActivate {
     return type === 'Bearer' ? token : undefined;
   }
 
-  private async validateToken(token: string): Promise<any> {
+  private async validateToken(token: string): Promise<IJwtPayload> {
     // Simple token validation without AuthsService
     if (token === '1234567890') {
-      return { id: 1, username: 'admin', role: 'admin' };
+      return { 
+        sub: '1',
+        id: '1', 
+        email: 'admin@example.com',
+        username: 'admin', 
+        role: 'admin' 
+      };
     }
     throw new Error('Invalid token');
   }

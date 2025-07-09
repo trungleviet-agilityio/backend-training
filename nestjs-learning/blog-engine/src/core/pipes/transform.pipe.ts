@@ -13,7 +13,7 @@ export class TransformPipe implements PipeTransform {
   /*
   transform is a method that provides the transformation functionality for the application.
   */
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     // Transform string values
     if (typeof value === 'string') {
       return this.transformString(value);
@@ -21,7 +21,7 @@ export class TransformPipe implements PipeTransform {
 
     // Transform object values
     if (typeof value === 'object' && value !== null) {
-      return this.transformObject(value);
+      return this.transformObject(value as Record<string, unknown>);
     }
 
     return value;
@@ -37,7 +37,7 @@ export class TransformPipe implements PipeTransform {
     return transformed;
   }
 
-  private transformObject(obj: any): any {
+  private transformObject(obj: Record<string, unknown>): Record<string, unknown> {
     const transformed = { ...obj };
 
     // Transform string properties
@@ -49,7 +49,7 @@ export class TransformPipe implements PipeTransform {
 
     // Add default values for missing properties
     if (transformed.title && !transformed.slug) {
-      transformed.slug = this.generateSlug(transformed.title);
+      transformed.slug = this.generateSlug(transformed.title as string);
     }
 
     return transformed;

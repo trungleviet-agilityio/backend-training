@@ -13,7 +13,7 @@ export class ValidationPipe implements PipeTransform {
   /*
   transform is a method that provides the validation functionality for the application.
   */
-  transform(value: any, metadata: ArgumentMetadata) {
+  transform(value: unknown, metadata: ArgumentMetadata) {
     // Check if value exists
     if (value === undefined || value === null) {
       throw new BadRequestException('Value is required');
@@ -26,7 +26,7 @@ export class ValidationPipe implements PipeTransform {
 
     // Check if value is an object and has required properties
     if (metadata.type === 'body' && typeof value === 'object') {
-      this.validateObject(value);
+      this.validateObject(value as Record<string, unknown>);
     }
 
     return value;
@@ -35,7 +35,7 @@ export class ValidationPipe implements PipeTransform {
   /*
   validateObject is a method that provides the validation functionality for the application.
   */
-  private validateObject(obj: any) {
+  private validateObject(obj: Record<string, unknown>) {
     // TODO: Add your custom validation logic here
     // For example, check required fields, data types, etc.
 
@@ -47,8 +47,8 @@ export class ValidationPipe implements PipeTransform {
       throw new BadRequestException('Content must be a string');
     }
 
-    if (obj.title && obj.title.length > 100) {
+    if (obj.title && typeof obj.title === 'string' && obj.title.length > 100) {
       throw new BadRequestException('Title must be less than 100 characters');
     }
-  }
+  }   
 }

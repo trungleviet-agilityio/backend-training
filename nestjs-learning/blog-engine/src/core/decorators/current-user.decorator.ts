@@ -16,7 +16,7 @@ export interface UserPayload {
 CurrentUser decorator extracts the authenticated user from the request.
 */
 export const CurrentUser = createParamDecorator(
-  (data: keyof UserPayload | undefined, ctx: ExecutionContext): UserPayload | any => {
+  (data: keyof UserPayload | undefined, ctx: ExecutionContext): UserPayload | undefined => {
     const request = ctx.switchToHttp().getRequest();
     const user = request.user;
 

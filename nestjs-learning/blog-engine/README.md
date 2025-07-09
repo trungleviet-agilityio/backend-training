@@ -1,85 +1,135 @@
-# Blog Engine - NestJS Learning Project
+# Blog Engine - NestJS Application
 
-## 🎯 Project Overview
+A modern blog engine built with NestJS, following best practices and design patterns.
 
-This is a learning project to build a blog engine using NestJS while applying the Observer pattern from your design patterns studies.
+## 🏗️ Architecture & Best Practices
 
-## 📚 Learning Path
-
-### Phase 1: Basic NestJS Concepts
-- [ ] Controllers and Routes
-- [ ] Services and Dependency Injection
-- [ ] Modules and Providers
-- [ ] DTOs and Validation
-- [ ] Exception Handling
-
-### Phase 2: Database Integration
-- [ ] TypeORM Setup
-- [ ] Entity Design (User, Post, Comment)
-- [ ] Repository Pattern
-- [ ] Database Migrations
-
-### Phase 3: Observer Pattern Implementation
-- [ ] Blog Publisher Service (Subject)
-- [ ] Email Notification Service (Observer)
-- [ ] SMS Notification Service (Observer)
-- [ ] Social Media Notification Service (Observer)
-- [ ] Event System Integration
-
-### Phase 4: Advanced Features
-- [ ] Authentication & Authorization
-- [ ] File Upload (Images)
-- [ ] Search Functionality
-- [ ] API Documentation (Swagger)
-- [ ] Testing (Unit & E2E)
-
-### Phase 5: Production Features
-- [ ] Caching
-- [ ] Rate Limiting
-- [ ] Logging
-- [ ] Error Monitoring
-- [ ] Performance Optimization
-
-## 🏗️ Project Structure
-
+### Folder Structure
 ```
 src/
-├── main.ts                 # Application entry point
-├── app.module.ts          # Root module
-├── app.controller.ts      # Main controller
-├── app.service.ts         # Main service
-├── entities/              # Database entities
-│   ├── user.entity.ts
-│   ├── post.entity.ts
-│   └── comment.entity.ts
-├── patterns/              # Design patterns implementation
-│   └── observer/
-│       ├── blog-observer.interface.ts
-│       ├── blog-publisher.service.ts
-│       ├── email-notification.service.ts
-│       ├── sms-notification.service.ts
-│       └── social-media-notification.service.ts
+├── core/                   # Core utilities, decorators, guards, pipes
+│   ├── decorators/        # Custom decorators
+│   ├── exceptions/        # Custom exceptions
+│   ├── guards/           # Authentication & authorization guards
+│   └── pipes/            # Validation & transformation pipes
+├── config/                # Configuration management
+├── database/              # Database configuration & migrations
+├── middleware/            # Custom middleware
 ├── modules/               # Feature modules
-│   ├── users/
-│   ├── posts/
-│   ├── comments/
-│   └── notifications/
-├── dto/                   # Data Transfer Objects
-├── guards/                # Authentication guards
-├── interceptors/          # Request/Response interceptors
-├── pipes/                 # Validation pipes
-└── filters/               # Exception filters
+│   ├── auth/             # Authentication module
+│   ├── blogs/            # Blog management module
+│   └── users/            # User management module
+├── shared/               # Shared interfaces and utilities
+│   └── interfaces/       # Common interfaces
+└── main.ts              # Application entry point
 ```
 
-## 🚀 Getting Started
+### Type Safety Improvements
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- Basic TypeScript knowledge
-- Understanding of Observer pattern
+All `any` types have been replaced with proper interfaces:
 
-### Installation
+#### 1. JWT Payload Interface
+```typescript
+export interface IJwtPayload {
+  sub: string;
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+```
+
+#### 2. Request Interface
+```typescript
+export interface IRequest extends Request {
+  user?: IJwtPayload;
+}
+```
+
+#### 3. Validation Details Interface
+```typescript
+export interface IValidationDetails {
+  field?: string;
+  value?: unknown;
+  message?: string;
+  code?: string;
+  [key: string]: unknown;
+}
+```
+
+#### 4. API Response Interface
+```typescript
+export interface IApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+}
+```
+
+### NestJS Best Practices Applied
+
+#### 1. **Dependency Injection**
+- All services use `@Injectable()` decorator
+- Proper constructor injection
+- Repository pattern with TypeORM
+
+#### 2. **Module Organization**
+- Feature-based module structure
+- Clear separation of concerns
+- Shared modules for common functionality
+
+#### 3. **Exception Handling**
+- Custom exception classes extending `HttpException`
+- Proper HTTP status codes
+- Detailed error messages with validation details
+
+#### 4. **Validation & Transformation**
+- Custom pipes for data transformation
+- Input validation with proper error messages
+- Type-safe request handling
+
+#### 5. **Authentication & Authorization**
+- JWT-based authentication
+- Custom guards for route protection
+- Role-based access control
+
+#### 6. **Database Design**
+- Entity relationships properly defined
+- Soft delete support
+- Audit fields (createdAt, updatedAt)
+
+#### 7. **API Design**
+- RESTful endpoints
+- Proper HTTP methods and status codes
+- Swagger/OpenAPI documentation
+- Pagination support
+
+#### 8. **Configuration Management**
+- Environment-based configuration
+- Secure secret management
+- Database connection configuration
+
+### Key Features
+
+- ✅ **Type Safety**: All `any` types replaced with proper interfaces
+- ✅ **Authentication**: JWT-based authentication system
+- ✅ **Authorization**: Role-based access control
+- ✅ **Validation**: Comprehensive input validation
+- ✅ **Error Handling**: Custom exception classes
+- ✅ **Documentation**: Swagger/OpenAPI integration
+- ✅ **Database**: TypeORM with SQLite
+- ✅ **Testing**: Jest testing framework
+- ✅ **Logging**: Structured logging
+- ✅ **Security**: Rate limiting, CORS, helmet
+
+### Development Commands
+
 ```bash
 # Install dependencies
 npm install
@@ -87,71 +137,69 @@ npm install
 # Start development server
 npm run start:dev
 
+# Build for production
+npm run build
+
 # Run tests
 npm run test
 
 # Run e2e tests
 npm run test:e2e
+
+# Generate documentation
+npm run docs:generate
 ```
 
-## 📖 Learning Resources
+### Environment Variables
 
-### NestJS Documentation
-- [NestJS Official Docs](https://docs.nestjs.com/)
-- [Controllers](https://docs.nestjs.com/controllers)
-- [Providers](https://docs.nestjs.com/providers)
-- [Modules](https://docs.nestjs.com/modules)
-- [TypeORM Integration](https://docs.nestjs.com/techniques/database)
+Create a `.env` file with the following variables:
 
-### Observer Pattern Resources
-- Your existing notes in `design-pattern-learning/behavioral-design-patterns/observer/`
-- [Observer Pattern in TypeScript](https://refactoring.guru/design-patterns/observer/typescript/example)
+```env
+# Database
+DB_PATH=./data/blog-engine.db
 
-## 🎯 Implementation Goals
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
 
-### Observer Pattern Integration
-The blog engine will demonstrate the Observer pattern by:
+# Application
+PORT=3000
+NODE_ENV=development
+```
 
-1. **Blog Publisher (Subject)**: Manages post lifecycle events
-2. **Email Notifications (Observer)**: Sends email notifications for new posts
-3. **SMS Notifications (Observer)**: Sends SMS for urgent updates
-4. **Social Media (Observer)**: Auto-posts to social platforms
-5. **Analytics (Observer)**: Tracks post engagement metrics
+### API Endpoints
 
-### Key Features to Implement
-- [ ] User registration and authentication
-- [ ] Create, read, update, delete blog posts
-- [ ] Comment system
-- [ ] Observer pattern for notifications
-- [ ] RESTful API with proper status codes
-- [ ] Input validation and error handling
-- [ ] Database relationships and queries
-- [ ] API documentation with Swagger
+#### Authentication
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+- `POST /auth/refresh` - Refresh token
 
-## 🔧 Development Tips
+#### Users
+- `GET /users` - Get all users
+- `GET /users/:id` - Get user by ID
+- `POST /users` - Create user
+- `PATCH /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
 
-### Start Small
-1. Begin with basic CRUD operations
-2. Add Observer pattern step by step
-3. Implement one notification type at a time
-4. Test each feature thoroughly
+#### Blogs
+- `GET /blogs` - Get all published blogs
+- `GET /blogs/my-blogs` - Get current user's blogs
+- `GET /blogs/:id` - Get blog by ID
+- `POST /blogs` - Create blog
+- `PATCH /blogs/:id` - Update blog
+- `POST /blogs/:id/publish` - Publish blog
+- `POST /blogs/:id/unpublish` - Unpublish blog
+- `POST /blogs/:id/like` - Like blog
+- `DELETE /blogs/:id` - Delete blog
 
-### Best Practices
-- Follow NestJS conventions
-- Use TypeScript strictly
-- Implement proper error handling
-- Write tests for each feature
-- Document your API endpoints
+### Contributing
 
-### Observer Pattern Implementation Steps
-1. Define the Observer interface
-2. Create the Subject (Blog Publisher)
-3. Implement concrete Observers (Email, SMS, Social)
-4. Register observers with the subject
-5. Trigger notifications on post events
+1. Follow the established folder structure
+2. Use proper TypeScript interfaces instead of `any`
+3. Implement proper error handling
+4. Add tests for new features
+5. Update documentation
 
-## 📝 Notes
+### License
 
-This project is designed for learning purposes. Take your time to understand each concept before moving to the next. The Observer pattern integration will help you understand how design patterns can be applied in real-world applications.
-
-Happy coding! 🚀
+MIT License
