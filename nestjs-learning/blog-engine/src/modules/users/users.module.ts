@@ -1,6 +1,7 @@
-/*
-Users module is used to define the module for the users.
-*/
+/**
+ * Users Module
+ * Provides user management functionality including CRUD operations
+ */
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +13,6 @@ import { User } from './entities/user.entity';
   imports: [TypeOrmModule.forFeature([User])],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService], // Export để các module khác có thể sử dụng
+  exports: [UsersService],
 })
 export class UsersModule {}

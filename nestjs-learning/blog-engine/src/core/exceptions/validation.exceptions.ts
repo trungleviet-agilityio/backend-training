@@ -11,12 +11,7 @@ ValidationException is an exception that provides the validation exception funct
 */
 export class ValidationException extends BaseException {
   constructor(message: string, details?: IValidationDetails) {
-    super(
-      message,
-      HttpStatus.BAD_REQUEST,
-      'VALIDATION_ERROR',
-      details
-    );
+    super(message, HttpStatus.BAD_REQUEST, 'VALIDATION_ERROR', details);
   }
 }
 
@@ -25,12 +20,7 @@ InvalidInputException is an exception that provides the invalid input exception 
 */
 export class InvalidInputException extends BaseException {
   constructor(message: string, details?: IValidationDetails) {
-    super(
-      message,
-      HttpStatus.BAD_REQUEST,
-      'INVALID_INPUT',
-      details
-    );
+    super(message, HttpStatus.BAD_REQUEST, 'INVALID_INPUT', details);
   }
 }
 
@@ -43,7 +33,7 @@ export class MissingRequiredFieldException extends BaseException {
       `Missing required field: ${fieldName}`,
       HttpStatus.BAD_REQUEST,
       'MISSING_REQUIRED_FIELD',
-      { fieldName }
+      { fieldName },
     );
   }
 }
@@ -57,7 +47,7 @@ export class InvalidDataTypeException extends BaseException {
       `Invalid data type for field '${fieldName}'. Expected: ${expectedType}, Got: ${actualType}`,
       HttpStatus.BAD_REQUEST,
       'INVALID_DATA_TYPE',
-      { fieldName, expectedType, actualType }
+      { fieldName, expectedType, actualType },
     );
   }
 }
@@ -71,7 +61,7 @@ export class FieldLengthException extends BaseException {
       `Field '${fieldName}' exceeds maximum length. Maximum: ${maxLength}, Actual: ${actualLength}`,
       HttpStatus.BAD_REQUEST,
       'FIELD_LENGTH_EXCEEDED',
-      { fieldName, maxLength, actualLength }
+      { fieldName, maxLength, actualLength },
     );
   }
 }

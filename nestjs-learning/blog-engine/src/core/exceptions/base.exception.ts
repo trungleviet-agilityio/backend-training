@@ -13,7 +13,7 @@ export abstract class BaseException extends HttpException {
     message: string,
     statusCode: HttpStatus,
     public readonly errorCode?: string,
-    public readonly details?: IValidationDetails
+    public readonly details?: IValidationDetails,
   ) {
     super(
       {
@@ -22,7 +22,7 @@ export abstract class BaseException extends HttpException {
         details,
         timestamp: new Date().toISOString(),
       },
-      statusCode
+      statusCode,
     );
   }
 

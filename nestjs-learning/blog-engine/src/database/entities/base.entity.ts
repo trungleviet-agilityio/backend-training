@@ -1,17 +1,20 @@
-/*
-This file is used to define the base entity for the database module.
-*/
+/**
+ * Base Entity
+ * Abstract base class providing common fields for all database entities
+ * Includes UUID primary key, timestamps, and soft delete functionality
+ */
 
-import { 
-  PrimaryGeneratedColumn, 
-  CreateDateColumn, 
+import {
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
   UpdateDateColumn,
-  DeleteDateColumn 
+  DeleteDateColumn,
 } from 'typeorm';
 
-/*
-BaseEntity is a base entity that provides the base entity functionality for the application.
-*/
+/**
+ * BaseEntity provides common functionality for all database entities
+ * All entities should extend this class to inherit standard fields
+ */
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -12,4 +12,4 @@ export interface IUserRepository {
   update(id: string, data: IUpdateUser): Promise<IUser>;
   delete(id: string): Promise<void>;
   softDelete(id: string): Promise<void>;
-} 
+}

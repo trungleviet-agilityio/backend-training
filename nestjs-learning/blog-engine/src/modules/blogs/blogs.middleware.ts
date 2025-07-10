@@ -16,7 +16,8 @@ export class BlogRateLimitMiddleware implements NestMiddleware {
     const clientId = req.ip || 'unknown'; // TODO: Implement client id
     const currentCount = this.requestCounts.get(clientId) || 0;
 
-    if (currentCount > 100) { // 100 requests per minute
+    if (currentCount > 100) {
+      // 100 requests per minute
       return res.status(429).json({ message: 'Rate limit exceeded' });
     }
 

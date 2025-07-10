@@ -1,24 +1,61 @@
-/*
-Database module is used to define the module for the database.
-*/
+/**
+ * Database Module
+ * Provides database configuration and connection management
+ */
 
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DatabaseService } from './database.service';
+import { DatabaseModuleOptions } from './interfaces/database-module.interface';
 
-@Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'sqlite',
-        database: configService.get('DB_PATH', './data/blog-engine.db'),
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        logging: configService.get('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-})
-export class DatabaseModule {}
+@Module({})
+export class DatabaseModule {
+  /**
+   * Creates the database module with configuration
+   */
+  static forRoot(options: DatabaseModuleOptions): DynamicModule {
+    return {
+      module: DatabaseModule,
+      imports: [
+        TypeOrmModule.forRootAsync({
+          useFactory: () => {
+            const environment = process.env.NODE_ENV || 'local';
+            const isDev =
+              environment === 'development' || environment === 'local';
+
+            const config = {
+              type: 'sqlite' as const,
+              database: `data/blog-engine-${environment}.db`,
+              autoLoadEntities: true,
+              synchronize: isDev,
+              logging: isDev,
+              entities: options.entities ? [...options.entities] : [],
+            };
+
+            return config;
+          },
+        }),
+      ],
+      providers: [
+        DatabaseService,
+        {
+          provide: 'DATABASE_OPTIONS',
+          useValue: options,
+        },
+      ],
+      exports: [DatabaseService, TypeOrmModule],
+      global: true,
+    };
+  }
+
+  /**
+   * Creates the feature module for entities
+   */
+  static forFeature(entities: any[]): DynamicModule {
+    return {
+      module: DatabaseModule,
+      imports: [TypeOrmModule.forFeature(entities)],
+      exports: [TypeOrmModule],
+    };
+  }
+}

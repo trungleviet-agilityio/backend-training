@@ -70,3 +70,18 @@ export interface IBlogFilters {
   page?: number;
   limit?: number;
 }
+
+export interface BlogsModuleOptions {
+  enableCaching?: boolean;
+  enableSearch?: boolean;
+  enableComments?: boolean;
+  pagination?: {
+    defaultLimit: number;
+    maxLimit: number;
+  };
+  features?: {
+    enableDrafts?: boolean;
+    enableScheduling?: boolean;
+    enableAnalytics?: boolean;
+  };
+}

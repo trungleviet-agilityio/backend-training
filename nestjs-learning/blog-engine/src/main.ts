@@ -1,37 +1,41 @@
-/*
-Main file is used to define the main file for the application.
-*/
+/**
+ * Application Bootstrap
+ * Main entry point for the Blog Engine API
+ * Configures and starts the NestJS application with all necessary middleware and plugins
+ */
 
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Create app with buffer logs enabled for better logging integration
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'], // Enable all log levels
+  });
+
+  // Use simple Logger for startup
+  const logger = new Logger('BlogEngineApp');
+
+  // Use logger for the application
+  app.useLogger(logger);
 
   // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Global CORS middleware
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-  });
-
-  // Global logging middleware
-  app.use((req, res, next) => {
-    const startTime = Date.now();
-    res.on('finish', () => {
-      const duration = Date.now() - startTime;
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
-    });
-    next();
   });
 
   // API prefix
@@ -44,15 +48,24 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
 
   const port = process.env.PORT || 3000;
+
+  // Start the server
   await app.listen(port);
 
-  console.log(`🚀 Blog Engine API is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  // Log startup information
+  logger.log(`🚀 Blog Engine API started successfully on port ${port}`);
+  logger.log(`📖 API Documentation: http://localhost:${port}/api/v1/docs`);
+  logger.log(`💚 Health Check: http://localhost:${port}/api/v1/health`);
+  logger.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.log(`📊 Log Level: ${process.env.LOG_LEVEL || 'debug'}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Application failed to start:', error);
+  process.exit(1);
+});

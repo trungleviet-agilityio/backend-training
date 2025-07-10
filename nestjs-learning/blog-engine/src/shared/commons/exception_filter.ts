@@ -57,12 +57,14 @@ export class CatchEverythingFilter implements ExceptionFilter {
     const responseBody = {
       success: false,
       statusCode: httpStatus,
-      message: exception instanceof Error ? exception.message : 'Internal server error',
+      message:
+        exception instanceof Error
+          ? exception.message
+          : 'Internal server error',
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
       timestamp: new Date().toISOString(),
     };
 
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
-
   }
 }

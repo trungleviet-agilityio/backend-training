@@ -1,24 +1,44 @@
-/*
-App controller is used to define the controller for the application.
-*/
+/**
+ * Application Controller
+ * Main controller for application-level endpoints including health checks
+ * and application information
+ */
 
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AppService } from './app.service';
+import { AuditService } from './commons/context/services/audit.service';
 
-/*
-AppController is a controller that provides the app functionality for the application.
-*/
+@ApiTags('Application')
 @Controller()
 export class AppController {
-  constructor() {}  // This is used to inject the app service into the app controller
+  constructor(
+    private readonly appService: AppService,
+    private readonly auditService: AuditService,
+  ) {}
 
-  /*
-  getHealth is a method that returns the health of the application.
-  */
+  @Get()
+  @ApiOperation({ summary: 'Get application info' })
+  @ApiResponse({ status: 200, description: 'Application information' })
+  getHello(): string {
+    // Record access to main endpoint for monitoring
+    this.auditService.recordAccess('application', 'info');
+
+    return this.appService.getHello();
+  }
+
   @Get('health')
-  getHealth(): { status: string; timestamp: string } {
+  @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiResponse({ status: 200, description: 'Application health status' })
+  getHealth(): any {
+    // Record health check access
+    this.auditService.recordAccess('application', 'health-check');
+
     return {
-      status: 'healthy',
+      status: 'ok',
       timestamp: new Date().toISOString(),
+      service: 'Blog Engine API',
+      version: '1.0.0',
     };
   }
 }

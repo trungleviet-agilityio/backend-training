@@ -50,5 +50,5 @@ export class ValidationPipe implements PipeTransform {
     if (obj.title && typeof obj.title === 'string' && obj.title.length > 100) {
       throw new BadRequestException('Title must be less than 100 characters');
     }
-  }   
+  }
 }

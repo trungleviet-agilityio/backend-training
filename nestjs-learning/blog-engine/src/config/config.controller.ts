@@ -10,10 +10,10 @@ ConfigController is a controller that provides the config functionality for the 
 */
 @Controller('config')
 export class ConfigController {
-    constructor(private readonly configService: ConfigService) {}  // This is used to inject the config service into the config controller
+  constructor(private readonly configService: ConfigService) {} // This is used to inject the config service into the config controller
 
-    @Get()
-    getConfig() {
-        return this.configService.getConfig();
-    }
+  @Get()
+  getConfig() {
+    return this.configService.getConfig();
+  }
 }

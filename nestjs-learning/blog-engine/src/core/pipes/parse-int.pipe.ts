@@ -1,6 +1,7 @@
-/*
-ParseInt pipe is used to define the parse int pipe for the application.
-*/
+/**
+ * Custom ParseInt Pipe
+ * Validates and transforms string values to integers
+ */
 
 import {
   PipeTransform,
@@ -9,30 +10,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
-/*
-ParseIntPipe is a pipe that provides the parse int functionality for the application.
-*/
 @Injectable()
-export class ParseIntPipe implements PipeTransform {
-  transform(value: unknown, metadata: ArgumentMetadata) {
-    // Check if value exists
-    if (value === undefined || value === null) {
-      throw new BadRequestException('Value is required');
+export class ParseIntPipe implements PipeTransform<string, number> {
+  transform(value: string, _metadata: ArgumentMetadata): number {
+    const val = parseInt(value, 10);
+
+    if (isNaN(val)) {
+      throw new BadRequestException(
+        `Expected integer value, received: ${JSON.stringify(value)}`,
+      );
     }
 
-    // Convert to number
-    const parsedValue = parseInt(String(value), 10);
-
-    // Check if the conversion was successful
-    if (isNaN(parsedValue)) {
-      throw new BadRequestException('Value must be a valid integer');
-    }
-
-    // Check if the value is positive (for IDs)
-    if (parsedValue <= 0) {
-      throw new BadRequestException('Value must be a positive integer');
-    }
-
-    return parsedValue;
+    return val;
   }
 }

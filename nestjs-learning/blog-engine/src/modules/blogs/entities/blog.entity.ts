@@ -22,7 +22,7 @@ export class Blog extends BaseEntity {
   @Column({ nullable: true })
   publishedAt?: Date;
 
-  @Column('simple-array', { default: [] })
+  @Column('simple-array', { nullable: true })
   tags: string[];
 
   @Column({ default: 0 })
@@ -31,7 +31,7 @@ export class Blog extends BaseEntity {
   @Column({ default: 0 })
   likeCount: number;
 
-  @ManyToOne(() => User, user => user.blogs)
+  @ManyToOne(() => User, (user) => user.blogs)
   @JoinColumn({ name: 'authorId' })
   author: User;
 
@@ -51,4 +51,4 @@ export class Blog extends BaseEntity {
     this.isPublished = false;
     this.publishedAt = undefined;
   }
-} 
+}

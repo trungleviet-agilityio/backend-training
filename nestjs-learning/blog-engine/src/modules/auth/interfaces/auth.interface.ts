@@ -45,4 +45,15 @@ export interface IAuthTokens {
   refresh_token?: string;
   expires_in: number;
   token_type: string;
-} 
+}
+
+export interface AuthModuleOptions {
+  isGlobal?: boolean;
+  jwt?: {
+    secret?: string;
+    expiresIn?: string;
+    global?: boolean;
+  };
+  strategies?: string[];
+  defaultStrategy?: string;
+}

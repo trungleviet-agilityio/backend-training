@@ -1,7 +1,11 @@
-/*
-This file is used to define the base entity interface for the shared module.
-*/
+/**
+ * Base Entity Interfaces
+ * Common interfaces for database entities
+ */
 
+/**
+ * Base entity fields that all entities should have
+ */
 export interface IBaseEntity {
   id: string;
   createdAt: Date;
@@ -9,12 +13,18 @@ export interface IBaseEntity {
   deletedAt?: Date;
 }
 
-export interface IBaseCreateDto {
-  // Common fields for creation DTOs
+/**
+ * Entity creation data without auto-generated fields
+ */
+export interface IEntityCreateData {
+  [key: string]: unknown;
 }
 
-export interface IBaseUpdateDto {
-  // Common fields for update DTOs
+/**
+ * Entity update data (partial)
+ */
+export interface IEntityUpdateData {
+  [key: string]: unknown;
 }
 
 export interface IBaseResponse {

@@ -48,4 +48,17 @@ export interface IUserResponse {
   createdAt: Date;
   updatedAt: Date;
   fullName: string;
-} 
+}
+
+export interface UsersModuleOptions {
+  enableValidation?: boolean;
+  enableCaching?: boolean;
+  pagination?: {
+    defaultLimit: number;
+    maxLimit: number;
+  };
+  features?: {
+    enableProfile?: boolean;
+    enableAvatar?: boolean;
+  };
+}

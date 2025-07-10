@@ -1,129 +1,143 @@
-/*
-This file is used to define the blogs service for the blogs module.
-*/
+/**
+ * Blogs Service
+ * Provides business logic for blog-related operations
+ */
 
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Blog } from './entities/blog.entity';
-import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
-import { IBlog, ICreateBlog, IUpdateBlog, IBlogResponse, IBlogFilters } from './interfaces';
+import { CustomLoggerService } from '../../core/logger/custom-logger.service';
+
+interface ICreateBlogData {
+  title: string;
+  content: string;
+  excerpt?: string;
+  tags?: string[];
+  authorId?: string;
+}
+
+interface IBlogFilters {
+  page?: number;
+  limit?: number;
+  includeDrafts?: boolean;
+  search?: string;
+}
 
 @Injectable()
 export class BlogsService {
+  private readonly logger: CustomLoggerService;
+
   constructor(
     @InjectRepository(Blog)
-    private blogsRepository: Repository<Blog>,
-  ) {}
+    private readonly blogRepository: Repository<Blog>,
+    logger: CustomLoggerService,
+  ) {
+    this.logger = logger;
+    this.logger.setContext('BlogsService');
+  }
 
-  async create(createBlogDto: CreateBlogDto, authorId: string): Promise<IBlog> {
-    const blog = this.blogsRepository.create({
-      ...createBlogDto,
-      authorId,
+  async create(createBlogData: ICreateBlogData): Promise<Blog> {
+    const blog = this.blogRepository.create({
+      title: createBlogData.title,
+      content: createBlogData.content,
+      excerpt: createBlogData.excerpt,
+      authorId: createBlogData.authorId || 'temp-author-id',
+      tags: createBlogData.tags || [],
+      isPublished: false,
+      viewCount: 0,
+      likeCount: 0,
     });
-    const savedBlog = await this.blogsRepository.save(blog);
-    return savedBlog as IBlog;
+
+    return this.blogRepository.save(blog);
   }
 
-  async findAll(includeDrafts = false): Promise<IBlogResponse[]> {
-    const query = this.blogsRepository.createQueryBuilder('blog')
-      .leftJoinAndSelect('blog.author', 'author')
-      .select(['blog', 'author.id', 'author.firstName', 'author.lastName']);
+  async findAll(filters: IBlogFilters = {}): Promise<Blog[]> {
+    const { page = 1, limit = 10, includeDrafts = false } = filters;
+
+    const queryBuilder = this.blogRepository.createQueryBuilder('blog');
 
     if (!includeDrafts) {
-      query.where('blog.isPublished = :isPublished', { isPublished: true });
+      queryBuilder.where('blog.isPublished = :isPublished', {
+        isPublished: true,
+      });
     }
 
-    const blogs = await query.getMany();
-    
-    return blogs.map(blog => ({
-      ...blog,
-      isPublic: blog.isPublic
-    }));
+    return queryBuilder
+      .orderBy('blog.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
   }
 
-  async findOne(id: string, includeDrafts = false): Promise<IBlog> {
-    const query = this.blogsRepository.createQueryBuilder('blog')
-      .leftJoinAndSelect('blog.author', 'author')
-      .where('blog.id = :id', { id });
-
-    if (!includeDrafts) {
-      query.andWhere('blog.isPublished = :isPublished', { isPublished: true });
-    }
-
-    const blog = await query.getOne();
-    
-    if (!blog) {
-      throw new NotFoundException(`Blog with ID ${id} not found`);
-    }
-    
-    return blog as IBlog;
-  }
-
-  async findByAuthor(authorId: string, includeDrafts = false): Promise<IBlog[]> {
-    const query = this.blogsRepository.createQueryBuilder('blog')
+  async findByAuthor(authorId: string, includeDrafts = true): Promise<Blog[]> {
+    const queryBuilder = this.blogRepository
+      .createQueryBuilder('blog')
       .where('blog.authorId = :authorId', { authorId });
 
     if (!includeDrafts) {
-      query.andWhere('blog.isPublished = :isPublished', { isPublished: true });
+      queryBuilder.andWhere('blog.isPublished = :isPublished', {
+        isPublished: true,
+      });
     }
 
-    const blogs = await query.getMany();
-    return blogs as IBlog[];
+    return queryBuilder.orderBy('blog.createdAt', 'DESC').getMany();
   }
 
-  async update(id: string, updateBlogDto: UpdateBlogDto, authorId: string): Promise<IBlog> {
-    const blog = await this.findOne(id, true) as Blog;
-    
-    if (blog.authorId !== authorId) {
-      throw new ForbiddenException('You can only update your own blogs');
+  async findOne(id: string): Promise<Blog> {
+    const blog = await this.blogRepository.findOne({ where: { id } });
+    if (!blog) {
+      throw new NotFoundException('Blog not found');
     }
-    
+    return blog;
+  }
+
+  async update(id: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
+    const blog = await this.findOne(id);
+
     Object.assign(blog, updateBlogDto);
-    const savedBlog = await this.blogsRepository.save(blog);
-    return savedBlog as IBlog;
+
+    try {
+      return await this.blogRepository.save(blog);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error('Failed to update blog:', errorMessage);
+      throw error;
+    }
   }
 
-  async publish(id: string, authorId: string): Promise<IBlog> {
-    const blog = await this.findOne(id, true) as Blog;
-    
-    if (blog.authorId !== authorId) {
-      throw new ForbiddenException('You can only publish your own blogs');
-    }
-    
-    blog.publish();
-    const savedBlog = await this.blogsRepository.save(blog);
-    return savedBlog as IBlog;
+  async publish(id: string): Promise<Blog> {
+    const blog = await this.findOne(id);
+
+    blog.publish(); // Use the entity method
+
+    return this.blogRepository.save(blog);
   }
 
-  async unpublish(id: string, authorId: string): Promise<IBlog> {
-    const blog = await this.findOne(id, true) as Blog;
-    
-    if (blog.authorId !== authorId) {
-      throw new ForbiddenException('You can only unpublish your own blogs');
-    }
-    
-    blog.unpublish();
-    const savedBlog = await this.blogsRepository.save(blog);
-    return savedBlog as IBlog;
+  async unpublish(id: string): Promise<Blog> {
+    const blog = await this.findOne(id);
+
+    blog.unpublish(); // Use the entity method
+
+    return this.blogRepository.save(blog);
   }
 
-  async remove(id: string, authorId: string): Promise<void> {
-    const blog = await this.findOne(id, true) as Blog;
-    
-    if (blog.authorId !== authorId) {
-      throw new ForbiddenException('You can only delete your own blogs');
-    }
-    
-    await this.blogsRepository.remove(blog);
+  async like(id: string): Promise<Blog> {
+    const blog = await this.findOne(id);
+
+    blog.likeCount = (blog.likeCount || 0) + 1;
+
+    return this.blogRepository.save(blog);
   }
 
   async incrementViewCount(id: string): Promise<void> {
-    await this.blogsRepository.increment({ id }, 'viewCount', 1);
+    await this.blogRepository.increment({ id }, 'viewCount', 1);
   }
 
-  async incrementLikeCount(id: string): Promise<void> {
-    await this.blogsRepository.increment({ id }, 'likeCount', 1);
+  async remove(id: string): Promise<void> {
+    const blog = await this.findOne(id);
+    await this.blogRepository.remove(blog);
   }
 }

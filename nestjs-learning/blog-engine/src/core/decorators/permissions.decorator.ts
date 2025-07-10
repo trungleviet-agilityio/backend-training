@@ -7,7 +7,8 @@ import { SetMetadata } from '@nestjs/common';
 /*
 Permissions decorator is a decorator that provides the permissions functionality for the application.
 */
-export const Permissions = (...permissions: string[]) => SetMetadata('permissions', permissions);
+export const Permissions = (...permissions: string[]) =>
+  SetMetadata('permissions', permissions);
 
 /*
 Public decorator is a decorator that provides the public functionality for the application.

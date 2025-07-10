@@ -2,7 +2,12 @@
 This file is used to define the interfaces for the blogs module.
 */
 
-import { IBlog, ICreateBlog, IUpdateBlog, IBlogFilters } from './blog.interface';
+import {
+  IBlog,
+  ICreateBlog,
+  IUpdateBlog,
+  IBlogFilters,
+} from './blog.interface';
 
 export interface IBlogRepository {
   create(data: ICreateBlog, authorId: string): Promise<IBlog>;

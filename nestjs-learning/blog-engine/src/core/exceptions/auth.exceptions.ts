@@ -11,12 +11,7 @@ AuthenticationException is an exception that provides the authentication excepti
 */
 export class AuthenticationException extends BaseException {
   constructor(message: string, details?: IValidationDetails) {
-    super(
-      message,
-      HttpStatus.UNAUTHORIZED,
-      'AUTHENTICATION_FAILED',
-      details
-    );
+    super(message, HttpStatus.UNAUTHORIZED, 'AUTHENTICATION_FAILED', details);
   }
 }
 
@@ -25,12 +20,7 @@ AuthorizationException is an exception that provides the authorization exception
 */
 export class AuthorizationException extends BaseException {
   constructor(message: string, details?: IValidationDetails) {
-    super(
-      message,
-      HttpStatus.FORBIDDEN,
-      'AUTHORIZATION_FAILED',
-      details
-    );
+    super(message, HttpStatus.FORBIDDEN, 'AUTHORIZATION_FAILED', details);
   }
 }
 
@@ -43,7 +33,7 @@ export class InvalidCredentialsException extends BaseException {
       'Invalid username or password',
       HttpStatus.UNAUTHORIZED,
       'INVALID_CREDENTIALS',
-      username ? { username } : undefined
+      username ? { username } : undefined,
     );
   }
 }
@@ -53,11 +43,7 @@ TokenExpiredException is an exception that provides the token expired exception 
 */
 export class TokenExpiredException extends BaseException {
   constructor() {
-    super(
-      'Token has expired',
-      HttpStatus.UNAUTHORIZED,
-      'TOKEN_EXPIRED'
-    );
+    super('Token has expired', HttpStatus.UNAUTHORIZED, 'TOKEN_EXPIRED');
   }
 }
 
@@ -66,11 +52,7 @@ InvalidTokenException is an exception that provides the invalid token exception 
 */
 export class InvalidTokenException extends BaseException {
   constructor() {
-    super(
-      'Invalid token provided',
-      HttpStatus.UNAUTHORIZED,
-      'INVALID_TOKEN'
-    );
+    super('Invalid token provided', HttpStatus.UNAUTHORIZED, 'INVALID_TOKEN');
   }
 }
 
@@ -79,11 +61,7 @@ MissingTokenException is an exception that provides the missing token exception 
 */
 export class MissingTokenException extends BaseException {
   constructor() {
-    super(
-      'No token provided',
-      HttpStatus.UNAUTHORIZED,
-      'MISSING_TOKEN'
-    );
+    super('No token provided', HttpStatus.UNAUTHORIZED, 'MISSING_TOKEN');
   }
 }
 
@@ -96,7 +74,7 @@ export class UserNotFoundException extends BaseException {
       'User not found',
       HttpStatus.NOT_FOUND,
       'USER_NOT_FOUND',
-      username ? { username } : undefined
+      username ? { username } : undefined,
     );
   }
 }
@@ -110,7 +88,7 @@ export class UserAlreadyExistsException extends BaseException {
       `User with username '${username}' already exists`,
       HttpStatus.CONFLICT,
       'USER_ALREADY_EXISTS',
-      { username }
+      { username },
     );
   }
 }

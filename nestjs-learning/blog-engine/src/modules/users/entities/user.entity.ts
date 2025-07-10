@@ -29,7 +29,7 @@ export class User extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => Blog, blog => blog.author)
+  @OneToMany(() => Blog, (blog) => blog.author)
   blogs: Blog[];
 
   get fullName(): string {

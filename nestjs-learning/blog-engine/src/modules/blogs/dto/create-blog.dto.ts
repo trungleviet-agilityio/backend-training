@@ -2,7 +2,13 @@
 Create blog DTO is used to define the DTO for creating blogs.
 */
 
-import { IsString, IsOptional, IsArray, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBlogDto {
@@ -12,7 +18,10 @@ export class CreateBlogDto {
   @MaxLength(200)
   title: string;
 
-  @ApiProperty({ description: 'Blog content', example: 'This is the content of my blog post...' })
+  @ApiProperty({
+    description: 'Blog content',
+    example: 'This is the content of my blog post...',
+  })
   @IsString()
   @MinLength(10)
   content: string;

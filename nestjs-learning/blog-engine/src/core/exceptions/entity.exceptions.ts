@@ -14,7 +14,7 @@ export class EntityNotFoundException extends BaseException {
       `${entityName} with id '${entityId}' not found`,
       HttpStatus.NOT_FOUND,
       'ENTITY_NOT_FOUND',
-      { entityName, entityId }
+      { entityName, entityId },
     );
   }
 }
@@ -28,7 +28,7 @@ export class EntityAlreadyExistsException extends BaseException {
       `${entityName} with ${fieldName} '${fieldValue}' already exists`,
       HttpStatus.CONFLICT,
       'ENTITY_ALREADY_EXISTS',
-      { entityName, fieldName, fieldValue }
+      { entityName, fieldName, fieldValue },
     );
   }
 }
@@ -42,7 +42,7 @@ export class EntityCreationException extends BaseException {
       `Failed to create ${entityName}${reason ? `: ${reason}` : ''}`,
       HttpStatus.INTERNAL_SERVER_ERROR,
       'ENTITY_CREATION_FAILED',
-      { entityName, reason }
+      { entityName, reason },
     );
   }
 }
@@ -56,7 +56,7 @@ export class EntityUpdateException extends BaseException {
       `Failed to update ${entityName} with id '${entityId}'${reason ? `: ${reason}` : ''}`,
       HttpStatus.INTERNAL_SERVER_ERROR,
       'ENTITY_UPDATE_FAILED',
-      { entityName, entityId, reason }
+      { entityName, entityId, reason },
     );
   }
 }
@@ -70,7 +70,7 @@ export class EntityDeletionException extends BaseException {
       `Failed to delete ${entityName} with id '${entityId}'${reason ? `: ${reason}` : ''}`,
       HttpStatus.INTERNAL_SERVER_ERROR,
       'ENTITY_DELETION_FAILED',
-      { entityName, entityId, reason }
+      { entityName, entityId, reason },
     );
   }
 }

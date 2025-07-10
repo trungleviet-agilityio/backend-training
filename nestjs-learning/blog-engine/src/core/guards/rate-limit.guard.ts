@@ -16,7 +16,10 @@ RateLimitGuard is a guard that provides the rate limit functionality for the app
 */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  private requestCounts = new Map<string, { count: number; resetTime: number }>();
+  private requestCounts = new Map<
+    string,
+    { count: number; resetTime: number }
+  >();
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
@@ -36,14 +39,15 @@ export class RateLimitGuard implements CanActivate {
     }
 
     // Check rate limit
-    if (clientRecord.count >= 100) { // 100 requests per minute
+    if (clientRecord.count >= 100) {
+      // 100 requests per minute
       throw new HttpException(
         {
           message: 'Rate limit exceeded',
           errorCode: 'RATE_LIMIT_EXCEEDED',
           retryAfter: Math.ceil((clientRecord.resetTime - now) / 1000),
         },
-        HttpStatus.TOO_MANY_REQUESTS
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 

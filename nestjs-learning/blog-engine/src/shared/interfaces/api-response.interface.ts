@@ -4,7 +4,7 @@ This file is used to define the API response interface for the shared module.
 
 import { IValidationDetails } from './validation-details.interface';
 
-  export interface IApiResponse<T = unknown> {
+export interface IApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
