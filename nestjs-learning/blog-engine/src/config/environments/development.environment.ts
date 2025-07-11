@@ -3,14 +3,14 @@ import { baseEnvironmentConfig } from './base.environment';
 
 export const developmentEnvironmentConfig: EnvironmentConfig = {
   name: 'development',
-  port: 8000,
+  port: 3000,
   database: {
-    type: 'sqlite',
+    type: 'postgres',
     host: 'localhost',
-    port: 3306,
-    username: 'dev_user',
-    password: 'dev_password',
-    database: './data/blog-engine-dev.db',
+    port: 5434,
+    username: 'postgres',
+    password: 'postgres',
+    database: 'blog_engine_dev',
     synchronize: true,
     logging: true,
   },

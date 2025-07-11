@@ -4,8 +4,8 @@
  * Configures and starts the NestJS application with all necessary middleware and plugins
  */
 
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, Logger, ClassSerializerInterceptor } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -30,6 +30,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Global serializer interceptor to handle @Exclude() decorators
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Global CORS middleware
   app.enableCors({

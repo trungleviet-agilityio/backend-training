@@ -1,38 +1,31 @@
 /**
  * Database Module
- * Provides database configuration and connection management
+ * Provides PostgreSQL database configuration and connection management
  */
 
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseService } from './database.service';
 import { DatabaseModuleOptions } from './interfaces/database-module.interface';
+import { getTypeOrmConfig } from '../config/database.config';
 
 @Module({})
 export class DatabaseModule {
   /**
-   * Creates the database module with configuration
+   * Creates the database module with PostgreSQL configuration
    */
-  static forRoot(options: DatabaseModuleOptions): DynamicModule {
+  static forRoot(options: DatabaseModuleOptions = {}): DynamicModule {
     return {
       module: DatabaseModule,
       imports: [
         TypeOrmModule.forRootAsync({
           useFactory: () => {
-            const environment = process.env.NODE_ENV || 'local';
-            const isDev =
-              environment === 'development' || environment === 'local';
-
-            const config = {
-              type: 'sqlite' as const,
-              database: `data/blog-engine-${environment}.db`,
-              autoLoadEntities: true,
-              synchronize: isDev,
-              logging: isDev,
+            const config = getTypeOrmConfig();
+            
+            return {
+              ...config,
               entities: options.entities ? [...options.entities] : [],
             };
-
-            return config;
           },
         }),
       ],

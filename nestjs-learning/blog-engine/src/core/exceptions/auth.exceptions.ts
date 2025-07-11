@@ -1,94 +1,103 @@
 /*
-Auth exceptions are used to define the auth exceptions for the application.
+Authentication and authorization related exceptions
 */
 
 import { HttpStatus } from '@nestjs/common';
 import { BaseException } from './base.exception';
-import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
+import { IValidationDetails } from '../../commons/interfaces/common.interface';
 
 /*
-AuthenticationException is an exception that provides the authentication exception functionality for the application.
+AuthenticationException is thrown when user authentication fails
 */
 export class AuthenticationException extends BaseException {
-  constructor(message: string, details?: IValidationDetails) {
-    super(message, HttpStatus.UNAUTHORIZED, 'AUTHENTICATION_FAILED', details);
+  readonly statusCode = HttpStatus.UNAUTHORIZED;
+  readonly error = 'Authentication Error';
+
+  constructor(message: string = 'Authentication failed', details?: IValidationDetails) {
+    super(message, details);
   }
 }
 
 /*
-AuthorizationException is an exception that provides the authorization exception functionality for the application.
+AuthorizationException is thrown when user authorization fails
 */
 export class AuthorizationException extends BaseException {
-  constructor(message: string, details?: IValidationDetails) {
-    super(message, HttpStatus.FORBIDDEN, 'AUTHORIZATION_FAILED', details);
+  readonly statusCode = HttpStatus.FORBIDDEN;
+  readonly error = 'Authorization Error';
+
+  constructor(message: string = 'Access denied', details?: IValidationDetails) {
+    super(message, details);
   }
 }
 
 /*
-InvalidCredentialsException is an exception that provides the invalid credentials exception functionality for the application.
+InvalidCredentialsException is thrown when user provides invalid credentials
 */
 export class InvalidCredentialsException extends BaseException {
-  constructor(username?: string) {
-    super(
-      'Invalid username or password',
-      HttpStatus.UNAUTHORIZED,
-      'INVALID_CREDENTIALS',
-      username ? { username } : undefined,
-    );
+  readonly statusCode = HttpStatus.UNAUTHORIZED;
+  readonly error = 'Invalid Credentials';
+
+  constructor(message: string = 'Invalid username or password', username?: string) {
+    super(message, username ? { username } : undefined);
   }
 }
 
 /*
-TokenExpiredException is an exception that provides the token expired exception functionality for the application.
+TokenExpiredException is thrown when JWT token has expired
 */
 export class TokenExpiredException extends BaseException {
-  constructor() {
-    super('Token has expired', HttpStatus.UNAUTHORIZED, 'TOKEN_EXPIRED');
+  readonly statusCode = HttpStatus.UNAUTHORIZED;
+  readonly error = 'Token Expired';
+
+  constructor(message: string = 'Token has expired') {
+    super(message);
   }
 }
 
 /*
-InvalidTokenException is an exception that provides the invalid token exception functionality for the application.
+InvalidTokenException is thrown when JWT token is invalid
 */
 export class InvalidTokenException extends BaseException {
-  constructor() {
-    super('Invalid token provided', HttpStatus.UNAUTHORIZED, 'INVALID_TOKEN');
+  readonly statusCode = HttpStatus.UNAUTHORIZED;
+  readonly error = 'Invalid Token';
+
+  constructor(message: string = 'Invalid token provided') {
+    super(message);
   }
 }
 
 /*
-MissingTokenException is an exception that provides the missing token exception functionality for the application.
+MissingTokenException is thrown when no JWT token is provided
 */
 export class MissingTokenException extends BaseException {
-  constructor() {
-    super('No token provided', HttpStatus.UNAUTHORIZED, 'MISSING_TOKEN');
+  readonly statusCode = HttpStatus.UNAUTHORIZED;
+  readonly error = 'Missing Token';
+
+  constructor(message: string = 'No token provided') {
+    super(message);
   }
 }
 
 /*
-UserNotFoundException is an exception that provides the user not found exception functionality for the application.
+UserNotFoundException is thrown when user is not found
 */
 export class UserNotFoundException extends BaseException {
-  constructor(username?: string) {
-    super(
-      'User not found',
-      HttpStatus.NOT_FOUND,
-      'USER_NOT_FOUND',
-      username ? { username } : undefined,
-    );
+  readonly statusCode = HttpStatus.NOT_FOUND;
+  readonly error = 'User Not Found';
+
+  constructor(message: string = 'User not found', username?: string) {
+    super(message, username ? { username } : undefined);
   }
 }
 
 /*
-UserAlreadyExistsException is an exception that provides the user already exists exception functionality for the application.
+UserAlreadyExistsException is thrown when trying to create a user that already exists
 */
 export class UserAlreadyExistsException extends BaseException {
-  constructor(username: string) {
-    super(
-      `User with username '${username}' already exists`,
-      HttpStatus.CONFLICT,
-      'USER_ALREADY_EXISTS',
-      { username },
-    );
+  readonly statusCode = HttpStatus.CONFLICT;
+  readonly error = 'User Already Exists';
+
+  constructor(message: string = 'User already exists', username: string) {
+    super(message, { username });
   }
 }

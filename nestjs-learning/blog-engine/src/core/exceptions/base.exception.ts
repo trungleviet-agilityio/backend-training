@@ -1,42 +1,43 @@
 /*
-Base exception is used to define the base exception for the application.
+Base exception classes provide the foundation for all custom exceptions.
+These are used to maintain consistency in error handling across the application.
 */
 
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
+import { IValidationDetails } from '../../commons/interfaces/common.interface';
 
 /*
-BaseException is a base exception that provides the base exception functionality for the application.
+BaseException is used as the base class for all custom exceptions.
 */
-export abstract class BaseException extends HttpException {
+export abstract class BaseException extends Error {
+  public abstract readonly statusCode: number;
+  public abstract readonly error: string;
+  public readonly timestamp: string;
+  public details?: IValidationDetails;
+
   constructor(
     message: string,
-    statusCode: HttpStatus,
-    public readonly errorCode?: string,
-    public readonly details?: IValidationDetails,
+    details?: IValidationDetails,
   ) {
-    super(
-      {
-        message,
-        errorCode,
-        details,
-        timestamp: new Date().toISOString(),
-      },
-      statusCode,
-    );
+    super(message);
+    this.name = this.constructor.name;
+    this.timestamp = new Date().toISOString();
+    this.details = details;
+
+    // Capture stack trace for debugging
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, BaseException);
+    }
   }
 
-  /*
-  getErrorCode is a method that returns the error code.
-  */
-  getErrorCode(): string | undefined {
-    return this.errorCode;
-  }
-
-  /*
-  getDetails is a method that returns the details.
-  */
-  getDetails(): IValidationDetails | undefined {
-    return this.details;
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      statusCode: this.statusCode,
+      error: this.error,
+      timestamp: this.timestamp,
+      details: this.details,
+      stack: this.stack,
+    };
   }
 }

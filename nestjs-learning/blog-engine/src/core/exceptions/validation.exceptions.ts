@@ -1,66 +1,75 @@
 /*
-Validation exceptions are used to define the validation exceptions for the application.
+Validation related exceptions
 */
 
 import { HttpStatus } from '@nestjs/common';
 import { BaseException } from './base.exception';
-import { IValidationDetails } from '../../shared/interfaces/validation-details.interface';
+import { IValidationDetails } from '../../commons/interfaces/common.interface';
 
 /*
-ValidationException is an exception that provides the validation exception functionality for the application.
+ValidationException is thrown when input validation fails
 */
 export class ValidationException extends BaseException {
-  constructor(message: string, details?: IValidationDetails) {
-    super(message, HttpStatus.BAD_REQUEST, 'VALIDATION_ERROR', details);
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly error = 'Validation Error';
+
+  constructor(message: string = 'Validation failed', details?: IValidationDetails) {
+    super(message, details);
   }
 }
 
 /*
-InvalidInputException is an exception that provides the invalid input exception functionality for the application.
+InvalidInputException is thrown when input data is invalid
 */
 export class InvalidInputException extends BaseException {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly error = 'Invalid Input';
+
   constructor(message: string, details?: IValidationDetails) {
-    super(message, HttpStatus.BAD_REQUEST, 'INVALID_INPUT', details);
+    super(message, details);
   }
 }
 
 /*
-MissingRequiredFieldException is an exception that provides the missing required field exception functionality for the application.
+MissingRequiredFieldException is thrown when a required field is missing
 */
 export class MissingRequiredFieldException extends BaseException {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly error = 'Missing Required Field';
+
   constructor(fieldName: string) {
     super(
-      `Missing required field: ${fieldName}`,
-      HttpStatus.BAD_REQUEST,
-      'MISSING_REQUIRED_FIELD',
+      `Required field '${fieldName}' is missing`,
       { fieldName },
     );
   }
 }
 
 /*
-InvalidDataTypeException is an exception that provides the invalid data type exception functionality for the application.
+InvalidDataTypeException is thrown when data type is invalid
 */
 export class InvalidDataTypeException extends BaseException {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly error = 'Invalid Data Type';
+
   constructor(fieldName: string, expectedType: string, actualType: string) {
     super(
-      `Invalid data type for field '${fieldName}'. Expected: ${expectedType}, Got: ${actualType}`,
-      HttpStatus.BAD_REQUEST,
-      'INVALID_DATA_TYPE',
+      `Field '${fieldName}' expected ${expectedType} but received ${actualType}`,
       { fieldName, expectedType, actualType },
     );
   }
 }
 
 /*
-FieldLengthException is an exception that provides the field length exception functionality for the application.
+FieldLengthException is thrown when field length exceeds limits
 */
 export class FieldLengthException extends BaseException {
+  readonly statusCode = HttpStatus.BAD_REQUEST;
+  readonly error = 'Field Length Exceeded';
+
   constructor(fieldName: string, maxLength: number, actualLength: number) {
     super(
-      `Field '${fieldName}' exceeds maximum length. Maximum: ${maxLength}, Actual: ${actualLength}`,
-      HttpStatus.BAD_REQUEST,
-      'FIELD_LENGTH_EXCEEDED',
+      `Field '${fieldName}' exceeds maximum length of ${maxLength} (actual: ${actualLength})`,
       { fieldName, maxLength, actualLength },
     );
   }

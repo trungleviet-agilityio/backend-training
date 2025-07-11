@@ -12,6 +12,8 @@ An enterprise-grade blog engine built with NestJS, following advanced patterns a
 - **Security**: JWT authentication, role-based authorization, rate limiting
 - **Performance**: Caching, connection pooling, and optimized database queries
 - **Monitoring**: Health checks, audit logging, and comprehensive error tracking
+- **Database**: PostgreSQL with Docker Compose for development and testing
+- **E2E Testing**: Comprehensive test suite with real database integration
 
 ## 🏗️ Architecture Overview
 
@@ -156,22 +158,33 @@ PORT=3000
 
 ### Database Configuration
 ```typescript
-// Multi-database support
+// PostgreSQL with environment-specific settings
 database: {
-  type: 'sqlite',                    // sqlite|mysql|postgres
-  database: './data/blog-engine.db', // file path or database name
+  type: 'postgres',                  // PostgreSQL for all environments
   host: 'localhost',
-  port: 3306,
-  username: 'user',
-  password: 'password',
+  port: 5434,                        // 5434 for dev, 5435 for test
+  username: 'postgres',
+  password: 'postgres',
+  database: 'blog_engine_dev',       // blog_engine_dev or blog_engine_test
   synchronize: true,                 // Auto-sync in development
   logging: true,                     // SQL query logging
 }
 ```
 
+### Docker Services
+- **Development DB**: PostgreSQL on `localhost:5434`
+- **Test DB**: PostgreSQL on `localhost:5435`
+- **Redis**: Cache on `localhost:6379`
+- **PgAdmin**: Web UI on `localhost:8080`
+
 ## 🚀 Quick Start
 
-### 1. Installation
+### 1. Prerequisites
+- Docker & Docker Compose
+- Node.js 18+
+- npm or yarn
+
+### 2. Installation & Setup
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -179,18 +192,27 @@ cd blog-engine
 
 # Install dependencies
 npm install
+
+# Run the automated demo setup (recommended)
+./scripts/demo-setup.sh
 ```
 
-### 2. Environment Setup
+### 3. Database Setup (PostgreSQL with Docker)
 ```bash
-# Copy example environment file
-cp .env.example .env.local
+# Start development database (port 5434)
+npm run db:dev
 
-# Edit configuration
-nano .env.local
+# Start test database (port 5435)
+npm run db:test
+
+# Start PgAdmin web interface (port 8080)
+npm run db:pgadmin
+
+# Stop all services
+npm run docker:down
 ```
 
-### 3. Development
+### 4. Development
 ```bash
 # Start development server with hot reload
 npm run start:dev
@@ -202,17 +224,24 @@ npm run build
 npm run start:prod
 ```
 
-### 4. Testing
+### 5. Testing
 ```bash
 # Unit tests
 npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
+npm run test:watch
 npm run test:cov
+
+# E2E tests (with PostgreSQL)
+npm run test:e2e:auth          # Auth module tests
+npm run test:e2e               # All e2e tests
+npm run test:e2e:coverage      # E2E with coverage
+
+# Automated test setup with database
+./scripts/test-setup.sh auth
+./scripts/test-setup.sh all
 ```
+
+📚 **For detailed setup instructions, see [DOCKER-SETUP.md](./DOCKER-SETUP.md)**
 
 ## 📡 API Endpoints
 
@@ -370,8 +399,4 @@ npm run migration:revert
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-**Built with ❤️ using NestJS, TypeScript, and Enterprise Best Practices**
+**Built with ❤️ using NestJS, TypeScript

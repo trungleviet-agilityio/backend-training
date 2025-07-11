@@ -2,10 +2,10 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { ConfigController } from './config.controller';
 import { ConfigService, RequestLoggerService } from './config.service';
-import { SharedModule } from '../shared/shared.module';
 import { configServiceProvider } from './providers/config.provider';
 import { ConfigModuleOptions } from './interfaces/config-module.interface';
 import { CONFIG_SERVICE, CONFIG_OPTIONS } from '../commons/constants/tokens';
+import { LoggerCoreModule } from '../core/logger/logger.module';
 
 @Module({})
 export class ConfigModule {
@@ -31,7 +31,7 @@ export class ConfigModule {
           validationSchema: options.validationSchema,
           validationOptions: options.validationOptions,
         }),
-        SharedModule,
+        LoggerCoreModule, // Import LoggerCoreModule to make CustomLoggerService available  
       ],
       controllers: [ConfigController],
       providers: [
@@ -42,8 +42,30 @@ export class ConfigModule {
           provide: CONFIG_OPTIONS,
           useValue: options,
         },
+        // API metadata providers (moved from SharedModule)
+        {
+          provide: 'API_VERSION',
+          useValue: 'v1',
+        },
+        {
+          provide: 'API_NAME',
+          useValue: 'blog-engine',
+        },
+        {
+          provide: 'API_DESCRIPTION',
+          useValue: 'Blog engine is a blog engine for the application.',
+        },
       ],
-      exports: [CONFIG_SERVICE, ConfigService, CONFIG_OPTIONS],
+      exports: [
+        CONFIG_SERVICE, 
+        ConfigService, 
+        CONFIG_OPTIONS,
+        RequestLoggerService,
+        LoggerCoreModule, // Export LoggerCoreModule to make CustomLoggerService available globally
+        'API_VERSION',
+        'API_NAME',
+        'API_DESCRIPTION',
+      ],
       global: options.isGlobal !== false,
     };
   }

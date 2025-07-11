@@ -1,9 +1,7 @@
 /*
 Guards index is used to export all guards for the application.
+Note: Core guards have been removed. Use guards from the auth module instead.
 */
 
-export { AuthGuard } from './auth.guard';
-export { RolesGuard } from './roles.guard';
-export { RoleGuard } from './role.guard';
-export { PermissionsGuard } from './permissions.guard';
-export { RateLimitGuard } from './rate-limit.guard';
+// All guards have been moved to the respective modules where they're actually used.
+// Import guards from: src/modules/auth/guards/

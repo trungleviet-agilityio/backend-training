@@ -18,8 +18,8 @@ import { ContextModule, AuditFlushInterceptor } from './commons';
 import { RequestContextMiddleware } from './core/middleware/request-context.middleware';
 
 // Feature modules
-import { UsersModule } from './modules/users/users.module';
-import { BlogsModule } from './modules/blogs/blogs.module';
+import { UsersModule } from './modules/user/user.module';
+import { BlogsModule } from './modules/blog/blog.module';
 
 @Module({
   imports: [

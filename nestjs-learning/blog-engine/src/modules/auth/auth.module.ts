@@ -10,7 +10,8 @@ import { ConfigModule } from '../../config/config.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { UsersModule } from '../users/users.module';
+import { LocalStrategy } from './strategies/local.strategy';
+import { UsersModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, PassportModule],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
+  exports: [AuthService, PassportModule, JwtStrategy, LocalStrategy],
 })
 export class AuthModule {}
