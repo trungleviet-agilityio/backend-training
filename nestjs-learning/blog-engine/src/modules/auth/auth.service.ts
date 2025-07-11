@@ -32,8 +32,8 @@ export class AuthService {
         password: hashedPassword,
       };
 
-      // Create user with hashed password
-      const user = await this.usersService.create(userWithHashedPassword);
+      // Create user with hashed password (flag indicates password is already hashed)
+      const user = await this.usersService.create(userWithHashedPassword, true);
 
       // Generate access token
       const access_token = await this.generateAccessToken(user);

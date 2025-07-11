@@ -26,15 +26,19 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash(createUserDto.password, this.saltRounds);
-    
+  async create(createUserDto: CreateUserDto, passwordAlreadyHashed: boolean = false): Promise<User> {
+    let password = createUserDto.password;
+
+    // Hash password only if it's not already hashed
+    if (!passwordAlreadyHashed) {
+      password = await bcrypt.hash(createUserDto.password, this.saltRounds);
+    }
+
     const user = this.userRepository.create({
       ...createUserDto,
-      password: hashedPassword,
+      password,
     });
-    
+
     return this.userRepository.save(user);
   }
 
@@ -62,12 +66,12 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    
+
     // Hash password if it's being updated
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, this.saltRounds);
     }
-    
+
     Object.assign(user, updateUserDto);
     return this.userRepository.save(user);
   }
