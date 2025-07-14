@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5555:5555"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=dev-db
+      - DB_PORT=5432
+      - DB_USERNAME=${POSTGRES_USER:-fake_twitter_user}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-fake_twitter_password}
+      - DB_DATABASE=${POSTGRES_DB:-fake_twitter_db}
+      - DB_SYNCHRONIZE=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - dev-db
+    networks:
+      - fake-twitter-network
+
+  dev-db:
+    build:
+      context: ./scripts/docker/postgres
+      dockerfile: Dockerfile
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fake_twitter_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fake_twitter_password}
+      POSTGRES_DB: ${POSTGRES_DB:-fake_twitter_db}
+      POSTGRES_SCHEMA: ${POSTGRES_SCHEMA:-fake_twitter_schema}
+    volumes:
+      - dev-db_data:/var/lib/postgresql/data
+    networks:
+      - fake-twitter-network
+
+  test-db:
+    build:
+      context: ./scripts/docker/postgres
+      dockerfile: Dockerfile
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fake_twitter_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fake_twitter_password}
+      POSTGRES_DB: ${POSTGRES_DB:-fake_twitter_test}
+      POSTGRES_SCHEMA: ${POSTGRES_SCHEMA:-fake_twitter_schema}
+    volumes:
+      - test-db_data:/var/lib/postgresql/data
+    networks:
+      - fake-twitter-network
+
+volumes:
+  dev-db_data:
+  test-db_data:
+
+networks:
+  fake-twitter-network:
+    driver: bridge
