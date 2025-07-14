@@ -1,3 +1,28 @@
+# Fake Twitter API Design Documentation
+
+## 1. Overview
+
+A Twitter-like social media API built with NestJS, focusing on core functionality with simplified models.
+
+**Authentication:** JWT-based with refresh tokens
+**Access Control:** Role-based (admin, user, moderator)
+**Base URL:** `https://api.fake-twitter.com`
+**Versioning:** URL-based (`/api/v1/`)
+
+**Core Models:**
+- `users` - User accounts and profiles
+- `roles` - User roles and permissions
+- `posts` - Tweet-like posts
+- `comments` - Post comments with threading
+- `auth_sessions` - JWT session management
+- `auth_password_resets` - Password reset tokens
+
+## 2. API Conventions
+
+### Authentication
+```
+Authorization: Bearer <access_token>
+```
 - Access token expires after 15 minutes
 - Refresh token expires after 7 days
 
