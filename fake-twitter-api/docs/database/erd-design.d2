@@ -1,0 +1,153 @@
+direction: right
+
+# CORE MODELS (User, Post, Comment + Roles)
+users: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  email: varchar {constraint: unique}
+  username: varchar {constraint: unique}
+  password_hash: varchar
+  first_name: varchar
+  last_name: varchar
+  bio: text
+  avatar_url: varchar
+  role_uuid: uuid {constraint: foreign_key}
+  is_active: boolean
+  email_verified: boolean
+}
+
+roles: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  name: varchar {constraint: unique}
+  description: text
+  permissions: jsonb
+}
+
+posts: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  content: text
+  author_uuid: uuid {constraint: foreign_key}
+  likes_count: int
+  comments_count: int
+  is_published: boolean
+}
+
+comments: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  content: text
+  author_uuid: uuid {constraint: foreign_key}
+  post_uuid: uuid {constraint: foreign_key}
+  parent_uuid: uuid {constraint: foreign_key}
+  depth_level: int
+  likes_count: int
+}
+
+# AUTH TABLES (Simple authentication)
+auth_sessions: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  user_uuid: uuid {constraint: foreign_key}
+  refresh_token_hash: varchar
+  expires_at: timestamptz
+  is_active: boolean
+}
+
+auth_password_resets: {
+  shape: sql_table
+  uuid: uuid {constraint: primary_key}
+  user_uuid: uuid {constraint: foreign_key}
+  token_hash: varchar
+  expires_at: timestamptz
+  is_used: boolean
+}
+
+# CORE RELATIONSHIPS (Following Blog Post Pattern)
+roles.uuid -> users.role_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#9f7aea"
+}
+
+users.uuid -> auth_sessions.user_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#4299e1"
+}
+
+users.uuid -> auth_password_resets.user_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#4299e1"
+}
+
+users.uuid -> posts.author_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#48bb78"
+}
+
+users.uuid -> comments.author_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#48bb78"
+}
+
+posts.uuid -> comments.post_uuid: {
+  label: "1:N"
+  style.stroke-width: 2
+  style.stroke: "#48bb78"
+}
+
+comments.uuid -> comments.parent_uuid: {
+  label: "1:N (threading)"
+  style.stroke-width: 2
+  style.stroke: "#ed8936"
+}
+
+legend: {
+  style.font-size: 16
+  shape: text
+  style.fill: "#f7fafc"
+  style.stroke: "#2d3748"
+  style.stroke-width: 1
+  style.border-radius: 8
+  label: |md
+    ## 🐦 Fake Twitter - Simplified Core Models
+
+    ### Core Relationships (Following Blog Post Pattern):
+    - **User → Post**: 1:N – User has many posts
+    - **Post → Comment**: 1:N – Post has many comments
+    - **User → Comment**: 1:N – User has many comments
+    - **Comment → Comment**: 1:N – Comment threading (self-referencing)
+
+    ### Has-Many-Through Relationship:
+    - **User → Comments (through Posts)**: User has many comments through their posts
+
+    ### Authentication Relationships:
+    - **Role → User**: 1:N – Role defines user permissions (admin, user, moderator)
+
+    **JWT Session Management:**
+    - **User → AuthSession**: 1:N – User can have multiple active sessions
+    - Purpose: Store refresh tokens for JWT authentication
+    - Lifecycle: Created on login, updated on token refresh, deactivated on logout
+    - Security: refresh_token_hash stored (never plain text)
+    - Expiration: expires_at field for automatic cleanup
+    - Multi-device: Supports multiple concurrent sessions per user
+
+    **Password Reset Flow:**
+    - **User → PasswordReset**: 1:N – User can request multiple resets
+    - Purpose: Secure password reset via email tokens
+    - Lifecycle: Created on forgot-password request, marked used after reset
+    - Security: token_hash stored (never plain text)
+    - Time-limited: expires_at prevents old token usage (typically 15 minutes)
+    - Single-use: is_used flag prevents token reuse attacks
+
+    ### Common Fields (All Tables):
+    - **created_at**: timestamptz - Record creation timestamp
+    - **updated_at**: timestamptz - Last modification timestamp
+    - **deleted**: boolean - Soft delete flag
+  |
+}
