@@ -8,6 +8,7 @@ export interface JwtPayload {
   username: string;
   role: string;
   permissions: Record<string, any>;
+  sessionId: string;
   iat?: number;
   exp?: number;
 }

@@ -1,16 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Role } from 'src/database/entities/role.entity';
+import { Role } from '../database/entities/role.entity';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/database/entities/user.entity';
-import { AuthSession } from 'src/database/entities/auth-session.entity';
+import { User } from '../database/entities/user.entity';
+import { AuthSession } from '../database/entities/auth-session.entity';
 import { PassportModule } from '@nestjs/passport';
-import { AuthPasswordReset } from 'src/database/entities/auth-password-reset.entity';
+import { AuthPasswordReset } from '../database/entities/auth-password-reset.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy, LocalStrategy } from './strategies';
 import { JwtAuthGuard, RolesGuard } from './guards';
 import { AuthController } from './auth.controller';
+import { NotificationModule } from '../common/notifications/notification.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuthController } from './auth.controller';
       }),
       inject: [ConfigService],
     }),
+    NotificationModule,
   ],
   controllers: [AuthController],
   providers: [

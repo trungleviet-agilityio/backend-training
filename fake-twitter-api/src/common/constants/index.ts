@@ -3,3 +3,4 @@
  */
 
 export * from './roles.constant';
+export * from './email-provider.constant';
