@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Navigate to fake-twitter-api directory and run comprehensive checks
+cd fake-twitter-api && npm run validate
