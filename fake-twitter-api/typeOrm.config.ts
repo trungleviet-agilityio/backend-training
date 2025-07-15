@@ -3,7 +3,6 @@
  * It is used to create the database connection and the data source.
 **/
 
-import { Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
@@ -19,6 +18,7 @@ export default new DataSource({
   database: configService.getOrThrow('DB_DATABASE'),
   username: configService.getOrThrow('DB_USERNAME'),
   password: configService.getOrThrow('DB_PASSWORD'),
-  migrations: ['migrations/**'],
-  entities: [],
+  migrations: ['src/database/migrations/*.ts'],
+  entities: ['src/database/entities/*.entity.ts'],
+  synchronize: configService.getOrThrow('DB_SYNCHRONIZE'),
 });
