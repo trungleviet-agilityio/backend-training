@@ -18,7 +18,7 @@ export default new DataSource({
   database: configService.getOrThrow('DB_DATABASE'),
   username: configService.getOrThrow('DB_USERNAME'),
   password: configService.getOrThrow('DB_PASSWORD'),
-  migrations: ['src/database/migrations/*.ts'],
-  entities: ['src/database/entities/*.entity.ts'],
-  synchronize: configService.getOrThrow('DB_SYNCHRONIZE'),
+  migrations: ['src/migrations/*.ts'],
+  entities: ['src/database/entities/*.ts'],
+  synchronize: configService.getOrThrow('DB_SYNCHRONIZE') === 'true',
 });
