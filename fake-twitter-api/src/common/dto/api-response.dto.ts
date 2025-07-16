@@ -5,7 +5,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export interface IApiResponse<T = any> {
+// Generic type constraint for response data
+export type ResponseData = Record<string, unknown> | string | number | boolean | null | Array<unknown> | object;
+
+export interface IApiResponse<T = ResponseData> {
   success: boolean;
   message: string;
   data?: T;
@@ -14,7 +17,7 @@ export interface IApiResponse<T = any> {
   path?: string;
 }
 
-export class BaseApiResponse<T = any> implements IApiResponse<T> {
+export class BaseApiResponse<T = ResponseData> implements IApiResponse<T> {
   @ApiProperty({
     description: 'Indicates if the request was successful',
     example: true,
@@ -58,7 +61,7 @@ export class BaseApiResponse<T = any> implements IApiResponse<T> {
   }
 }
 
-export class SuccessResponse<T = any> extends BaseApiResponse<T> {
+export class SuccessResponse<T = ResponseData> extends BaseApiResponse<T> {
   @ApiProperty({ example: true })
   declare success: boolean;
 
