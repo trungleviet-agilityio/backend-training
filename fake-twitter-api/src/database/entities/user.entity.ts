@@ -7,6 +7,8 @@ import { AbstractEntity } from '../abstract.entity';
 import { AuthPasswordReset } from './auth-password-reset.entity';
 import { AuthSession } from './auth-session.entity';
 import { Role } from './role.entity';
+import { Post } from './post.entity';
+import { Comment } from './comment.entity';
 
 @Entity('users')
 export class User extends AbstractEntity<User> {
@@ -50,4 +52,11 @@ export class User extends AbstractEntity<User> {
 
   @OneToMany(() => AuthPasswordReset, reset => reset.user)
   authPasswordResets: AuthPasswordReset[];
+
+  // Content relationships
+  @OneToMany(() => Post, post => post.author)
+  posts: Post[];
+
+  @OneToMany(() => Comment, comment => comment.author)
+  comments: Comment[];
 }

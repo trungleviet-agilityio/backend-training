@@ -31,6 +31,49 @@ export interface AuthTokensWithUser {
 // Comment-related response data types
 
 // User-related response data types
+export interface UserProfileData {
+  uuid: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  avatarUrl?: string;
+  role: { name: string };
+  stats: {
+    postsCount: number;
+    commentsCount: number;
+  };
+  createdAt: string;
+}
+
+export interface UserStatsData {
+  postsCount: number;
+  commentsCount: number;
+  followersCount: number;
+  followingCount: number;
+}
+
+export interface UserPostsData {
+  uuid: string;
+  content: string;
+  author: UserProfileData;
+  stats: {
+    likesCount: number;
+    commentsCount: number;
+  };
+  createdAt: string;
+}
+
+export interface UserCommentsData {
+  uuid: string;
+  content: string;
+  post: UserPostsData;
+  stats: {
+    likesCount: number;
+  };
+  createdAt: string;
+}
+
 
 export interface AuthRefreshTokens {
   access_token: string;

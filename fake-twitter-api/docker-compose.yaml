@@ -12,7 +12,7 @@ services:
       - DB_USERNAME=${POSTGRES_USER:-fake_twitter_user}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-fake_twitter_password}
       - DB_DATABASE=${POSTGRES_DB:-fake_twitter_db}
-      - DB_SYNCHRONIZE=true
+      - DB_SYNCHRONIZE=false
     volumes:
       - .:/app
       - /app/node_modules

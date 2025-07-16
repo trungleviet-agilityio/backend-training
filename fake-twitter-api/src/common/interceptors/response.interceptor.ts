@@ -12,22 +12,28 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { ApiResponse, CommonResponseData } from '../types';
+import { ResponseData } from '../dto/api-response.dto';
 
 // Metadata key for custom response messages
 export const RESPONSE_MESSAGE_METADATA = 'custom_response_message';
 
+// Standard API Response Interface
+export interface InterceptorApiResponse<T = ResponseData> {  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+  path: string;
+}
+
 @Injectable()
-export class ResponseInterceptor<
-  T extends CommonResponseData = CommonResponseData,
-> implements NestInterceptor<T, ApiResponse<T>>
+export class ResponseInterceptor<T = ResponseData> implements NestInterceptor<T, InterceptorApiResponse<T>>
 {
   constructor(private reflector: Reflector) {}
 
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ApiResponse<T>> {
+  ): Observable<InterceptorApiResponse<T>> {
     const request = context.switchToHttp().getRequest();
     const { statusCode } = context.switchToHttp().getResponse();
 

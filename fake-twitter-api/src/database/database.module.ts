@@ -11,6 +11,8 @@ import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { AuthSession } from './entities/auth-session.entity';
 import { AuthPasswordReset } from './entities/auth-password-reset.entity';
+import { Post } from './entities/post.entity';
+import { Comment } from './entities/comment.entity';
 
 @Module({
   imports: [
@@ -23,7 +25,7 @@ import { AuthPasswordReset } from './entities/auth-password-reset.entity';
         username: configService.getOrThrow('DB_USERNAME'),
         password: configService.getOrThrow('DB_PASSWORD'),
 
-        entities: [User, Role, AuthSession, AuthPasswordReset],
+        entities: [User, Role, AuthSession, AuthPasswordReset, Post, Comment],
         autoLoadEntities: true,
         synchronize: configService.getOrThrow('DB_SYNCHRONIZE'),
       }),

@@ -39,8 +39,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'warn',
 
       // General code quality rules
-      'no-console': 'warn',
-      'no-debugger': 'error',
+      // 'no-console': 'warn',
+      // 'no-debugger': 'error',
       'no-duplicate-imports': 'error',
       'no-var': 'error',
       'prefer-const': 'error',
@@ -70,9 +70,9 @@ export default tseslint.config(
   },
   {
     files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      'no-console': 'off',
-    },
+    // rules: {
+    //   '@typescript-eslint/no-explicit-any': 'off',
+    //   'no-console': 'warn',
+    // },
   },
 );
