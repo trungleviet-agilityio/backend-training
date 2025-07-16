@@ -19,12 +19,3 @@ export * from './interceptors';
 
 // Constants
 export * from './constants';
-
-// Services
-export * from './services';
-
-// Controllers
-export * from './controllers';
-
-// Guards
-export * from './guards';

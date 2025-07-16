@@ -216,5 +216,6 @@ export class UserService {
 
     const user = await this.findById(uuid);
     await this.userRepository.softRemove(user);
+    await this.userRepository.update(uuid, { deleted: true, isActive: false });
   }
 }

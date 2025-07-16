@@ -6,6 +6,7 @@ import {
   BeforeUpdate,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -27,6 +28,9 @@ export abstract class AbstractEntity<T> {
   // Soft delete
   @Column({ name: 'deleted', type: 'boolean', default: false })
   deleted: boolean;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt?: Date;
 
   constructor(entity: Partial<T>) {
     Object.assign(this, entity);
