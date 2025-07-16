@@ -39,6 +39,10 @@ export abstract class EmailTemplateBuilder {
   }
 }
 
+/**
+ * Password Reset Email Builder - Template Method Pattern
+ * Provides consistent email formatting
+ */
 export class PasswordResetEmailBuilder extends EmailTemplateBuilder {
   protected getSubject(data: any): string {
     return 'Reset Your Password - Fake Twitter';
