@@ -24,7 +24,8 @@ import {
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { NotificationService } from '../common/notifications/notification.service';
+import { NotificationService } from '../notifications/notification.service';
+import { DEFAULT_ROLE } from '../common/constants/roles.constant';
 
 // Response interfaces
 interface MessageOnlyResponse {
@@ -74,7 +75,7 @@ export class AuthService {
 
     // Get default role
     const defaultRole = await this.roleRepository.findOne({
-      where: { name: 'user' },
+      where: { name: DEFAULT_ROLE },
     });
 
     if (!defaultRole) {
@@ -347,7 +348,7 @@ export class AuthService {
       sub: user.uuid,
       email: user.email,
       username: user.username,
-      role: user.role?.name || 'user',
+      role: user.role?.name || DEFAULT_ROLE,
       permissions: user.role?.permissions || {},
       sessionId: currentSessionId || '',
     };
@@ -392,7 +393,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: {
-          name: user.role?.name || 'user',
+          name: user.role?.name || DEFAULT_ROLE,
         },
       },
     };

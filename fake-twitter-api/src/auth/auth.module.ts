@@ -11,7 +11,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy, LocalStrategy } from './strategies';
 import { JwtAuthGuard, RolesGuard } from './guards';
 import { AuthController } from './auth.controller';
-import { NotificationModule } from '../common/notifications/notification.module';
+import { NotificationModule } from '../notifications/notification.module';
+
 
 @Module({
   imports: [
