@@ -3,6 +3,9 @@
  * It is used to bootstrap the application.
  */
 
+import { randomUUID } from 'crypto';
+if (!global.crypto) global.crypto = { randomUUID } as any;
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
