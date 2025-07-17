@@ -8,9 +8,7 @@
   },
   "setupFilesAfterEnv": ["<rootDir>/jest-test-setup.ts"],
   "testTimeout": 30000,
-  "collectCoverageFrom": [
-    "src/**/*.ts",
-    "!src/**/*.spec.ts",
-    "!src/**/*.e2e-spec.ts"
-  ]
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/../src/$1"
+  }
 }

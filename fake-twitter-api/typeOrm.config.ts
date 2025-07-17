@@ -27,5 +27,4 @@ export default new DataSource({
   entities: ['src/database/entities/*.entity.ts'],
   migrations: ['src/migrations/*.ts'],
   synchronize: false, // Always false for migrations
-  logging: nodeEnv === 'development',
 });

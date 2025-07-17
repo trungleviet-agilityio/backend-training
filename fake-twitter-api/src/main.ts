@@ -8,7 +8,7 @@ if (!global.crypto) global.crypto = { randomUUID } as any;
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 // Import the global interceptors and filters
@@ -16,6 +16,17 @@ import { GlobalExceptionFilter, ResponseInterceptor } from './common';
 import { Reflector } from '@nestjs/core';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
+  // Log environment and database configuration
+  logger.log(`🚀 Starting Fake Twitter API in ${process.env.NODE_ENV || 'development'} mode`);
+  logger.log(`📊 Database Configuration:`);
+  logger.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
+  logger.log(`   Port: ${process.env.DB_PORT || '5436'}`);
+  logger.log(`   Database: ${process.env.DB_DATABASE || 'fake_twitter_db'}`);
+  logger.log(`   Username: ${process.env.DB_USERNAME || 'fake_twitter_user'}`);
+  logger.log(`   Synchronize: ${process.env.DB_SYNCHRONIZE || 'false'}`);
+
   const app = await NestFactory.create(AppModule);
 
   // Global API prefix
@@ -69,6 +80,10 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(process.env.APP_PORT ?? 3000);
+  const port = process.env.APP_PORT ?? 3000;
+  await app.listen(port);
+
+  logger.log(`✅ Fake Twitter API is running on port ${port}`);
+  logger.log(`🔗 API Documentation: http://localhost:${port}/api/v1/docs`);
 }
 bootstrap();

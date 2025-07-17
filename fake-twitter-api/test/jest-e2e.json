@@ -6,6 +6,8 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "setupFilesAfterEnv": ["<rootDir>/jest-test-setup.ts"],
+  "testTimeout": 30000,
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1"
   }
