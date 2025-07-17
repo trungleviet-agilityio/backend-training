@@ -2,7 +2,11 @@
  * Post service
  */
 
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../../database/entities/post.entity';
@@ -76,7 +80,10 @@ export class PostService {
     };
   }
 
-  async createPost(currentUser: { uuid: string; role: { name: string } }, createData: CreatePostDto): Promise<Post> {
+  async createPost(
+    currentUser: { uuid: string; role: { name: string } },
+    createData: CreatePostDto,
+  ): Promise<Post> {
     /**
      * Create a new post
      * @param currentUser - The current user
@@ -86,14 +93,16 @@ export class PostService {
 
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
-      relations: ['role']
+      relations: ['role'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+    const strategy = this.postOperationFactory.createStrategy(
+      currentUser.role.name,
+    );
 
     if (!strategy.canCreatePost(user)) {
       throw new ForbiddenException('You cannot create posts');
@@ -111,7 +120,11 @@ export class PostService {
     return this.postRepository.save(post);
   }
 
-  async updatePost(currentUser: { uuid: string; role: { name: string } }, postUuid: string, updateData: UpdatePostDto): Promise<Post> {
+  async updatePost(
+    currentUser: { uuid: string; role: { name: string } },
+    postUuid: string,
+    updateData: UpdatePostDto,
+  ): Promise<Post> {
     /**
      * Update a post
      * @param currentUser - The current user
@@ -125,14 +138,16 @@ export class PostService {
     // Fetch the full user entity
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
-      relations: ['role']
+      relations: ['role'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+    const strategy = this.postOperationFactory.createStrategy(
+      currentUser.role.name,
+    );
 
     if (!strategy.canUpdatePost(user, post)) {
       throw new ForbiddenException('You cannot update this post');
@@ -146,7 +161,10 @@ export class PostService {
     return this.findById(postUuid);
   }
 
-  async deletePost(currentUser: { uuid: string; role: { name: string } }, postUuid: string): Promise<void> {
+  async deletePost(
+    currentUser: { uuid: string; role: { name: string } },
+    postUuid: string,
+  ): Promise<void> {
     /**
      * Delete a post
      * @param currentUser - The current user
@@ -158,14 +176,16 @@ export class PostService {
     // Fetch the full user entity
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
-      relations: ['role']
+      relations: ['role'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+    const strategy = this.postOperationFactory.createStrategy(
+      currentUser.role.name,
+    );
 
     if (!strategy.canDeletePost(user, post)) {
       throw new ForbiddenException('You cannot delete this post');
@@ -174,7 +194,11 @@ export class PostService {
     await this.postRepository.softDelete(postUuid);
   }
 
-  async getUserPosts(userUuid: string, page: number, limit: number): Promise<PaginatedPosts> {
+  async getUserPosts(
+    userUuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedPosts> {
     /**
      * Get posts by a specific user
      * @param userUuid - The UUID of the user

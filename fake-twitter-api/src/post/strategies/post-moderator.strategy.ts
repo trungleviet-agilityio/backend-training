@@ -64,7 +64,11 @@ export class ModeratorPostStrategy implements IPostOperationStrategy {
     return true;
   }
 
-  validateUpdateData(currentUser: User, post: Post, updateData: UpdatePostDto): boolean {
+  validateUpdateData(
+    currentUser: User,
+    post: Post,
+    updateData: UpdatePostDto,
+  ): boolean {
     /**
      * Moderator can update any field
      * @param currentUser - The current user

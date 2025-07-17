@@ -20,5 +20,9 @@ export interface IPostOperationStrategy {
   canUpdatePost(currentUser: User, post: Post): boolean;
   canDeletePost(currentUser: User, post: Post): boolean;
   validateCreateData(currentUser: User, createData: CreatePostDto): boolean;
-  validateUpdateData(currentUser: User, post: Post, updateData: UpdatePostDto): boolean;
+  validateUpdateData(
+    currentUser: User,
+    post: Post,
+    updateData: UpdatePostDto,
+  ): boolean;
 }

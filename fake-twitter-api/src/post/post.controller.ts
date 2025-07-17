@@ -3,25 +3,35 @@
  */
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
   Query,
   UseGuards,
-  ParseIntPipe,
-  DefaultValuePipe,
-  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { PostService, PostMapperService } from './services';
-import { CreatePostDto, UpdatePostDto, PostResponseDto, PostsResponseDto } from './dto';
+import { PostMapperService, PostService } from './services';
+import {
+  CreatePostDto,
+  PostResponseDto,
+  PostsResponseDto,
+  UpdatePostDto,
+} from './dto';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -66,7 +76,10 @@ export class PostController {
   @ApiOperation({ summary: 'Create new post' })
   @ApiResponse({ status: 201, description: 'Post created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createPost(
     @CurrentUser() currentUser: JwtPayload,
@@ -84,7 +97,10 @@ export class PostController {
       role: { name: currentUser.role },
     } as any;
 
-    const post = await this.postService.createPost(currentUserObj, createPostDto);
+    const post = await this.postService.createPost(
+      currentUserObj,
+      createPostDto,
+    );
     return { post: this.postMapper.toPostDto(post) };
   }
 
@@ -92,10 +108,15 @@ export class PostController {
   @ApiOperation({ summary: 'Get single post' })
   @ApiResponse({ status: 200, description: 'Post retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async getPost(@Param('uuid', ParseUUIDPipe) uuid: string): Promise<PostResponseDto> {
+  async getPost(
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+  ): Promise<PostResponseDto> {
     /**
      * Get a single post
      * @param uuid - The UUID of the post
@@ -110,7 +131,10 @@ export class PostController {
   @ApiOperation({ summary: 'Update post' })
   @ApiResponse({ status: 200, description: 'Post updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updatePost(
@@ -131,7 +155,11 @@ export class PostController {
       role: { name: currentUser.role },
     } as any;
 
-    const post = await this.postService.updatePost(currentUserObj, uuid, updatePostDto);
+    const post = await this.postService.updatePost(
+      currentUserObj,
+      uuid,
+      updatePostDto,
+    );
     return { post: this.postMapper.toPostDto(post) };
   }
 
@@ -139,7 +167,10 @@ export class PostController {
   @ApiOperation({ summary: 'Delete post' })
   @ApiResponse({ status: 200, description: 'Post deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deletePost(

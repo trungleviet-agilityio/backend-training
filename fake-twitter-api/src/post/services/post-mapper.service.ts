@@ -4,7 +4,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Post } from '../../database/entities/post.entity';
-import { PostDto, PostAuthorDto, PostStatsDto } from '../dto';
+import { PostAuthorDto, PostDto, PostStatsDto } from '../dto';
 
 @Injectable()
 export class PostMapperService {
