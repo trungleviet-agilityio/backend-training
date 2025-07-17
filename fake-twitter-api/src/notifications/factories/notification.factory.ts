@@ -24,9 +24,7 @@ export enum NotificationProvider {
 
 @Injectable()
 export class NotificationFactory {
-  constructor(
-    private configService: ConfigService,
-  ) {}
+  constructor(private configService: ConfigService) {}
 
   createEmailService(): IEmailService {
     const provider = this.configService.get<string>(
@@ -45,7 +43,9 @@ export class NotificationFactory {
         return new RealEmailService();
 
       default:
-        console.warn(`Unknown email provider: ${provider}, falling back to console`);
+        console.warn(
+          `Unknown email provider: ${provider}, falling back to console`,
+        );
         return new ConsoleEmailService();
     }
   }
