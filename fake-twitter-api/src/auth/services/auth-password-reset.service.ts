@@ -80,28 +80,35 @@ export class AuthPasswordResetService {
      * @param newPassword - New password
      * @returns Message
      */
-    const passwordReset = await this.authPasswordResetRepository.findOne({
+
+    // Find all unused, non-expired reset tokens
+    const passwordResets = await this.authPasswordResetRepository.find({
       where: {
         expiresAt: MoreThan(new Date()),
         isUsed: false,
       },
     });
 
-    if (!passwordReset) {
+    // Find the correct token by comparing with all available tokens
+    let validPasswordReset: AuthPasswordReset | null = null;
+    for (const reset of passwordResets) {
+      const isValidToken = await bcrypt.compare(token, reset.tokenHash);
+      if (isValidToken) {
+        validPasswordReset = reset;
+        break;
+      }
+    }
+
+    if (!validPasswordReset) {
       throw new UnauthorizedException('Invalid or expired reset token');
     }
 
-    const isValidToken = await bcrypt.compare(token, passwordReset.tokenHash);
-    if (!isValidToken) {
-      throw new UnauthorizedException('Invalid reset token');
-    }
-
     const newPasswordHash = await bcrypt.hash(newPassword, 12);
-    await this.userRepository.update(passwordReset.userUuid, {
+    await this.userRepository.update(validPasswordReset.userUuid, {
       passwordHash: newPasswordHash,
     });
 
-    await this.authPasswordResetRepository.update(passwordReset.uuid, {
+    await this.authPasswordResetRepository.update(validPasswordReset.uuid, {
       isUsed: true,
     });
 

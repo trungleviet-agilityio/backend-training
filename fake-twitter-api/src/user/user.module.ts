@@ -14,6 +14,7 @@ import { AdminUserStrategy } from './strategies/user-admin.strategy';
 import { ModeratorUserStrategy } from './strategies/user-moderator.strategy';
 import { RegularUserStrategy } from './strategies/user-regular.strategy';
 import { UserMapperService } from './services/user-mapper.service';
+import { PostMapperService } from '../post/services';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Post, Comment])],
@@ -25,6 +26,7 @@ import { UserMapperService } from './services/user-mapper.service';
     AdminUserStrategy,
     ModeratorUserStrategy,
     RegularUserStrategy,
+    PostMapperService,
   ],
   exports: [UserService],
 })

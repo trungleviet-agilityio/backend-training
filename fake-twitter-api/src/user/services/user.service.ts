@@ -227,15 +227,33 @@ export class UserService {
     };
   }
 
-  async deleteUser(uuid: string): Promise<void> {
+  async deleteUser(currentUser: User, targetUuid: string): Promise<void> {
     /**
      * Delete a user
-     * @param uuid - The UUID of the user
-     * @returns The deleted user
+     * @param currentUser - The current user performing the deletion
+     * @param targetUuid - The UUID of the user to delete
+     * @returns void
      */
 
-    const user = await this.findById(uuid);
-    await this.userRepository.softRemove(user);
-    await this.userRepository.update(uuid, { deleted: true, isActive: false });
+    const targetUser = await this.findById(targetUuid);
+    const strategy = this.userOperationFactory.createStrategy(
+      currentUser.role.name,
+    );
+
+    if (!strategy.canDeleteUser(currentUser, targetUser)) {
+      // Provide more specific error messages based on the scenario
+      if (currentUser.uuid === targetUser.uuid) {
+        throw new ForbiddenException('You cannot delete your own account');
+      }
+
+      if (currentUser.role.name !== 'admin') {
+        throw new ForbiddenException('Only administrators can delete users');
+      }
+
+      throw new ForbiddenException('You do not have permission to delete this user');
+    }
+
+    await this.userRepository.softRemove(targetUser);
+    await this.userRepository.update(targetUuid, { deleted: true, isActive: false });
   }
 }

@@ -91,18 +91,29 @@ export class PostService {
      * @returns The created post
      */
 
+    console.log('PostService.createPost - currentUser:', currentUser);
+    console.log('PostService.createPost - currentUser.uuid:', currentUser?.uuid);
+    console.log('PostService.createPost - currentUser.role:', currentUser?.role);
+
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
       relations: ['role'],
     });
 
+    console.log('PostService.createPost - user found:', user);
+    console.log('PostService.createPost - user.uuid:', user?.uuid);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    console.log('PostService.createPost - creating strategy with role:', currentUser.role.name);
+
     const strategy = this.postOperationFactory.createStrategy(
       currentUser.role.name,
     );
+
+    console.log('PostService.createPost - strategy created:', strategy);
 
     if (!strategy.canCreatePost(user)) {
       throw new ForbiddenException('You cannot create posts');
@@ -112,12 +123,28 @@ export class PostService {
       throw new ForbiddenException('Invalid post data for your role');
     }
 
+    console.log('PostService.createPost - about to create post with authorUuid:', user.uuid);
+
     const post = this.postRepository.create({
       ...createData,
       authorUuid: user.uuid,
     });
 
-    return this.postRepository.save(post);
+    console.log('PostService.createPost - post created:', post);
+
+    const savedPost = await this.postRepository.save(post);
+
+    // Load the post with author relation for the mapper
+    const postWithAuthor = await this.postRepository.findOne({
+      where: { uuid: savedPost.uuid },
+      relations: ['author'],
+    });
+
+    if (!postWithAuthor) {
+      throw new NotFoundException('Post not found after creation');
+    }
+
+    return postWithAuthor;
   }
 
   async updatePost(
