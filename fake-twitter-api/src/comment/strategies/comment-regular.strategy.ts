@@ -9,7 +9,7 @@ import { Comment } from '../../database/entities/comment.entity';
 import { CreateCommentDto, UpdateCommentDto } from '../dto';
 
 @Injectable()
-export class RegularCommentStrategy implements ICommentOperationStrategy {  
+export class RegularCommentStrategy implements ICommentOperationStrategy {
   canCreateComment(currentUser: User, postAuthorId: string): boolean {
     /**
      * This method checks if the current user can create a comment.
@@ -55,7 +55,11 @@ export class RegularCommentStrategy implements ICommentOperationStrategy {
     return !!createData.content;
   }
 
-  validateUpdateData(currentUser: User, comment: Comment, updateData: UpdateCommentDto): boolean {
+  validateUpdateData(
+    currentUser: User,
+    comment: Comment,
+    updateData: UpdateCommentDto,
+  ): boolean {
     /**
      * This method validates the update data.
      * @param currentUser - The current user.

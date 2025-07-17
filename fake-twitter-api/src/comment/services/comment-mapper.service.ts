@@ -4,7 +4,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Comment } from '../../database/entities/comment.entity';
-import { CommentDto, CommentAuthorDto, CommentStatsDto } from '../dto';
+import { CommentAuthorDto, CommentDto, CommentStatsDto } from '../dto';
 
 @Injectable()
 export class CommentMapperService {

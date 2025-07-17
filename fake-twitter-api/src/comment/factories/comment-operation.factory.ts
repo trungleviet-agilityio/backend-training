@@ -3,11 +3,11 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { 
+import {
   AdminCommentStrategy,
+  ICommentOperationStrategy,
   ModeratorCommentStrategy,
   RegularCommentStrategy,
-  ICommentOperationStrategy,
 } from '../strategies';
 
 @Injectable()

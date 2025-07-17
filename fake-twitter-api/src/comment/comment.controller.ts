@@ -3,25 +3,35 @@
  */
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
   Query,
   UseGuards,
-  ParseIntPipe,
-  DefaultValuePipe,
-  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { CommentService, CommentMapperService } from './services';
-import { CreateCommentDto, UpdateCommentDto, CommentResponseDto, CommentsResponseDto } from './dto';
+import { CommentMapperService, CommentService } from './services';
+import {
+  CommentResponseDto,
+  CommentsResponseDto,
+  CreateCommentDto,
+  UpdateCommentDto,
+} from './dto';
 
 @ApiTags('Comments')
 @Controller('')
@@ -58,7 +68,11 @@ export class CommentController {
      * @returns Paginated comments
      */
 
-    const result = await this.commentService.getPostComments(postUuid, page, limit);
+    const result = await this.commentService.getPostComments(
+      postUuid,
+      page,
+      limit,
+    );
     return {
       data: this.commentMapper.toCommentDtoList(result.data),
       meta: result.meta,
@@ -69,7 +83,10 @@ export class CommentController {
   @ApiOperation({ summary: 'Create comment' })
   @ApiResponse({ status: 201, description: 'Comment created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createComment(
@@ -90,7 +107,11 @@ export class CommentController {
       role: { name: currentUser.role },
     } as any;
 
-    const comment = await this.commentService.createComment(currentUserObj, postUuid, createCommentDto);
+    const comment = await this.commentService.createComment(
+      currentUserObj,
+      postUuid,
+      createCommentDto,
+    );
     return { comment: this.commentMapper.toCommentDto(comment) };
   }
 
@@ -98,7 +119,10 @@ export class CommentController {
   @ApiOperation({ summary: 'Update comment' })
   @ApiResponse({ status: 200, description: 'Comment updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updateComment(
@@ -119,7 +143,11 @@ export class CommentController {
       role: { name: currentUser.role },
     } as any;
 
-    const comment = await this.commentService.updateComment(currentUserObj, uuid, updateCommentDto);
+    const comment = await this.commentService.updateComment(
+      currentUserObj,
+      uuid,
+      updateCommentDto,
+    );
     return { comment: this.commentMapper.toCommentDto(comment) };
   }
 
@@ -127,7 +155,10 @@ export class CommentController {
   @ApiOperation({ summary: 'Delete comment' })
   @ApiResponse({ status: 200, description: 'Comment deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deleteComment(
@@ -169,7 +200,11 @@ export class CommentController {
      * @returns Paginated replies
      */
 
-    const result = await this.commentService.getCommentReplies(commentUuid, page, limit);
+    const result = await this.commentService.getCommentReplies(
+      commentUuid,
+      page,
+      limit,
+    );
     return {
       data: this.commentMapper.toCommentDtoList(result.data),
       meta: result.meta,

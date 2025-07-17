@@ -11,5 +11,9 @@ export interface ICommentOperationStrategy {
   canUpdateComment(currentUser: User, comment: Comment): boolean;
   canDeleteComment(currentUser: User, comment: Comment): boolean;
   validateCreateData(currentUser: User, createData: CreateCommentDto): boolean;
-  validateUpdateData(currentUser: User, comment: Comment, updateData: UpdateCommentDto): boolean;
+  validateUpdateData(
+    currentUser: User,
+    comment: Comment,
+    updateData: UpdateCommentDto,
+  ): boolean;
 }
