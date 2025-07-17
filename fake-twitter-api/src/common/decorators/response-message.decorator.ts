@@ -10,4 +10,5 @@ import { RESPONSE_MESSAGE_METADATA } from '../interceptors/response.interceptor'
  * @param message - The message to set.
  * @returns The decorator function.
  */
-export const ResponseMessage = (message: string) => SetMetadata(RESPONSE_MESSAGE_METADATA, message);
+export const ResponseMessage = (message: string) =>
+  SetMetadata(RESPONSE_MESSAGE_METADATA, message);

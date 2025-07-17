@@ -6,7 +6,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 // Generic type constraint for response data
-export type ResponseData = Record<string, unknown> | string | number | boolean | null | Array<unknown> | object;
+export type ResponseData =
+  | Record<string, unknown>
+  | string
+  | number
+  | boolean
+  | null
+  | Array<unknown>
+  | object;
 
 export interface IApiResponse<T = ResponseData> {
   success: boolean;
