@@ -10,9 +10,19 @@ import { CreateCommentDto, UpdateCommentDto } from '../dto';
 
 @Injectable()
 export class ModeratorCommentStrategy implements ICommentOperationStrategy {
-  canCreateComment(): boolean { return true; }
-  canUpdateComment(): boolean { return true; }
-  canDeleteComment(): boolean { return true; }
-  validateCreateData(): boolean { return true; }
-  validateUpdateData(): boolean { return true; }
+  canCreateComment(): boolean {
+    return true;
+  }
+  canUpdateComment(): boolean {
+    return true;
+  }
+  canDeleteComment(): boolean {
+    return true;
+  }
+  validateCreateData(): boolean {
+    return true;
+  }
+  validateUpdateData(): boolean {
+    return true;
+  }
 }

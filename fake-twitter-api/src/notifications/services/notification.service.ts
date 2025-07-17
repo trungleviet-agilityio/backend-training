@@ -4,11 +4,11 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { NotificationFactory } from './factories/notification.factory';
+import { NotificationFactory } from '../factories';
 import {
   PasswordResetEmailBuilder,
   PasswordResetSuccessEmailBuilder,
-} from './templates/email-template.builder';
+} from '../templates/email-template.builder';
 
 /**
  * Notification Service - Facade Pattern

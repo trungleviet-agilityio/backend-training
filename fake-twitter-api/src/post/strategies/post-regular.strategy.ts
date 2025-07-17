@@ -64,7 +64,11 @@ export class RegularPostStrategy implements IPostOperationStrategy {
     return createData.isPublished !== false;
   }
 
-  validateUpdateData(currentUser: User, post: Post, updateData: UpdatePostDto): boolean {
+  validateUpdateData(
+    currentUser: User,
+    post: Post,
+    updateData: UpdatePostDto,
+  ): boolean {
     /**
      * Regular users can update content and publishing status
      * @param currentUser - The current user

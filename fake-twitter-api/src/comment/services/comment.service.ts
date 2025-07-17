@@ -2,9 +2,13 @@
  * Comment service
  */
 
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Comment, Post, User } from '../../database/entities';
 import { CommentOperationFactory } from '../factories/comment-operation.factory';
 import { CreateCommentDto, UpdateCommentDto } from '../dto';
@@ -56,7 +60,11 @@ export class CommentService {
     return comment;
   }
 
-  async getPostComments(postUuid: string, page: number, limit: number): Promise<PaginatedComments> {
+  async getPostComments(
+    postUuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments> {
     /**
      * Get comments for a post
      * @param postUuid - The UUID of the post
@@ -84,7 +92,11 @@ export class CommentService {
     };
   }
 
-  async getCommentReplies(commentUuid: string, page: number, limit: number): Promise<PaginatedComments> {
+  async getCommentReplies(
+    commentUuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments> {
     /**
      * Get replies for a comment
      * @param commentUuid - The UUID of the comment
@@ -112,7 +124,11 @@ export class CommentService {
     };
   }
 
-  async createComment(currentUser: { uuid: string; role: { name: string } }, postUuid: string, createData: CreateCommentDto): Promise<Comment> {
+  async createComment(
+    currentUser: { uuid: string; role: { name: string } },
+    postUuid: string,
+    createData: CreateCommentDto,
+  ): Promise<Comment> {
     /**
      * Create a new comment with transaction
      * @param currentUser - The current user
@@ -122,7 +138,7 @@ export class CommentService {
      */
 
     // Use transaction to ensure data consistency
-    return await this.dataSource.transaction(async (manager) => {
+    return await this.dataSource.transaction(async manager => {
       // Get user with role
       const user = await manager.findOne(User, {
         where: { uuid: currentUser.uuid },
@@ -143,8 +159,10 @@ export class CommentService {
       }
 
       // Check permissions
-      const strategy = this.commentOperationFactory.createStrategy(currentUser.role.name);
-      
+      const strategy = this.commentOperationFactory.createStrategy(
+        currentUser.role.name,
+      );
+
       if (!strategy.canCreateComment(user, post.authorUuid)) {
         throw new ForbiddenException('You cannot comment');
       }
@@ -157,7 +175,7 @@ export class CommentService {
       const comment = manager.create(Comment, {
         content: createData.content,
         authorUuid: user.uuid,
-        postUuid: postUuid,
+        postUuid,
         parentUuid: createData.parent_uuid || undefined,
         depthLevel: createData.parent_uuid ? 1 : 0,
         likesCount: 0,
@@ -180,7 +198,11 @@ export class CommentService {
     });
   }
 
-  async updateComment(currentUser: { uuid: string; role: { name: string } }, commentUuid: string, updateData: UpdateCommentDto): Promise<Comment> {
+  async updateComment(
+    currentUser: { uuid: string; role: { name: string } },
+    commentUuid: string,
+    updateData: UpdateCommentDto,
+  ): Promise<Comment> {
     /**
      * Update a comment with transaction
      * @param currentUser - The current user
@@ -189,7 +211,7 @@ export class CommentService {
      * @returns The updated comment
      */
 
-    return await this.dataSource.transaction(async (manager) => {
+    return await this.dataSource.transaction(async manager => {
       const comment = await manager.findOne(Comment, {
         where: { uuid: commentUuid },
         relations: ['author', 'post'],
@@ -208,7 +230,9 @@ export class CommentService {
         throw new NotFoundException('User not found');
       }
 
-      const strategy = this.commentOperationFactory.createStrategy(currentUser.role.name);
+      const strategy = this.commentOperationFactory.createStrategy(
+        currentUser.role.name,
+      );
 
       if (!strategy.canUpdateComment(user, comment)) {
         throw new ForbiddenException('You cannot update this comment');
@@ -218,7 +242,9 @@ export class CommentService {
         throw new ForbiddenException('Invalid update data');
       }
 
-      await manager.update(Comment, commentUuid, { content: updateData.content });
+      await manager.update(Comment, commentUuid, {
+        content: updateData.content,
+      });
 
       const updatedComment = await manager.findOne(Comment, {
         where: { uuid: commentUuid },
@@ -233,14 +259,17 @@ export class CommentService {
     });
   }
 
-  async deleteComment(currentUser: { uuid: string; role: { name: string } }, commentUuid: string): Promise<void> {
+  async deleteComment(
+    currentUser: { uuid: string; role: { name: string } },
+    commentUuid: string,
+  ): Promise<void> {
     /**
      * Delete a comment with transaction
      * @param currentUser - The current user
      * @param commentUuid - The UUID of the comment
      */
 
-    await this.dataSource.transaction(async (manager) => {
+    await this.dataSource.transaction(async manager => {
       const comment = await manager.findOne(Comment, {
         where: { uuid: commentUuid },
         relations: ['author', 'post'],
@@ -259,7 +288,9 @@ export class CommentService {
         throw new NotFoundException('User not found');
       }
 
-      const strategy = this.commentOperationFactory.createStrategy(currentUser.role.name);
+      const strategy = this.commentOperationFactory.createStrategy(
+        currentUser.role.name,
+      );
 
       if (!strategy.canDeleteComment(user, comment)) {
         throw new ForbiddenException('You cannot delete this comment');

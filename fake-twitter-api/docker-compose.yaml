@@ -4,20 +4,21 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5555:5555"
+      - "${APP_PORT:-5555}:5555"
     environment:
-      - NODE_ENV=development
-      - DB_HOST=dev-db
-      - DB_PORT=5432
-      - DB_USERNAME=${POSTGRES_USER:-fake_twitter_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-fake_twitter_password}
-      - DB_DATABASE=${POSTGRES_DB:-fake_twitter_db}
-      - DB_SYNCHRONIZE=false
+      - NODE_ENV=${NODE_ENV:-development}
+      - DB_HOST=${DB_HOST:-dev-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-fake_twitter_user}
+      - DB_PASSWORD=${DB_PASSWORD:-fake_twitter_password}
+      - DB_DATABASE=${DB_DATABASE:-fake_twitter_db}
+      - DB_SYNCHRONIZE=${DB_SYNCHRONIZE:-false}
     volumes:
       - .:/app
       - /app/node_modules
     depends_on:
       - dev-db
+      - test-db
     networks:
       - fake-twitter-network
 
@@ -46,7 +47,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fake_twitter_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fake_twitter_password}
-      POSTGRES_DB: ${POSTGRES_DB:-fake_twitter_test}
+      POSTGRES_DB: ${POSTGRES_DB_TEST:-fake_twitter_test}
       POSTGRES_SCHEMA: ${POSTGRES_SCHEMA:-fake_twitter_schema}
     volumes:
       - test-db_data:/var/lib/postgresql/data

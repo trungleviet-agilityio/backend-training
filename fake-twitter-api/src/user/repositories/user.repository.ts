@@ -10,7 +10,12 @@ import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
-import { IUserRepository, UserStats, PaginatedPosts, PaginatedComments } from '../interfaces/user.interface';
+import {
+  IUserRepository,
+  PaginatedComments,
+  PaginatedPosts,
+  UserStats,
+} from '../interfaces/user.interface';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
@@ -121,7 +126,11 @@ export class UserRepository implements IUserRepository {
     };
   }
 
-  async getUserPosts(uuid: string, page: number, limit: number): Promise<PaginatedPosts> {
+  async getUserPosts(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedPosts> {
     /**
      * Get a user's posts
      * @param uuid - The UUID of the user
@@ -149,7 +158,11 @@ export class UserRepository implements IUserRepository {
     };
   }
 
-  async getUserComments(uuid: string, page: number, limit: number): Promise<PaginatedComments> {
+  async getUserComments(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments> {
     /**
      * Get a user's comments
      * @param uuid - The UUID of the user

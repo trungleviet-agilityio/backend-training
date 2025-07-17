@@ -8,9 +8,13 @@ import { Comment } from '../database/entities/comment.entity';
 import { User } from '../database/entities/user.entity';
 import { Post } from '../database/entities/post.entity';
 import { CommentController } from './comment.controller';
-import { CommentService, CommentMapperService } from './services';
+import { CommentMapperService, CommentService } from './services';
 import { CommentOperationFactory } from './factories/comment-operation.factory';
-import { AdminCommentStrategy, ModeratorCommentStrategy, RegularCommentStrategy } from './strategies';
+import {
+  AdminCommentStrategy,
+  ModeratorCommentStrategy,
+  RegularCommentStrategy,
+} from './strategies';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Comment, User, Post])],

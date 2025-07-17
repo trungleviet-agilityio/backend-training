@@ -2,10 +2,10 @@
  * User interfaces using Interface Segregation Principle
  */
 
-import { User } from "src/database/entities/user.entity";
-import { UpdateUserDto } from "../dto/update-user.dto";
-import { Post } from "src/database/entities/post.entity";
-import { Comment } from "src/database/entities/comment.entity";
+import { User } from 'src/database/entities/user.entity';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { Post } from 'src/database/entities/post.entity';
+import { Comment } from 'src/database/entities/comment.entity';
 
 export const USER_REPOSITORY = 'USER_REPOSITORY';
 
@@ -15,8 +15,16 @@ export interface IUserService {
   findByUsername(username: string): Promise<User>;
   updateProfile(uuid: string, updateData: UpdateUserDto): Promise<User>;
   getUserStats(uuid: string): Promise<UserStats>;
-  getUserPosts(uuid: string, page: number, limit: number): Promise<PaginatedPosts>;
-  getUserComments(uuid: string, page: number, limit: number): Promise<PaginatedComments>;
+  getUserPosts(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedPosts>;
+  getUserComments(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments>;
 }
 
 export interface IUserRepository {
@@ -25,8 +33,16 @@ export interface IUserRepository {
   findByUsername(username: string): Promise<User>;
   update(uuid: string, data: Partial<User>): Promise<User>;
   getUserStats(uuid: string): Promise<UserStats>;
-  getUserPosts(uuid: string, page: number, limit: number): Promise<PaginatedPosts>;
-  getUserComments(uuid: string, page: number, limit: number): Promise<PaginatedComments>;
+  getUserPosts(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedPosts>;
+  getUserComments(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments>;
 }
 
 export interface UserStats {

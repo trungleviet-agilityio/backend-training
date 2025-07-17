@@ -7,9 +7,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Post } from '../database/entities/post.entity';
 import { User } from '../database/entities/user.entity';
 import { PostController } from './post.controller';
-import { PostService, PostMapperService } from './services';
+import { PostMapperService, PostService } from './services';
 import { PostOperationFactory } from './factories/post-operation.factory';
-import { AdminPostStrategy, ModeratorPostStrategy, RegularPostStrategy } from './strategies';
+import {
+  AdminPostStrategy,
+  ModeratorPostStrategy,
+  RegularPostStrategy,
+} from './strategies';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Post, User])],

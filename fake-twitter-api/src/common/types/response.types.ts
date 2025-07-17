@@ -74,7 +74,6 @@ export interface UserCommentsData {
   createdAt: string;
 }
 
-
 export interface AuthRefreshTokens {
   access_token: string;
   refresh_token: string;

@@ -2,7 +2,7 @@
  * Auth service tests
  */
 
-import { AuthService } from '../auth.service';
+import { AuthService } from '../services';
 
 describe('AuthService', () => {
   it('should be defined', () => {

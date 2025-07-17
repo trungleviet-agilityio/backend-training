@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
@@ -8,7 +12,11 @@ import { UserOperationFactory } from '../factories/user-operation.factory';
 import { UserMapperService } from './user-mapper.service';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserProfileDto } from '../dto/user-response.dto';
-import { UserStats, PaginatedPosts, PaginatedComments } from '../interfaces/user.interface';
+import {
+  PaginatedComments,
+  PaginatedPosts,
+  UserStats,
+} from '../interfaces/user.interface';
 
 @Injectable()
 export class UserService {
@@ -25,10 +33,8 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Post)
-
     private readonly postRepository: Repository<Post>,
     @InjectRepository(Comment)
-
     private readonly commentRepository: Repository<Comment>,
     private readonly userOperationFactory: UserOperationFactory,
     private readonly userMapper: UserMapperService,
@@ -101,7 +107,11 @@ export class UserService {
     return this.userMapper.toUserProfileDto(user, stats);
   }
 
-  async updateProfile(currentUser: User, targetUuid: string, updateData: UpdateUserDto): Promise<User> {
+  async updateProfile(
+    currentUser: User,
+    targetUuid: string,
+    updateData: UpdateUserDto,
+  ): Promise<User> {
     /**
      * Update a user's profile
      * @param currentUser - The current user
@@ -111,7 +121,9 @@ export class UserService {
      */
 
     const targetUser = await this.findById(targetUuid);
-    const strategy = this.userOperationFactory.createStrategy(currentUser.role.name);
+    const strategy = this.userOperationFactory.createStrategy(
+      currentUser.role.name,
+    );
 
     if (!strategy.canUpdateUser(currentUser, targetUser)) {
       throw new ForbiddenException('You cannot update this user');
@@ -147,7 +159,11 @@ export class UserService {
     };
   }
 
-  async getUserPosts(uuid: string, page: number, limit: number): Promise<PaginatedPosts> {
+  async getUserPosts(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedPosts> {
     /**
      * Get a user's posts
      * @param uuid - The UUID of the user
@@ -177,7 +193,11 @@ export class UserService {
     };
   }
 
-  async getUserComments(uuid: string, page: number, limit: number): Promise<PaginatedComments> {
+  async getUserComments(
+    uuid: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedComments> {
     /**
      * Get a user's comments
      * @param uuid - The UUID of the user

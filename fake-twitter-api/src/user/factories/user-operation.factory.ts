@@ -5,8 +5,8 @@
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '../../common/constants/roles.constant';
 import {
-  IUserOperationStrategy,
   AdminUserStrategy,
+  IUserOperationStrategy,
   ModeratorUserStrategy,
   RegularUserStrategy,
 } from '../strategies';

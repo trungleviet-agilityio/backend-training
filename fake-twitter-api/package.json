@@ -25,8 +25,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.json --watch",
+
     "test:all": "npm run test && npm run test:e2e",
     "test:ci": "npm run test:cov && npm run test:e2e",
 
@@ -35,7 +34,13 @@
     "migration:create": "npm run typeorm -- migration:create -d ./typeOrm.config.ts",
     "migration:run": "npm run typeorm -- migration:run -d ./typeOrm.config.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d ./typeOrm.config.ts",
+
+    "migration:run:test": "NODE_ENV=test npm run typeorm -- migration:run -d ./typeOrm.config.ts",
+    "migration:generate:test": "NODE_ENV=test npm run typeorm -- migration:generate -d ./typeOrm.config.ts",
+    "migration:revert:test": "NODE_ENV=test npm run typeorm -- migration:revert -d ./typeOrm.config.ts",
+
     "seed": "ts-node src/database/seeds/database-seed.ts",
+    "seed:test": "NODE_ENV=test ts-node src/database/seeds/database-seed.ts",
 
     "db:dev:rm": "docker compose rm dev-db -s -f -v",
     "db:dev:up": "docker compose up dev-db -d",
@@ -44,6 +49,8 @@
     "db:test:rm": "docker compose rm test-db -s -f -v",
     "db:test:up": "docker compose up test-db -d",
     "db:test:restart": "npm run db:test:rm && npm run db:test:up && sleep 3",
+    "db:test:setup": "npm run db:test:restart && npm run migration:run:test && npm run seed:test",
+    "db:test:reset": "npm run db:test:rm && npm run db:test:setup",
 
     "db:both:up": "docker compose up dev-db test-db -d",
     "db:both:logs": "docker compose logs -f dev-db test-db",
@@ -56,11 +63,10 @@
     "docker:up:detached": "docker compose up --build -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
-    "docker:logs:app": "docker compose logs -f app",
-    "docker:logs:db": "docker compose logs -f dev-db",
-    "docker:shell:app": "docker compose exec app sh",
-    "docker:shell:db": "docker compose exec dev-db psql -U fake_twitter_user -d fake_twitter_db",
-    "pretest:e2e": "npm run db:test:restart"
+
+    "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
+    "test:e2e:watch": "NODE_ENV=test jest --config ./test/jest-e2e.json --watch",
+    "pretest:e2e": "npm run db:test:setup"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",

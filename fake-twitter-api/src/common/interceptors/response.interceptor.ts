@@ -18,7 +18,8 @@ import { ResponseData } from '../dto/api-response.dto';
 export const RESPONSE_MESSAGE_METADATA = 'custom_response_message';
 
 // Standard API Response Interface
-export interface InterceptorApiResponse<T = ResponseData> {  success: boolean;
+export interface InterceptorApiResponse<T = ResponseData> {
+  success: boolean;
   message: string;
   data: T;
   timestamp: string;
@@ -26,7 +27,8 @@ export interface InterceptorApiResponse<T = ResponseData> {  success: boolean;
 }
 
 @Injectable()
-export class ResponseInterceptor<T = ResponseData> implements NestInterceptor<T, InterceptorApiResponse<T>>
+export class ResponseInterceptor<T = ResponseData>
+  implements NestInterceptor<T, InterceptorApiResponse<T>>
 {
   constructor(private reflector: Reflector) {}
 

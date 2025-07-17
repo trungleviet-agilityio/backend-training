@@ -1,18 +1,28 @@
-import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { Role } from '../database/entities/role.entity';
-import { ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../database/entities/user.entity';
-import { AuthSession } from '../database/entities/auth-session.entity';
-import { PassportModule } from '@nestjs/passport';
-import { AuthPasswordReset } from '../database/entities/auth-password-reset.entity';
-import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy, LocalStrategy } from './strategies';
-import { JwtAuthGuard, RolesGuard } from './guards';
-import { AuthController } from './auth.controller';
-import { NotificationModule } from '../notifications/notification.module';
+/**
+ * Auth module
+ */
 
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+
+import { User } from '../database/entities/user.entity';
+import { Role } from '../database/entities/role.entity';
+import { AuthSession } from '../database/entities/auth-session.entity';
+import { AuthPasswordReset } from '../database/entities/auth-password-reset.entity';
+
+import { AuthController } from './auth.controller';
+import {
+  AuthMapperService,
+  AuthPasswordResetService,
+  AuthService,
+} from './services';
+import { AuthOperationFactory } from './factories';
+import { JwtAuthStrategy, JwtStrategy, LocalStrategy } from './strategies';
+import { JwtAuthGuard, RolesGuard } from './guards';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
@@ -33,10 +43,22 @@ import { NotificationModule } from '../notifications/notification.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthPasswordResetService,
+    AuthMapperService,
+    AuthOperationFactory,
+    JwtAuthStrategy,
     JwtStrategy,
     LocalStrategy,
     JwtAuthGuard,
     RolesGuard,
+    {
+      provide: 'JWT_AUTH_STRATEGY',
+      useExisting: JwtAuthStrategy,
+    },
+    {
+      provide: 'AUTH_MAPPER_SERVICE',
+      useExisting: AuthMapperService,
+    },
   ],
   exports: [AuthService],
 })
