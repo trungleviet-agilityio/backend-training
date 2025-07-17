@@ -19,7 +19,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
 } from './dto';
-import { AuthService } from './auth.service';
+import { AuthService } from './services';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import {
@@ -29,12 +29,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { MessageOnlyResponse, ResponseMessage, Public } from '../common';
+import { JwtAuthGuard } from './guards';
+import { Public, ResponseMessage } from '../common';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  /**
+   * Constructor
+   *
+   * @param authService - Auth service
+   */
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
@@ -357,8 +362,8 @@ export class AuthController {
       },
     },
   })
-  async logout(@CurrentUser() user: JwtPayload): Promise<MessageOnlyResponse> {
-    return this.authService.logout(user.sub);
+  async logout(@CurrentUser() user: JwtPayload): Promise<void> {
+    await this.authService.logout(user.sub);
   }
 
   @Post('forgot-password')
@@ -400,7 +405,7 @@ export class AuthController {
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
   ): Promise<{ message: string }> {
-    return this.authService.forgotPassword(forgotPasswordDto);
+    return this.authService.forgotPassword(forgotPasswordDto.email);
   }
 
   @Post('reset-password')
@@ -443,6 +448,9 @@ export class AuthController {
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
   ): Promise<{ message: string }> {
-    return this.authService.resetPassword(resetPasswordDto);
+    return this.authService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.password,
+    );
   }
 }

@@ -2,8 +2,10 @@
  * Auth controller tests
  */
 
+import { AuthController } from '../auth.controller';
+
 describe('AuthController', () => {
-    it('should be defined', () => {
-    expect(true).toBe(true);
+  it('should be defined', () => {
+    expect(AuthController).toBeDefined();
   });
 });

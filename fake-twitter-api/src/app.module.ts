@@ -13,7 +13,10 @@ import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', `.env.${process.env.NODE_ENV || 'local'}`],
+    }),
     DatabaseModule,
     AuthModule,
     UserModule,
