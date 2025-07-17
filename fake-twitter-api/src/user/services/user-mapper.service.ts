@@ -6,8 +6,16 @@
 
 import { Injectable } from '@nestjs/common';
 import { User } from '../../database/entities/user.entity';
-import { UserProfileDto, UserPostDto, UserCommentDto } from '../dto/user-response.dto';
-import { UserStats, PaginatedPosts, PaginatedComments } from '../interfaces/user.interface';
+import {
+  UserCommentDto,
+  UserPostDto,
+  UserProfileDto,
+} from '../dto/user-response.dto';
+import {
+  PaginatedComments,
+  PaginatedPosts,
+  UserStats,
+} from '../interfaces/user.interface';
 
 @Injectable()
 export class UserMapperService {
@@ -27,7 +35,12 @@ export class UserMapperService {
       bio: user.bio,
       avatarUrl: user.avatarUrl,
       role: { name: user.role?.name || 'user' },
-      stats: stats || { postsCount: 0, commentsCount: 0, followersCount: 0, followingCount: 0 },
+      stats: stats || {
+        postsCount: 0,
+        commentsCount: 0,
+        followersCount: 0,
+        followingCount: 0,
+      },
       createdAt: user.createdAt.toISOString(),
     };
   }

@@ -1,16 +1,21 @@
 import {
-  Controller,
-  Get,
-  Patch,
-  Param,
   Body,
-  Query,
-  UseGuards,
-  ParseIntPipe,
+  Controller,
   DefaultValuePipe,
   Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -32,12 +37,20 @@ export class UserController {
 
   @Get(':uuid')
   @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async getUserProfile(@Param('uuid') uuid: string): Promise<UserProfileResponseDto> {
+  async getUserProfile(
+    @Param('uuid') uuid: string,
+  ): Promise<UserProfileResponseDto> {
     /**
      * Get a user's profile
      * @param uuid - The UUID of the user
@@ -52,7 +65,10 @@ export class UserController {
   @ApiOperation({ summary: 'Update user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updateProfile(
@@ -73,14 +89,21 @@ export class UserController {
       role: { name: currentUser.role },
     } as any;
 
-    const updatedUser = await this.userService.updateProfile(currentUserObj, uuid, updateUserDto);
+    const updatedUser = await this.userService.updateProfile(
+      currentUserObj,
+      uuid,
+      updateUserDto,
+    );
     const user = await this.userService.getUserProfile(uuid);
     return { user };
   }
 
   @Get(':uuid/stats')
   @ApiOperation({ summary: 'Get user statistics' })
-  @ApiResponse({ status: 200, description: 'User statistics retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User statistics retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -96,7 +119,10 @@ export class UserController {
 
   @Get(':uuid/posts')
   @ApiOperation({ summary: 'Get user posts' })
-  @ApiResponse({ status: 200, description: 'User posts retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User posts retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -118,7 +144,10 @@ export class UserController {
 
   @Get(':uuid/comments')
   @ApiOperation({ summary: 'Get user comments' })
-  @ApiResponse({ status: 200, description: 'User comments retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User comments retrieved successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })

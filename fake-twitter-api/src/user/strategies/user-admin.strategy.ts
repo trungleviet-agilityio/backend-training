@@ -14,7 +14,9 @@ export class AdminUserStrategy implements IUserOperationStrategy {
      * Admins can update any user
      */
 
-    return currentUser.role.name === 'admin' || currentUser.uuid === targetUser.uuid;
+    return (
+      currentUser.role.name === 'admin' || currentUser.uuid === targetUser.uuid
+    );
   }
 
   canViewUser(currentUser: User, targetUser: User): boolean {
@@ -30,10 +32,16 @@ export class AdminUserStrategy implements IUserOperationStrategy {
      * Admins can delete any user
      */
 
-    return currentUser.role.name === 'admin' && currentUser.uuid !== targetUser.uuid;
+    return (
+      currentUser.role.name === 'admin' && currentUser.uuid !== targetUser.uuid
+    );
   }
 
-  validateUpdateData(currentUser: User, targetUser: User, updateData: UpdateUserDto): boolean {
+  validateUpdateData(
+    currentUser: User,
+    targetUser: User,
+    updateData: UpdateUserDto,
+  ): boolean {
     /**
      * Admins can update any field
      */

@@ -157,7 +157,12 @@ export class UserResponseBuilder {
     return new UserResponseBuilder();
   }
 
-  withBasicInfo(uuid: string, username: string, firstName?: string, lastName?: string): this {
+  withBasicInfo(
+    uuid: string,
+    username: string,
+    firstName?: string,
+    lastName?: string,
+  ): this {
     this.user.uuid = uuid;
     this.user.username = username;
     this.user.firstName = firstName;
@@ -216,7 +221,7 @@ export class UserProfileResponseDto {
 export class UserPostsResponseDto {
   @ApiProperty({
     description: 'User posts data',
-    type: PaginatedData<UserPostDto>
+    type: PaginatedData<UserPostDto>,
   })
   data: PaginatedData<UserPostDto>;
 }
@@ -224,7 +229,7 @@ export class UserPostsResponseDto {
 export class UserCommentsResponseDto {
   @ApiProperty({
     description: 'User comments data',
-    type: PaginatedData<UserCommentDto>
+    type: PaginatedData<UserCommentDto>,
   })
   data: PaginatedData<UserCommentDto>;
 }

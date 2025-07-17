@@ -29,7 +29,11 @@ export class ModeratorUserStrategy implements IUserOperationStrategy {
     return false;
   }
 
-  validateUpdateData(currentUser: User, targetUser: User, updateData: UpdateUserDto): boolean {
+  validateUpdateData(
+    currentUser: User,
+    targetUser: User,
+    updateData: UpdateUserDto,
+  ): boolean {
     /**
      * Moderators can only update their own profile fields
      */
