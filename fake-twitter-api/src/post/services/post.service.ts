@@ -35,10 +35,11 @@ export class PostService {
     private readonly postMapper: PostMapperService,
   ) {}
 
-  async findById(uuid: string): Promise<Post> {
+  async findById(uuid: string, currentUser?: { uuid: string; role: { name: string } }): Promise<Post> {
     /**
-     * Find a post by its UUID
+     * Find a post by its UUID with optional permission check
      * @param uuid - The UUID of the post
+     * @param currentUser - Optional current user for permission check
      * @returns The post
      */
 
@@ -50,6 +51,25 @@ export class PostService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
+    // If current user is provided, check permissions
+    if (currentUser) {
+      const user = await this.userRepository.findOne({
+        where: { uuid: currentUser.uuid },
+        relations: ['role'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+
+      if (!strategy.canViewPost(user, post)) {
+        throw new ForbiddenException('You cannot view this post');
+      }
+    }
+
     return post;
   }
 
