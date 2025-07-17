@@ -3,7 +3,12 @@
  */
 
 import { DataSource } from 'typeorm';
+import { config } from 'dotenv';
 import { runSeeds } from '.';
+
+// Load environment variables based on NODE_ENV
+const nodeEnv = process.env.NODE_ENV || 'local';
+config({ path: `.env.${nodeEnv}` });
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -19,7 +24,7 @@ const AppDataSource = new DataSource({
 async function seed() {
   try {
     await AppDataSource.initialize();
-    console.log('Database connected successfully');
+    console.log(`Database connected successfully (${nodeEnv} environment)`);
 
     await runSeeds(AppDataSource);
 
