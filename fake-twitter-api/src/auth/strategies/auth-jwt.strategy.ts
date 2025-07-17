@@ -2,10 +2,10 @@
  * JWT authentication strategy
  */
 
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { User } from '../../database/entities/user.entity';
@@ -20,6 +20,7 @@ import {
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthMapperService } from '../services';
 import { DEFAULT_ROLE } from '../../common/constants/roles.constant';
+import { Role } from 'src/database/entities/role.entity';
 
 @Injectable()
 export class JwtAuthStrategy implements IAuthOperationStrategy {
@@ -34,11 +35,14 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
     @InjectRepository(AuthSession)
     private readonly authSessionRepository: Repository<AuthSession>,
     private readonly jwtService: JwtService,
     @Inject('AUTH_MAPPER_SERVICE')
     private readonly authMapperService: AuthMapperService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async authenticate(credentials: LoginDto): Promise<AuthTokensWithUserDto> {
@@ -51,6 +55,7 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
 
     const { email, password } = credentials;
 
+    // Find user with role (support both email and username)
     const user = await this.userRepository.findOne({
       where: [{ email }, { username: email }],
       relations: ['role'],
@@ -86,6 +91,15 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
       throw new UnauthorizedException('User already exists');
     }
 
+    // Get default role
+    const defaultRole = await this.roleRepository.findOne({
+      where: { name: DEFAULT_ROLE },
+    });
+
+    if (!defaultRole) {
+      throw new Error('Default role not found');
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     const user = this.userRepository.create({
       email,
@@ -93,10 +107,11 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
       passwordHash,
       firstName,
       lastName,
-      roleUuid: DEFAULT_ROLE,
+      roleUuid: defaultRole.uuid,
     });
 
     const savedUser = await this.userRepository.save(user);
+
     const userWithRole = await this.userRepository.findOne({
       where: { uuid: savedUser.uuid },
       relations: ['role'],
@@ -157,7 +172,7 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
      * @param sessionId - Session ID
      */
 
-    await this.authSessionRepository.update(sessionId, { isActive: false });
+      await this.authSessionRepository.update(sessionId, { isActive: false });
   }
 
   async validateToken(token: string): Promise<User> {
@@ -189,61 +204,64 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
     user: User,
     sessionId?: string,
   ): Promise<AuthTokensWithUserDto> {
-    /**
-     * Generate tokens
-     *
-     * @param user - User
-     * @param sessionId - Session ID
-     * @returns Auth tokens with user
-     */
+    /*
+    This function generates the tokens for the user.
+    */
 
-    const session = sessionId
-      ? await this.authSessionRepository.findOne({ where: { uuid: sessionId } })
-      : await this.createSession(user);
-
-    if (!session) {
-      throw new Error('Session not found');
-    }
+    let currentSessionId = sessionId;
 
     const payload: JwtPayload = {
       sub: user.uuid,
       email: user.email,
       username: user.username,
-      role: user.role.name,
-      permissions: user.role.permissions || {},
-      sessionId: session.uuid,
+      role: user.role?.name || DEFAULT_ROLE,
+      permissions: user.role?.permissions || {},
+      sessionId: currentSessionId || '',
     };
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { expiresIn: '15m' }),
-      this.jwtService.signAsync(payload, { expiresIn: '7d' }),
-    ]);
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION || '15m',
+    });
+    const refreshToken = this.jwtService.sign(
+      { sub: user.uuid, type: 'refresh', sessionId: currentSessionId },
+      { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION || '7d' },
+    );
 
+    // Create or update session
     const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
-    await this.authSessionRepository.update(session.uuid, {
-      refreshTokenHash,
-    });
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    return this.authMapperService.mapToAuthTokensWithUser(user, {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-  }
+    if (currentSessionId) {
+      // Update existing session
+      await this.authSessionRepository.update(currentSessionId, {
+        refreshTokenHash,
+        expiresAt,
+      });
+    } else {
+      // Create new session
+      const session = this.authSessionRepository.create({
+        userUuid: user.uuid,
+        refreshTokenHash,
+        expiresAt,
+      });
+      const savedSession = await this.authSessionRepository.save(session);
+      currentSessionId = savedSession.uuid;
+    }
 
-  private async createSession(user: User): Promise<AuthSession> {
-    /**
-     * Create session
-     *
-     * @param user - User
-     * @returns Auth session
-     */
-
-    const session = this.authSessionRepository.create({
-      userUuid: user.uuid,
-      isActive: true,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-
-    return this.authSessionRepository.save(session);
+    return {
+      tokens: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      },
+      user: {
+        uuid: user.uuid,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: {
+          name: user.role?.name || DEFAULT_ROLE,
+        },
+      },
+    };
   }
 }

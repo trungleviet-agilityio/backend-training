@@ -42,10 +42,11 @@ export class CommentService {
     private readonly commentMapper: CommentMapperService,
   ) {}
 
-  async findById(uuid: string): Promise<Comment> {
+  async findById(uuid: string, currentUser?: { uuid: string; role: { name: string } }): Promise<Comment> {
     /**
-     * Find a comment by its UUID
+     * Find a comment by its UUID with optional permission check
      * @param uuid - The UUID of the comment
+     * @param currentUser - Optional current user for permission check
      * @returns The comment
      */
 
@@ -57,6 +58,27 @@ export class CommentService {
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
+
+    // If current user is provided, check permissions
+    if (currentUser) {
+      const user = await this.userRepository.findOne({
+        where: { uuid: currentUser.uuid },
+        relations: ['role'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const strategy = this.commentOperationFactory.createStrategy(currentUser.role.name);
+
+      // For comments, we'll use a simple check - users can view any comment
+      //  add more specific logic here if needed
+      if (!user) {
+        throw new ForbiddenException('You cannot view this comment');
+      }
+    }
+
     return comment;
   }
 

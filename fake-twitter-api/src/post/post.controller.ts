@@ -92,10 +92,16 @@ export class PostController {
      * @returns The created post
      */
 
+    console.log('currentUser from decorator:', currentUser);
+    console.log('currentUser.sub:', currentUser?.sub);
+    console.log('currentUser.role:', currentUser?.role);
+
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
     } as any;
+
+    console.log('currentUserObj:', currentUserObj);
 
     const post = await this.postService.createPost(
       currentUserObj,
@@ -115,15 +121,22 @@ export class PostController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async getPost(
+    @CurrentUser() currentUser: JwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<PostResponseDto> {
     /**
      * Get a single post
+     * @param currentUser - The current user
      * @param uuid - The UUID of the post
      * @returns The post
      */
 
-    const post = await this.postService.findById(uuid);
+    const currentUserObj = {
+      uuid: currentUser.sub,
+      role: { name: currentUser.role },
+    } as any;
+
+    const post = await this.postService.findById(uuid, currentUserObj);
     return { post: this.postMapper.toPostDto(post) };
   }
 

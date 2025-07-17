@@ -35,10 +35,11 @@ export class PostService {
     private readonly postMapper: PostMapperService,
   ) {}
 
-  async findById(uuid: string): Promise<Post> {
+  async findById(uuid: string, currentUser?: { uuid: string; role: { name: string } }): Promise<Post> {
     /**
-     * Find a post by its UUID
+     * Find a post by its UUID with optional permission check
      * @param uuid - The UUID of the post
+     * @param currentUser - Optional current user for permission check
      * @returns The post
      */
 
@@ -50,6 +51,25 @@ export class PostService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
+    // If current user is provided, check permissions
+    if (currentUser) {
+      const user = await this.userRepository.findOne({
+        where: { uuid: currentUser.uuid },
+        relations: ['role'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+
+      if (!strategy.canViewPost(user, post)) {
+        throw new ForbiddenException('You cannot view this post');
+      }
+    }
+
     return post;
   }
 
@@ -91,18 +111,29 @@ export class PostService {
      * @returns The created post
      */
 
+    console.log('PostService.createPost - currentUser:', currentUser);
+    console.log('PostService.createPost - currentUser.uuid:', currentUser?.uuid);
+    console.log('PostService.createPost - currentUser.role:', currentUser?.role);
+
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
       relations: ['role'],
     });
 
+    console.log('PostService.createPost - user found:', user);
+    console.log('PostService.createPost - user.uuid:', user?.uuid);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    console.log('PostService.createPost - creating strategy with role:', currentUser.role.name);
+
     const strategy = this.postOperationFactory.createStrategy(
       currentUser.role.name,
     );
+
+    console.log('PostService.createPost - strategy created:', strategy);
 
     if (!strategy.canCreatePost(user)) {
       throw new ForbiddenException('You cannot create posts');
@@ -112,12 +143,28 @@ export class PostService {
       throw new ForbiddenException('Invalid post data for your role');
     }
 
+    console.log('PostService.createPost - about to create post with authorUuid:', user.uuid);
+
     const post = this.postRepository.create({
       ...createData,
       authorUuid: user.uuid,
     });
 
-    return this.postRepository.save(post);
+    console.log('PostService.createPost - post created:', post);
+
+    const savedPost = await this.postRepository.save(post);
+
+    // Load the post with author relation for the mapper
+    const postWithAuthor = await this.postRepository.findOne({
+      where: { uuid: savedPost.uuid },
+      relations: ['author'],
+    });
+
+    if (!postWithAuthor) {
+      throw new NotFoundException('Post not found after creation');
+    }
+
+    return postWithAuthor;
   }
 
   async updatePost(

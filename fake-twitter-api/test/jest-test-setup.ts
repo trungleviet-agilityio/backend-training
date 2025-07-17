@@ -6,13 +6,30 @@
 
 import { config } from 'dotenv';
 import { randomBytes } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Debug: Check if environment files exist
+const envTestPath = path.resolve(process.cwd(), '.env.test');
+const envPath = path.resolve(process.cwd(), '.env');
 
 // Load environment variables based on NODE_ENV
 const nodeEnv = process.env.NODE_ENV || 'test';
+
 if (nodeEnv === 'test') {
-  config({ path: '.env.test' });
+  if (fs.existsSync(envTestPath)) {
+    config({ path: '.env.test' });
+    console.log('Loaded .env.test file');
+  } else {
+    console.log('.env.test file not found, using defaults');
+  }
 } else {
-  config({ path: '.env' });
+  if (fs.existsSync(envPath)) {
+    config({ path: '.env' });
+    console.log('Loaded .env file');
+  } else {
+    console.log('.env file not found, using defaults');
+  }
 }
 
 // Generate secure test secrets dynamically
@@ -47,15 +64,6 @@ process.env.POSTGRES_SCHEMA = process.env.TEST_POSTGRES_SCHEMA || 'fake_twitter_
 
 // Email Provider
 process.env.EMAIL_PROVIDER = process.env.TEST_EMAIL_PROVIDER || 'console';
-
-// Log the configuration for debugging
-console.log('🧪 Test Environment Configuration:');
-console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`   DB_HOST: ${process.env.DB_HOST}`);
-console.log(`   DB_PORT: ${process.env.DB_PORT}`);
-console.log(`   DB_DATABASE: ${process.env.DB_DATABASE}`);
-console.log(`   DB_USERNAME: ${process.env.DB_USERNAME}`);
-console.log(`   DB_SYNCHRONIZE: ${process.env.DB_SYNCHRONIZE}`);
 
 // Global test timeout
 global.testTimeout = 30000; // 30 seconds
