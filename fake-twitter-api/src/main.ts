@@ -19,7 +19,9 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Log environment and database configuration
-  logger.log(`🚀 Starting Fake Twitter API in ${process.env.NODE_ENV || 'development'} mode`);
+  logger.log(
+    `🚀 Starting Fake Twitter API in ${process.env.NODE_ENV || 'development'} mode`,
+  );
   logger.log(`📊 Database Configuration:`);
   logger.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
   logger.log(`   Port: ${process.env.DB_PORT || '5436'}`);

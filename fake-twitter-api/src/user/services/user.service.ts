@@ -250,10 +250,15 @@ export class UserService {
         throw new ForbiddenException('Only administrators can delete users');
       }
 
-      throw new ForbiddenException('You do not have permission to delete this user');
+      throw new ForbiddenException(
+        'You do not have permission to delete this user',
+      );
     }
 
     await this.userRepository.softRemove(targetUser);
-    await this.userRepository.update(targetUuid, { deleted: true, isActive: false });
+    await this.userRepository.update(targetUuid, {
+      deleted: true,
+      isActive: false,
+    });
   }
 }

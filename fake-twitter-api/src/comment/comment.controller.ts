@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CommentMapperService, CommentService } from './services';
 import {
   CommentResponseDto,
@@ -90,7 +90,7 @@ export class CommentController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createComment(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) postUuid: string,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<CommentResponseDto> {
@@ -126,7 +126,7 @@ export class CommentController {
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updateComment(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() updateCommentDto: UpdateCommentDto,
   ): Promise<CommentResponseDto> {
@@ -162,7 +162,7 @@ export class CommentController {
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deleteComment(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<{ message: string }> {
     /**

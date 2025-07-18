@@ -5,7 +5,6 @@
 
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
@@ -13,13 +12,9 @@ export class GlobalAuthGuard implements CanActivate {
   /**
    * Constructor
    * @param reflector - The reflector for the global auth guard
-   * @param jwtAuthGuard - The JWT auth guard
    */
 
-  constructor(
-    private reflector: Reflector,
-    private jwtAuthGuard: JwtAuthGuard,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     /**
@@ -39,7 +34,15 @@ export class GlobalAuthGuard implements CanActivate {
       return true;
     }
 
-    // Otherwise, use the JWT auth guard
-    return this.jwtAuthGuard.canActivate(context) as boolean;
+    // For non-public endpoints, check if user exists in request
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+
+    // If no user, authentication is required
+    if (!user) {
+      return false; // This will trigger 401 Unauthorized
+    }
+
+    return true;
   }
 }

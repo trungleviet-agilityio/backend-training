@@ -35,7 +35,10 @@ export class PostService {
     private readonly postMapper: PostMapperService,
   ) {}
 
-  async findById(uuid: string, currentUser?: { uuid: string; role: { name: string } }): Promise<Post> {
+  async findById(
+    uuid: string,
+    currentUser?: { uuid: string; role: { name: string } },
+  ): Promise<Post> {
     /**
      * Find a post by its UUID with optional permission check
      * @param uuid - The UUID of the post
@@ -63,7 +66,9 @@ export class PostService {
         throw new NotFoundException('User not found');
       }
 
-      const strategy = this.postOperationFactory.createStrategy(currentUser.role.name);
+      const strategy = this.postOperationFactory.createStrategy(
+        currentUser.role.name,
+      );
 
       if (!strategy.canViewPost(user, post)) {
         throw new ForbiddenException('You cannot view this post');
@@ -112,8 +117,14 @@ export class PostService {
      */
 
     console.log('PostService.createPost - currentUser:', currentUser);
-    console.log('PostService.createPost - currentUser.uuid:', currentUser?.uuid);
-    console.log('PostService.createPost - currentUser.role:', currentUser?.role);
+    console.log(
+      'PostService.createPost - currentUser.uuid:',
+      currentUser?.uuid,
+    );
+    console.log(
+      'PostService.createPost - currentUser.role:',
+      currentUser?.role,
+    );
 
     const user = await this.userRepository.findOne({
       where: { uuid: currentUser.uuid },
@@ -127,7 +138,10 @@ export class PostService {
       throw new NotFoundException('User not found');
     }
 
-    console.log('PostService.createPost - creating strategy with role:', currentUser.role.name);
+    console.log(
+      'PostService.createPost - creating strategy with role:',
+      currentUser.role.name,
+    );
 
     const strategy = this.postOperationFactory.createStrategy(
       currentUser.role.name,
@@ -143,7 +157,10 @@ export class PostService {
       throw new ForbiddenException('Invalid post data for your role');
     }
 
-    console.log('PostService.createPost - about to create post with authorUuid:', user.uuid);
+    console.log(
+      'PostService.createPost - about to create post with authorUuid:',
+      user.uuid,
+    );
 
     const post = this.postRepository.create({
       ...createData,

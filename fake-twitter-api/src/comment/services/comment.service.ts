@@ -42,7 +42,10 @@ export class CommentService {
     private readonly commentMapper: CommentMapperService,
   ) {}
 
-  async findById(uuid: string, currentUser?: { uuid: string; role: { name: string } }): Promise<Comment> {
+  async findById(
+    uuid: string,
+    currentUser?: { uuid: string; role: { name: string } },
+  ): Promise<Comment> {
     /**
      * Find a comment by its UUID with optional permission check
      * @param uuid - The UUID of the comment
@@ -70,7 +73,9 @@ export class CommentService {
         throw new NotFoundException('User not found');
       }
 
-      const strategy = this.commentOperationFactory.createStrategy(currentUser.role.name);
+      const strategy = this.commentOperationFactory.createStrategy(
+        currentUser.role.name,
+      );
 
       // For comments, we'll use a simple check - users can view any comment
       //  add more specific logic here if needed

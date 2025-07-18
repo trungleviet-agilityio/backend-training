@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { PostMapperService, PostService } from './services';
 import {
   CreatePostDto,
@@ -82,7 +82,7 @@ export class PostController {
   })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createPost(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Body() createPostDto: CreatePostDto,
   ): Promise<PostResponseDto> {
     /**
@@ -121,7 +121,7 @@ export class PostController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async getPost(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<PostResponseDto> {
     /**
@@ -151,7 +151,7 @@ export class PostController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updatePost(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<PostResponseDto> {
@@ -187,7 +187,7 @@ export class PostController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deletePost(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<{ message: string }> {
     /**
