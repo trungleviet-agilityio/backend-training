@@ -2,7 +2,12 @@
  * JWT authentication strategy
  */
 
-import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -17,7 +22,7 @@ import {
   LoginDto,
   RegisterDto,
 } from '../dto';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthMapperService } from '../services';
 import { DEFAULT_ROLE } from '../../common/constants/roles.constant';
 import { Role } from 'src/database/entities/role.entity';
@@ -172,7 +177,7 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
      * @param sessionId - Session ID
      */
 
-      await this.authSessionRepository.update(sessionId, { isActive: false });
+    await this.authSessionRepository.update(sessionId, { isActive: false });
   }
 
   async validateToken(token: string): Promise<User> {
@@ -210,7 +215,7 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
 
     let currentSessionId = sessionId;
 
-    const payload: JwtPayload = {
+    const payload: IJwtPayload = {
       sub: user.uuid,
       email: user.email,
       username: user.username,
@@ -220,11 +225,11 @@ export class JwtAuthStrategy implements IAuthOperationStrategy {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION || '15m',
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION,
     });
     const refreshToken = this.jwtService.sign(
       { sub: user.uuid, type: 'refresh', sessionId: currentSessionId },
-      { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION || '7d' },
+      { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION },
     );
 
     // Create or update session

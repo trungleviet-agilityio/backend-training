@@ -17,8 +17,14 @@ export class RegularPostStrategy implements IPostOperationStrategy {
      * @returns true if the user can create a post
      */
 
-    console.log('RegularPostStrategy.canCreatePost - currentUser:', currentUser);
-    console.log('RegularPostStrategy.canCreatePost - currentUser.uuid:', currentUser?.uuid);
+    console.log(
+      'RegularPostStrategy.canCreatePost - currentUser:',
+      currentUser,
+    );
+    console.log(
+      'RegularPostStrategy.canCreatePost - currentUser.uuid:',
+      currentUser?.uuid,
+    );
 
     return true;
   }

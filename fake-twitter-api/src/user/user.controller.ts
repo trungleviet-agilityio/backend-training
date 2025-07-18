@@ -19,14 +19,13 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { UserService } from './services/user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserProfileResponseDto } from './dto/user-response.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PostMapperService } from '../post/services';
-
 
 @ApiTags('Users')
 @Controller('users')
@@ -80,7 +79,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async updateProfile(
-    @CurrentUser() currentUser: JwtPayload,
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserProfileResponseDto> {
@@ -189,13 +188,13 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Admin role required to delete users'
+    description: 'Forbidden - Admin role required to delete users',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async deleteUser(
-    @CurrentUser() currentUser: JwtPayload,
-    @Param('uuid', ParseUUIDPipe ) uuid: string,
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<void> {
     /**
      * Delete a user (Admin only)

@@ -21,7 +21,7 @@ import {
 } from './dto';
 import { AuthService } from './services';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { IJwtPayload } from './interfaces/jwt-payload.interface';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -313,8 +313,8 @@ export class AuthController {
     return this.authService.refresh(refreshTokenDto.refreshToken);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Logged out successfully')
   @ApiBearerAuth('JWT-auth')
@@ -362,11 +362,12 @@ export class AuthController {
       },
     },
   })
-  async logout(@CurrentUser() user: JwtPayload): Promise<void> {
+  async logout(@CurrentUser() user: IJwtPayload): Promise<void> {
     await this.authService.logout(user.sub);
   }
 
   @Post('forgot-password')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Password reset email sent')
   @ApiOperation({
@@ -409,6 +410,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Password reset successfully')
   @ApiOperation({

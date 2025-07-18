@@ -17,7 +17,7 @@ export class AuthMapperService {
    */
   mapToAuthTokensWithUser(
     user: User,
-    tokens: { access_token: string; refresh_token: string },
+    tokens: AuthRefreshTokenDto,
   ): AuthTokensWithUserDto {
     return {
       tokens: {
@@ -42,10 +42,7 @@ export class AuthMapperService {
    * @param tokens - Tokens
    * @returns Auth refresh token
    */
-  mapToAuthRefreshToken(tokens: {
-    access_token: string;
-    refresh_token: string;
-  }): AuthRefreshTokenDto {
+  mapToAuthRefreshToken(tokens: AuthRefreshTokenDto): AuthRefreshTokenDto {
     return {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,

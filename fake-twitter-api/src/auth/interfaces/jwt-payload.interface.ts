@@ -2,7 +2,7 @@
  * This file contains the interface for the JWT payload.
  */
 
-export interface JwtPayload {
+export interface IJwtPayload {
   sub: string;
   email: string;
   username: string;

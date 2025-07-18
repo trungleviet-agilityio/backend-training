@@ -3,11 +3,11 @@
  */
 
 import { ExecutionContext, createParamDecorator } from '@nestjs/common';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 
 export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): JwtPayload => {
+  (data: unknown, ctx: ExecutionContext): IJwtPayload => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user as JwtPayload;
+    return request.user as IJwtPayload;
   },
 );
