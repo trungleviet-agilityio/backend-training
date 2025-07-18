@@ -76,47 +76,40 @@ export class PostTestBuilder {
   }
 
   // Convenience methods for common scenarios
-  withRegularUserScenario(): PostTestBuilder {
-    const user = PostMockProvider.createMockUser({
-      role: { name: 'user' } as any,
-    });
-    const post = PostMockProvider.createMockPost({ authorUuid: user.uuid });
-
-    return this.withCurrentUser(user).withTargetPost(post);
+  withCreatePostScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    return this;
   }
 
-  withAdminUserScenario(): PostTestBuilder {
-    const user = PostMockProvider.createMockUser({
-      role: { name: 'admin' } as any,
-    });
-    const post = PostMockProvider.createMockPost();
-
-    return this.withCurrentUser(user).withTargetPost(post);
+  withUpdatePostScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser();
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
   }
 
-  withModeratorUserScenario(): PostTestBuilder {
-    const user = PostMockProvider.createMockUser({
-      role: { name: 'moderator' } as any,
-    });
-    const post = PostMockProvider.createMockPost();
-
-    return this.withCurrentUser(user).withTargetPost(post);
+  withAdminUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'admin' } as any });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
   }
 
-  withCreatePostScenario(): PostTestBuilder {
-    const user = PostMockProvider.createMockUser();
-    const createDto = PostMockProvider.createMockCreatePostDto();
-
-    return this.withCurrentUser(user).withCreateDto(createDto);
+  withRegularUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'user' } as any });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
   }
 
-  withUpdatePostScenario(): PostTestBuilder {
-    const user = PostMockProvider.createMockUser();
-    const post = PostMockProvider.createMockPost({ authorUuid: user.uuid });
-    const updateDto = PostMockProvider.createMockUpdatePostDto();
-
-    return this.withCurrentUser(user)
-      .withTargetPost(post)
-      .withUpdateDto(updateDto);
+  withModeratorUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'moderator' } as any });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
   }
 }

@@ -28,31 +28,32 @@ describe('PostService', () => {
         {
           provide: getRepositoryToken(Post),
           useValue: {
-            findOne: jest.fn(),
-            findAndCount: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-            update: jest.fn(),
-            softRemove: jest.fn(),
+            findOne: jest.fn() as jest.MockedFunction<any>,
+            findAndCount: jest.fn() as jest.MockedFunction<any>,
+            create: jest.fn() as jest.MockedFunction<any>,
+            save: jest.fn() as jest.MockedFunction<any>,
+            update: jest.fn() as jest.MockedFunction<any>,
+            softRemove: jest.fn() as jest.MockedFunction<any>,
+            softDelete: jest.fn() as jest.MockedFunction<any>,
           },
         },
         {
           provide: getRepositoryToken(User),
           useValue: {
-            findOne: jest.fn(),
+            findOne: jest.fn() as jest.MockedFunction<any>,
           },
         },
         {
           provide: PostOperationFactory,
           useValue: {
-            createStrategy: jest.fn(),
+            createStrategy: jest.fn() as jest.MockedFunction<any>,
           },
         },
         {
           provide: PostMapperService,
           useValue: {
-            toPostDto: jest.fn(),
-            toPostDtoList: jest.fn(),
+            toPostDto: jest.fn() as jest.MockedFunction<any>,
+            toPostDtoList: jest.fn() as jest.MockedFunction<any>,
           },
         },
       ],
@@ -106,8 +107,14 @@ describe('PostService', () => {
         .withTargetPost(PostMockProvider.createMockPost())
         .build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canViewPost.mockReturnValue(true);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -138,8 +145,14 @@ describe('PostService', () => {
         .withTargetPost(PostMockProvider.createMockPost())
         .build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canViewPost.mockReturnValue(false);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(false),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -198,7 +211,14 @@ describe('PostService', () => {
       // Arrange
       const scenario = new PostTestBuilder().withCreatePostScenario().build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
       const createdPost = PostMockProvider.createMockPost();
 
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -236,8 +256,14 @@ describe('PostService', () => {
       // Arrange
       const scenario = new PostTestBuilder().withCreatePostScenario().build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canCreatePost.mockReturnValue(false);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(false),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
@@ -255,9 +281,14 @@ describe('PostService', () => {
       // Arrange
       const scenario = new PostTestBuilder().withCreatePostScenario().build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canCreatePost.mockReturnValue(true);
-      mockStrategy.validateCreateData.mockReturnValue(false);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(false),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
@@ -275,12 +306,19 @@ describe('PostService', () => {
   describe('updatePost', () => {
     it('should update post successfully with valid permissions', async () => {
       // Arrange
-      const scenario = new PostTestBuilder().withUpdatePostScenario().build();
+      const scenario = new PostTestBuilder()
+        .withUpdatePostScenario()
+        .build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      const updatedPost = PostMockProvider.createMockPost({
-        content: 'Updated content',
-      });
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
+      const updatedPost = PostMockProvider.createMockPost({ content: 'Updated content' });
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -296,19 +334,9 @@ describe('PostService', () => {
       );
 
       // Assert
-      expect(mockStrategy.canUpdatePost).toHaveBeenCalledWith(
-        scenario.currentUser,
-        scenario.targetPost,
-      );
-      expect(mockStrategy.validateUpdateData).toHaveBeenCalledWith(
-        scenario.currentUser,
-        scenario.targetPost,
-        scenario.updateDto,
-      );
-      expect(postRepository.update).toHaveBeenCalledWith(
-        scenario.targetPost!.uuid,
-        scenario.updateDto,
-      );
+      expect(mockStrategy.canUpdatePost).toHaveBeenCalledWith(scenario.currentUser, updatedPost);
+      expect(mockStrategy.validateUpdateData).toHaveBeenCalledWith(scenario.currentUser, updatedPost, scenario.updateDto);
+      expect(postRepository.update).toHaveBeenCalledWith(scenario.targetPost!.uuid, scenario.updateDto);
       expect(result).toEqual(updatedPost);
     });
 
@@ -316,8 +344,14 @@ describe('PostService', () => {
       // Arrange
       const scenario = new PostTestBuilder().withUpdatePostScenario().build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canUpdatePost.mockReturnValue(false);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(false),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -337,14 +371,23 @@ describe('PostService', () => {
   describe('deletePost', () => {
     it('should delete post successfully with valid permissions', async () => {
       // Arrange
-      const scenario = new PostTestBuilder().withAdminUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withAdminUserScenario()
+        .build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(true),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-      postRepository.softRemove.mockResolvedValue(scenario.targetPost);
+      postRepository.softDelete.mockResolvedValue(undefined);
 
       // Act
       await service.deletePost(
@@ -353,21 +396,22 @@ describe('PostService', () => {
       );
 
       // Assert
-      expect(mockStrategy.canDeletePost).toHaveBeenCalledWith(
-        scenario.currentUser,
-        scenario.targetPost,
-      );
-      expect(postRepository.softRemove).toHaveBeenCalledWith(
-        scenario.targetPost,
-      );
+      expect(mockStrategy.canDeletePost).toHaveBeenCalledWith(scenario.currentUser, scenario.targetPost);
+      expect(postRepository.softDelete).toHaveBeenCalledWith(scenario.targetPost!.uuid);
     });
 
     it('should handle insufficient permissions for delete', async () => {
       // Arrange
       const scenario = new PostTestBuilder().withRegularUserScenario().build();
 
-      const mockStrategy = PostMockProvider.createPostStrategy();
-      mockStrategy.canDeletePost.mockReturnValue(false);
+      const mockStrategy = {
+        canViewPost: jest.fn().mockReturnValue(true),
+        canCreatePost: jest.fn().mockReturnValue(true),
+        canUpdatePost: jest.fn().mockReturnValue(true),
+        canDeletePost: jest.fn().mockReturnValue(false),
+        validateCreateData: jest.fn().mockReturnValue(true),
+        validateUpdateData: jest.fn().mockReturnValue(true),
+      };
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -398,7 +442,7 @@ describe('PostService', () => {
 
       // Assert
       expect(postRepository.findAndCount).toHaveBeenCalledWith({
-        where: { authorUuid: 'user-uuid-123' },
+        where: { authorUuid: 'user-uuid-123', isPublished: true },
         relations: ['author'],
         skip: 0,
         take: 10,

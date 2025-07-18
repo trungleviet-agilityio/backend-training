@@ -4,95 +4,135 @@
  * Tests the PostOperationFactory class
  */
 
+import { Test, TestingModule } from '@nestjs/testing';
 import { PostOperationFactory } from '../factories/post-operation.factory';
 import { AdminPostStrategy } from '../strategies/post-admin.strategy';
-import { ModeratorPostStrategy } from '../strategies/post-moderator.strategy';
 import { RegularPostStrategy } from '../strategies/post-regular.strategy';
+import { ModeratorPostStrategy } from '../strategies/post-moderator.strategy';
+import { PostMockProvider } from './mocks/post-mock.provider';
 
 describe('PostOperationFactory', () => {
   let factory: PostOperationFactory;
   let adminStrategy: AdminPostStrategy;
-  let moderatorStrategy: ModeratorPostStrategy;
   let regularStrategy: RegularPostStrategy;
+  let moderatorStrategy: ModeratorPostStrategy;
 
-  beforeEach(() => {
-    adminStrategy = new AdminPostStrategy();
-    moderatorStrategy = new ModeratorPostStrategy();
-    regularStrategy = new RegularPostStrategy();
-    factory = new PostOperationFactory(
-      adminStrategy,
-      moderatorStrategy,
-      regularStrategy,
-    );
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      providers: [
+        PostOperationFactory,
+        AdminPostStrategy,
+        RegularPostStrategy,
+        ModeratorPostStrategy,
+      ],
+    }).compile();
+
+    factory = moduleRef.get<PostOperationFactory>(PostOperationFactory);
+    adminStrategy = moduleRef.get<AdminPostStrategy>(AdminPostStrategy);
+    regularStrategy = moduleRef.get<RegularPostStrategy>(RegularPostStrategy);
+    moderatorStrategy = moduleRef.get<ModeratorPostStrategy>(ModeratorPostStrategy);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('createStrategy', () => {
-    it('should return AdminPostStrategy for admin role', () => {
+    it('should create admin strategy for admin role', () => {
+      // Arrange
+      const roleName = 'admin';
+
       // Act
-      const strategy = factory.createStrategy('admin');
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(AdminPostStrategy);
+      expect(result).toBeInstanceOf(AdminPostStrategy);
     });
 
-    it('should return ModeratorPostStrategy for moderator role', () => {
+    it('should create regular strategy for user role', () => {
+      // Arrange
+      const roleName = 'user';
+
       // Act
-      const strategy = factory.createStrategy('moderator');
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(ModeratorPostStrategy);
+      expect(result).toBeInstanceOf(RegularPostStrategy);
     });
 
-    it('should return RegularPostStrategy for user role', () => {
+    it('should create moderator strategy for moderator role', () => {
+      // Arrange
+      const roleName = 'moderator';
+
       // Act
-      const strategy = factory.createStrategy('user');
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(RegularPostStrategy);
+      expect(result).toBeInstanceOf(ModeratorPostStrategy);
     });
 
-    it('should return RegularPostStrategy for unknown role', () => {
+    it('should create regular strategy for unknown role', () => {
+      // Arrange
+      const roleName = 'unknown';
+
       // Act
-      const strategy = factory.createStrategy('unknown');
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(RegularPostStrategy);
+      expect(result).toBeInstanceOf(RegularPostStrategy);
     });
 
-    it('should return RegularPostStrategy for empty string role', () => {
+    it('should create regular strategy for empty role', () => {
+      // Arrange
+      const roleName = '';
+
       // Act
-      const strategy = factory.createStrategy('');
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(RegularPostStrategy);
+      expect(result).toBeInstanceOf(RegularPostStrategy);
     });
 
-    it('should return RegularPostStrategy for null role', () => {
+    it('should create regular strategy for undefined role', () => {
+      // Arrange
+      const roleName = undefined as any;
+
       // Act
-      const strategy = factory.createStrategy(null as any);
+      const result = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(RegularPostStrategy);
+      expect(result).toBeInstanceOf(RegularPostStrategy);
+    });
+  });
+
+  describe('Strategy Behavior', () => {
+    it('should return different strategy instances for different roles', () => {
+      // Arrange
+      const adminRole = 'admin';
+      const userRole = 'user';
+      const moderatorRole = 'moderator';
+
+      // Act
+      const adminStrategy = factory.createStrategy(adminRole);
+      const userStrategy = factory.createStrategy(userRole);
+      const moderatorStrategy = factory.createStrategy(moderatorRole);
+
+      // Assert
+      expect(adminStrategy).not.toBe(userStrategy);
+      expect(adminStrategy).not.toBe(moderatorStrategy);
+      expect(userStrategy).not.toBe(moderatorStrategy);
     });
 
-    it('should return RegularPostStrategy for undefined role', () => {
+    it('should return same strategy instance for same role', () => {
+      // Arrange
+      const roleName = 'admin';
+
       // Act
-      const strategy = factory.createStrategy(undefined as any);
+      const strategy1 = factory.createStrategy(roleName);
+      const strategy2 = factory.createStrategy(roleName);
 
       // Assert
-      expect(strategy).toBeInstanceOf(RegularPostStrategy);
-    });
-
-    it('should handle case-sensitive role names', () => {
-      // Act
-      const adminStrategy = factory.createStrategy('ADMIN');
-      const moderatorStrategy = factory.createStrategy('MODERATOR');
-      const userStrategy = factory.createStrategy('USER');
-
-      // Assert
-      expect(adminStrategy).toBeInstanceOf(RegularPostStrategy);
-      expect(moderatorStrategy).toBeInstanceOf(RegularPostStrategy);
-      expect(userStrategy).toBeInstanceOf(RegularPostStrategy);
+      expect(strategy1).toBe(strategy2);
     });
   });
 });

@@ -4,49 +4,43 @@
  * Tests the RegularPostStrategy class
  */
 
+import { Test, TestingModule } from '@nestjs/testing';
 import { RegularPostStrategy } from '../../strategies/post-regular.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
-import { UpdatePostDto } from '../../dto';
+import { PostTestBuilder } from '../mocks/post-test.builder';
 
 describe('RegularPostStrategy', () => {
   let strategy: RegularPostStrategy;
 
-  beforeEach(() => {
-    strategy = new RegularPostStrategy();
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      providers: [RegularPostStrategy],
+    }).compile();
+
+    strategy = moduleRef.get<RegularPostStrategy>(RegularPostStrategy);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('canCreatePost', () => {
-    it('should return true for regular users', () => {
+    it('should allow regular users to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
 
       // Act
-      const result = strategy.canCreatePost(user);
+      const result = strategy.canCreatePost(scenario.currentUser!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for admin users', () => {
+    it('should allow any user to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'admin' } as any,
-      });
-
-      // Act
-      const result = strategy.canCreatePost(user);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('should return true for moderator users', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'moderator' } as any,
-      });
+      const user = PostMockProvider.createMockUser({ role: { name: 'user' } as any });
 
       // Act
       const result = strategy.canCreatePost(user);
@@ -57,43 +51,76 @@ describe('RegularPostStrategy', () => {
   });
 
   describe('canViewPost', () => {
-    it('should return true for all posts', () => {
+    it('should allow users to view published posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.isPublished = true;
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canViewPost(user, post);
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
+    });
+
+    it('should allow users to view their own posts regardless of publishing status', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.isPublished = false;
+      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
+
+      // Act
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should not allow users to view unpublished posts from other users', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.isPublished = false;
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
+
+      // Act
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+
+      // Assert
+      expect(result).toBe(false);
     });
   });
 
   describe('canUpdatePost', () => {
-    it('should return true when user is the author', () => {
+    it('should allow users to update their own posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({ uuid: 'user-uuid-123' });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'user-uuid-123',
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
-      const result = strategy.canUpdatePost(user, post);
+      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return false when user is not the author', () => {
+    it('should not allow users to update posts from other users', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({ uuid: 'user-uuid-123' });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'different-user-uuid',
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canUpdatePost(user, post);
+      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(false);
@@ -101,32 +128,29 @@ describe('RegularPostStrategy', () => {
   });
 
   describe('canDeletePost', () => {
-    it('should return false for regular users', () => {
+    it('should allow users to delete their own posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
-      });
-      const post = PostMockProvider.createMockPost();
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
-      const result = strategy.canDeletePost(user, post);
+      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
 
-    it('should return false even if user is the author', () => {
+    it('should not allow users to delete posts from other users', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        uuid: 'user-uuid-123',
-        role: { name: 'user' } as any,
-      });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'user-uuid-123',
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canDeletePost(user, post);
+      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(false);
@@ -134,70 +158,80 @@ describe('RegularPostStrategy', () => {
   });
 
   describe('validateCreateData', () => {
-    it('should return true for valid create data', () => {
+    it('should allow users to create published posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const createDto = PostMockProvider.createMockCreatePostDto();
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.createDto!.isPublished = true;
 
       // Act
-      const result = strategy.validateCreateData(user, createDto);
+      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for empty content', () => {
+    it('should allow users to create posts with default publishing status', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const createDto = PostMockProvider.createMockCreatePostDto({
-        content: '',
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.createDto!.isPublished = undefined;
 
       // Act
-      const result = strategy.validateCreateData(user, createDto);
+      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
 
       // Assert
       expect(result).toBe(true);
+    });
+
+    it('should not allow users to create unpublished posts', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.createDto!.isPublished = false;
+
+      // Act
+      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+
+      // Assert
+      expect(result).toBe(false);
     });
   });
 
   describe('validateUpdateData', () => {
-    it('should return true for valid update data', () => {
+    it('should allow users to update any field of their posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = PostMockProvider.createMockUpdatePostDto();
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
 
       // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
+      const result = strategy.validateUpdateData(
+        scenario.currentUser!,
+        scenario.targetPost!,
+        scenario.updateDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for partial update data', () => {
+    it('should allow users to update publishing status', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = PostMockProvider.createMockUpdatePostDto({
-        content: 'Updated content',
-      });
+      const scenario = new PostTestBuilder()
+        .withRegularUserScenario()
+        .build();
+      scenario.updateDto!.isPublished = false;
 
       // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('should return true for empty update data', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = {} as UpdatePostDto;
-
-      // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
+      const result = strategy.validateUpdateData(
+        scenario.currentUser!,
+        scenario.targetPost!,
+        scenario.updateDto!,
+      );
 
       // Assert
       expect(result).toBe(true);

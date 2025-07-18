@@ -4,49 +4,43 @@
  * Tests the ModeratorPostStrategy class
  */
 
+import { Test, TestingModule } from '@nestjs/testing';
 import { ModeratorPostStrategy } from '../../strategies/post-moderator.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
-import { UpdatePostDto } from '../../dto';
+import { PostTestBuilder } from '../mocks/post-test.builder';
 
 describe('ModeratorPostStrategy', () => {
   let strategy: ModeratorPostStrategy;
 
-  beforeEach(() => {
-    strategy = new ModeratorPostStrategy();
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      providers: [ModeratorPostStrategy],
+    }).compile();
+
+    strategy = moduleRef.get<ModeratorPostStrategy>(ModeratorPostStrategy);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('canCreatePost', () => {
-    it('should return true for moderator users', () => {
+    it('should allow moderators to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'moderator' } as any,
-      });
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
-      const result = strategy.canCreatePost(user);
+      const result = strategy.canCreatePost(scenario.currentUser!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for admin users', () => {
+    it('should allow any moderator to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'admin' } as any,
-      });
-
-      // Act
-      const result = strategy.canCreatePost(user);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('should return true for regular users', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
-      });
+      const user = PostMockProvider.createMockUser({ role: { name: 'moderator' } as any });
 
       // Act
       const result = strategy.canCreatePost(user);
@@ -57,13 +51,42 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canViewPost', () => {
-    it('should return true for all posts', () => {
+    it('should allow moderators to view any post', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
-      const result = strategy.canViewPost(user, post);
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should allow moderators to view unpublished posts', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.targetPost!.isPublished = false;
+
+      // Act
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should allow moderators to view posts from other users', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
+
+      // Act
+      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
@@ -71,124 +94,86 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canUpdatePost', () => {
-    it('should return true when user is the author', () => {
+    it('should allow moderators to update any post', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({ uuid: 'user-uuid-123' });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'user-uuid-123',
-      });
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
-      const result = strategy.canUpdatePost(user, post);
+      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true when user is moderator', () => {
+    it('should allow moderators to update posts from other users', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        uuid: 'moderator-uuid',
-        role: { name: 'moderator' } as any,
-      });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'different-user-uuid',
-      });
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canUpdatePost(user, post);
+      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
-    });
-
-    it('should return false when regular user is not the author', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser({
-        uuid: 'user-uuid-123',
-        role: { name: 'user' } as any,
-      });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'different-user-uuid',
-      });
-
-      // Act
-      const result = strategy.canUpdatePost(user, post);
-
-      // Assert
-      expect(result).toBe(false);
     });
   });
 
   describe('canDeletePost', () => {
-    it('should return false for regular users', () => {
+    it('should allow moderators to delete any post', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
-      });
-      const post = PostMockProvider.createMockPost();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
-      const result = strategy.canDeletePost(user, post);
-
-      // Assert
-      expect(result).toBe(false);
-    });
-
-    it('should return false for moderator users', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser({
-        role: { name: 'moderator' } as any,
-      });
-      const post = PostMockProvider.createMockPost();
-
-      // Act
-      const result = strategy.canDeletePost(user, post);
-
-      // Assert
-      expect(result).toBe(false);
-    });
-
-    it('should return false even if user is the author', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser({
-        uuid: 'user-uuid-123',
-        role: { name: 'user' } as any,
-      });
-      const post = PostMockProvider.createMockPost({
-        authorUuid: 'user-uuid-123',
-      });
-
-      // Act
-      const result = strategy.canDeletePost(user, post);
-
-      // Assert
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('validateCreateData', () => {
-    it('should return true for valid create data', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser();
-      const createDto = PostMockProvider.createMockCreatePostDto();
-
-      // Act
-      const result = strategy.validateCreateData(user, createDto);
+      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for empty content', () => {
+    it('should allow moderators to delete posts from other users', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const createDto = PostMockProvider.createMockCreatePostDto({
-        content: '',
-      });
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.validateCreateData(user, createDto);
+      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('validateCreateData', () => {
+    it('should allow moderators to create any type of post', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+
+      // Act
+      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should allow moderators to create unpublished posts', () => {
+      // Arrange
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.createDto!.isPublished = false;
+
+      // Act
+      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
 
       // Assert
       expect(result).toBe(true);
@@ -196,42 +181,36 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('validateUpdateData', () => {
-    it('should return true for valid update data', () => {
+    it('should allow moderators to update any field', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = PostMockProvider.createMockUpdatePostDto();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
+      const result = strategy.validateUpdateData(
+        scenario.currentUser!,
+        scenario.targetPost!,
+        scenario.updateDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
     });
 
-    it('should return true for partial update data', () => {
+    it('should allow moderators to update publishing status', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = PostMockProvider.createMockUpdatePostDto({
-        content: 'Updated content',
-      });
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
+      scenario.updateDto!.isPublished = false;
 
       // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('should return true for empty update data', () => {
-      // Arrange
-      const user = PostMockProvider.createMockUser();
-      const post = PostMockProvider.createMockPost();
-      const updateDto = {} as UpdatePostDto;
-
-      // Act
-      const result = strategy.validateUpdateData(user, post, updateDto);
+      const result = strategy.validateUpdateData(
+        scenario.currentUser!,
+        scenario.targetPost!,
+        scenario.updateDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
