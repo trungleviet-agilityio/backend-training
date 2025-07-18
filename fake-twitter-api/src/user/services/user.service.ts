@@ -107,7 +107,7 @@ export class UserService {
     return this.userMapper.toUserProfileDto(user, stats);
   }
 
-  async updateProfile(
+  async updateUserProfile(
     currentUser: User,
     targetUuid: string,
     updateData: UpdateUserDto,

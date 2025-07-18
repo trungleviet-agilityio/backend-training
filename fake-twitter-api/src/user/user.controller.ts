@@ -78,7 +78,7 @@ export class UserController {
   })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async updateProfile(
+  async updateUserProfile(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -96,7 +96,7 @@ export class UserController {
       role: { name: currentUser.role },
     } as any;
 
-    const updatedUser = await this.userService.updateProfile(
+    const updatedUser = await this.userService.updateUserProfile(
       currentUserObj,
       uuid,
       updateUserDto,
