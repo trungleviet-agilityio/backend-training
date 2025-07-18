@@ -13,7 +13,7 @@ export interface IUserService {
   findById(uuid: string): Promise<User>;
   findByEmail(email: string): Promise<User>;
   findByUsername(username: string): Promise<User>;
-  updateProfile(uuid: string, updateData: UpdateUserDto): Promise<User>;
+  updateUserProfile(uuid: string, updateData: UpdateUserDto): Promise<User>;
   getUserStats(uuid: string): Promise<UserStats>;
   getUserPosts(
     uuid: string,
