@@ -15,7 +15,6 @@ import { Comment } from '../../database/entities/comment.entity';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
 
-
 describe('UserService', () => {
   let service: UserService;
   let userOperationFactory: jest.Mocked<UserOperationFactory>;
