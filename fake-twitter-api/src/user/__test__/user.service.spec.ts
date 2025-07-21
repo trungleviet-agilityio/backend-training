@@ -15,6 +15,7 @@ import { Comment } from '../../database/entities/comment.entity';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
 
+
 describe('UserService', () => {
   let service: UserService;
   let userOperationFactory: jest.Mocked<UserOperationFactory>;
@@ -451,8 +452,14 @@ describe('UserService', () => {
     it('should throw generic error for other permission issues', async () => {
       // Arrange
       const scenario = new UserTestBuilder()
-        .withCurrentUser(UserMockProvider.createMockUser({ role: { name: 'moderator' } } as any))
-        .withTargetUser(UserMockProvider.createMockUser({ uuid: 'different-uuid' }))
+        .withCurrentUser(
+          UserMockProvider.createMockUser({
+            role: { name: 'moderator' },
+          } as any),
+        )
+        .withTargetUser(
+          UserMockProvider.createMockUser({ uuid: 'different-uuid' }),
+        )
         .build();
 
       const mockStrategy = UserMockProvider.createUserStrategy();
@@ -462,8 +469,9 @@ describe('UserService', () => {
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
-      await expect(service.deleteUser(scenario.currentUser!, scenario.targetUser!.uuid))
-        .rejects.toThrow('Only administrators can delete users');
+      await expect(
+        service.deleteUser(scenario.currentUser!, scenario.targetUser!.uuid),
+      ).rejects.toThrow('Only administrators can delete users');
     });
   });
 });

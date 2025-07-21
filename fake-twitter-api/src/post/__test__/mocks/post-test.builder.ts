@@ -1,41 +1,121 @@
 /**
  * Post Test Builder
  * Following the Builder Pattern for creating test data
+ * Comprehensive scenario building for post module tests
  */
 
 import { Post } from '../../../database/entities/post.entity';
 import { User } from '../../../database/entities/user.entity';
+import { CreatePostDto, UpdatePostDto } from '../../dto';
+import { PaginatedPosts } from '../../interfaces';
+import { PostMockProvider } from './post-mock.provider';
+
+export interface PostTestScenario {
+  currentUser?: User;
+  targetPost?: Post;
+  createDto?: CreatePostDto;
+  updateDto?: UpdatePostDto;
+  paginatedPosts?: PaginatedPosts;
+  error?: Error;
+  userStats?: { postsCount: number; commentsCount: number };
+}
 
 export class PostTestBuilder {
-  private post: Partial<Post> = {
-    uuid: 'post-uuid',
-    content: 'Test post content',
-    authorUuid: 'user-uuid',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  private scenario: PostTestScenario = {};
 
-  withUuid(uuid: string): PostTestBuilder {
-    this.post.uuid = uuid;
+  withCurrentUser(user: User): PostTestBuilder {
+    this.scenario.currentUser = user;
     return this;
   }
 
-  withContent(content: string): PostTestBuilder {
-    this.post.content = content;
+  withTargetPost(post: Post): PostTestBuilder {
+    this.scenario.targetPost = post;
     return this;
   }
 
-  withAuthorUuid(authorUuid: string): PostTestBuilder {
-    this.post.authorUuid = authorUuid;
+  withCreateDto(dto: CreatePostDto): PostTestBuilder {
+    this.scenario.createDto = dto;
     return this;
   }
 
-  withAuthor(author: User): PostTestBuilder {
-    this.post.author = author;
+  withUpdateDto(dto: UpdatePostDto): PostTestBuilder {
+    this.scenario.updateDto = dto;
     return this;
   }
 
-  build(): Post {
-    return this.post as Post;
+  withPaginatedPosts(
+    posts: Post[],
+    page = 1,
+    limit = 10,
+    total = 0,
+  ): PostTestBuilder {
+    this.scenario.paginatedPosts = PostMockProvider.createMockPaginatedPosts(
+      posts,
+      page,
+      limit,
+      total,
+    );
+    return this;
+  }
+
+  withError(error: Error): PostTestBuilder {
+    this.scenario.error = error;
+    return this;
+  }
+
+  withUserStats(stats: {
+    postsCount: number;
+    commentsCount: number;
+  }): PostTestBuilder {
+    this.scenario.userStats = stats;
+    return this;
+  }
+
+  build(): PostTestScenario {
+    return { ...this.scenario };
+  }
+
+  // Convenience methods for common scenarios
+  withCreatePostScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    return this;
+  }
+
+  withUpdatePostScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser();
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
+  }
+
+  withAdminUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'admin' } as any,
+    });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
+  }
+
+  withRegularUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'user' } as any,
+    });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
+  }
+
+  withModeratorUserScenario(): this {
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'moderator' } as any,
+    });
+    this.scenario.targetPost = PostMockProvider.createMockPost();
+    this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
+    this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
+    return this;
   }
 }
