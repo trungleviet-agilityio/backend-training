@@ -40,7 +40,9 @@ describe('ModeratorPostStrategy', () => {
 
     it('should allow any moderator to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({ role: { name: 'moderator' } as any });
+      const user = PostMockProvider.createMockUser({
+        role: { name: 'moderator' } as any,
+      });
 
       // Act
       const result = strategy.canCreatePost(user);
@@ -58,7 +60,10 @@ describe('ModeratorPostStrategy', () => {
         .build();
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -72,7 +77,10 @@ describe('ModeratorPostStrategy', () => {
       scenario.targetPost!.isPublished = false;
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -86,7 +94,10 @@ describe('ModeratorPostStrategy', () => {
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -101,7 +112,10 @@ describe('ModeratorPostStrategy', () => {
         .build();
 
       // Act
-      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canUpdatePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -115,7 +129,10 @@ describe('ModeratorPostStrategy', () => {
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canUpdatePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -130,7 +147,10 @@ describe('ModeratorPostStrategy', () => {
         .build();
 
       // Act
-      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canDeletePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -144,7 +164,10 @@ describe('ModeratorPostStrategy', () => {
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canDeletePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -159,7 +182,10 @@ describe('ModeratorPostStrategy', () => {
         .build();
 
       // Act
-      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+      const result = strategy.validateCreateData(
+        scenario.currentUser!,
+        scenario.createDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -173,7 +199,10 @@ describe('ModeratorPostStrategy', () => {
       scenario.createDto!.isPublished = false;
 
       // Act
-      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+      const result = strategy.validateCreateData(
+        scenario.currentUser!,
+        scenario.createDto!,
+      );
 
       // Assert
       expect(result).toBe(true);

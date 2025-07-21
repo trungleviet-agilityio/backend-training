@@ -90,7 +90,9 @@ export class PostTestBuilder {
   }
 
   withAdminUserScenario(): this {
-    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'admin' } as any });
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'admin' } as any,
+    });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
     this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
@@ -98,7 +100,9 @@ export class PostTestBuilder {
   }
 
   withRegularUserScenario(): this {
-    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'user' } as any });
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'user' } as any,
+    });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
     this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();
@@ -106,7 +110,9 @@ export class PostTestBuilder {
   }
 
   withModeratorUserScenario(): this {
-    this.scenario.currentUser = PostMockProvider.createMockUser({ role: { name: 'moderator' } as any });
+    this.scenario.currentUser = PostMockProvider.createMockUser({
+      role: { name: 'moderator' } as any,
+    });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
     this.scenario.updateDto = PostMockProvider.createMockUpdatePostDto();

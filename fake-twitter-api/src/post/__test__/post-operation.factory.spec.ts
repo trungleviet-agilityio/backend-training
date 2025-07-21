@@ -30,7 +30,9 @@ describe('PostOperationFactory', () => {
     factory = moduleRef.get<PostOperationFactory>(PostOperationFactory);
     adminStrategy = moduleRef.get<AdminPostStrategy>(AdminPostStrategy);
     regularStrategy = moduleRef.get<RegularPostStrategy>(RegularPostStrategy);
-    moderatorStrategy = moduleRef.get<ModeratorPostStrategy>(ModeratorPostStrategy);
+    moderatorStrategy = moduleRef.get<ModeratorPostStrategy>(
+      ModeratorPostStrategy,
+    );
   });
 
   afterEach(() => {

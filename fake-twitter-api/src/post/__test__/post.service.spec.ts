@@ -306,9 +306,7 @@ describe('PostService', () => {
   describe('updatePost', () => {
     it('should update post successfully with valid permissions', async () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withUpdatePostScenario()
-        .build();
+      const scenario = new PostTestBuilder().withUpdatePostScenario().build();
 
       const mockStrategy = {
         canViewPost: jest.fn().mockReturnValue(true),
@@ -318,7 +316,9 @@ describe('PostService', () => {
         validateCreateData: jest.fn().mockReturnValue(true),
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
-      const updatedPost = PostMockProvider.createMockPost({ content: 'Updated content' });
+      const updatedPost = PostMockProvider.createMockPost({
+        content: 'Updated content',
+      });
 
       postRepository.findOne.mockResolvedValue(scenario.targetPost);
       userRepository.findOne.mockResolvedValue(scenario.currentUser);
@@ -334,9 +334,19 @@ describe('PostService', () => {
       );
 
       // Assert
-      expect(mockStrategy.canUpdatePost).toHaveBeenCalledWith(scenario.currentUser, updatedPost);
-      expect(mockStrategy.validateUpdateData).toHaveBeenCalledWith(scenario.currentUser, updatedPost, scenario.updateDto);
-      expect(postRepository.update).toHaveBeenCalledWith(scenario.targetPost!.uuid, scenario.updateDto);
+      expect(mockStrategy.canUpdatePost).toHaveBeenCalledWith(
+        scenario.currentUser,
+        updatedPost,
+      );
+      expect(mockStrategy.validateUpdateData).toHaveBeenCalledWith(
+        scenario.currentUser,
+        updatedPost,
+        scenario.updateDto,
+      );
+      expect(postRepository.update).toHaveBeenCalledWith(
+        scenario.targetPost!.uuid,
+        scenario.updateDto,
+      );
       expect(result).toEqual(updatedPost);
     });
 
@@ -371,9 +381,7 @@ describe('PostService', () => {
   describe('deletePost', () => {
     it('should delete post successfully with valid permissions', async () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withAdminUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       const mockStrategy = {
         canViewPost: jest.fn().mockReturnValue(true),
@@ -396,8 +404,13 @@ describe('PostService', () => {
       );
 
       // Assert
-      expect(mockStrategy.canDeletePost).toHaveBeenCalledWith(scenario.currentUser, scenario.targetPost);
-      expect(postRepository.softDelete).toHaveBeenCalledWith(scenario.targetPost!.uuid);
+      expect(mockStrategy.canDeletePost).toHaveBeenCalledWith(
+        scenario.currentUser,
+        scenario.targetPost,
+      );
+      expect(postRepository.softDelete).toHaveBeenCalledWith(
+        scenario.targetPost!.uuid,
+      );
     });
 
     it('should handle insufficient permissions for delete', async () => {

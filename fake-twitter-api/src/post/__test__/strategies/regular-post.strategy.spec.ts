@@ -27,9 +27,7 @@ describe('RegularPostStrategy', () => {
   describe('canCreatePost', () => {
     it('should allow regular users to create posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
 
       // Act
       const result = strategy.canCreatePost(scenario.currentUser!);
@@ -40,7 +38,9 @@ describe('RegularPostStrategy', () => {
 
     it('should allow any user to create posts', () => {
       // Arrange
-      const user = PostMockProvider.createMockUser({ role: { name: 'user' } as any });
+      const user = PostMockProvider.createMockUser({
+        role: { name: 'user' } as any,
+      });
 
       // Act
       const result = strategy.canCreatePost(user);
@@ -53,14 +53,15 @@ describe('RegularPostStrategy', () => {
   describe('canViewPost', () => {
     it('should allow users to view published posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.isPublished = true;
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -68,14 +69,15 @@ describe('RegularPostStrategy', () => {
 
     it('should allow users to view their own posts regardless of publishing status', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.isPublished = false;
       scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -83,14 +85,15 @@ describe('RegularPostStrategy', () => {
 
     it('should not allow users to view unpublished posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.isPublished = false;
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canViewPost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canViewPost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -100,13 +103,14 @@ describe('RegularPostStrategy', () => {
   describe('canUpdatePost', () => {
     it('should allow users to update their own posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
-      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canUpdatePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -114,13 +118,14 @@ describe('RegularPostStrategy', () => {
 
     it('should not allow users to update posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canUpdatePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canUpdatePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -130,13 +135,14 @@ describe('RegularPostStrategy', () => {
   describe('canDeletePost', () => {
     it('should allow users to delete their own posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
-      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canDeletePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -144,13 +150,14 @@ describe('RegularPostStrategy', () => {
 
     it('should not allow users to delete posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
-      const result = strategy.canDeletePost(scenario.currentUser!, scenario.targetPost!);
+      const result = strategy.canDeletePost(
+        scenario.currentUser!,
+        scenario.targetPost!,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -160,13 +167,14 @@ describe('RegularPostStrategy', () => {
   describe('validateCreateData', () => {
     it('should allow users to create published posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.createDto!.isPublished = true;
 
       // Act
-      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+      const result = strategy.validateCreateData(
+        scenario.currentUser!,
+        scenario.createDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -174,13 +182,14 @@ describe('RegularPostStrategy', () => {
 
     it('should allow users to create posts with default publishing status', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.createDto!.isPublished = undefined;
 
       // Act
-      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+      const result = strategy.validateCreateData(
+        scenario.currentUser!,
+        scenario.createDto!,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -188,13 +197,14 @@ describe('RegularPostStrategy', () => {
 
     it('should not allow users to create unpublished posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.createDto!.isPublished = false;
 
       // Act
-      const result = strategy.validateCreateData(scenario.currentUser!, scenario.createDto!);
+      const result = strategy.validateCreateData(
+        scenario.currentUser!,
+        scenario.createDto!,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -204,9 +214,7 @@ describe('RegularPostStrategy', () => {
   describe('validateUpdateData', () => {
     it('should allow users to update any field of their posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
 
       // Act
       const result = strategy.validateUpdateData(
@@ -221,9 +229,7 @@ describe('RegularPostStrategy', () => {
 
     it('should allow users to update publishing status', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withRegularUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withRegularUserScenario().build();
       scenario.updateDto!.isPublished = false;
 
       // Act
