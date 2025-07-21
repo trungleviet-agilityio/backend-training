@@ -65,4 +65,4 @@ describe('AdminCommentStrategy', () => {
       expect(result).toBe(true);
     });
   });
-}); 
+});

@@ -204,7 +204,11 @@ describe('RegularCommentStrategy', () => {
       };
 
       // Act
-      const result = strategy.validateUpdateData(currentUser, comment, updateData);
+      const result = strategy.validateUpdateData(
+        currentUser,
+        comment,
+        updateData,
+      );
 
       // Assert
       expect(result).toBe(true);
@@ -221,7 +225,11 @@ describe('RegularCommentStrategy', () => {
       };
 
       // Act
-      const result = strategy.validateUpdateData(currentUser, comment, updateData);
+      const result = strategy.validateUpdateData(
+        currentUser,
+        comment,
+        updateData,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -238,7 +246,11 @@ describe('RegularCommentStrategy', () => {
       };
 
       // Act
-      const result = strategy.validateUpdateData(currentUser, comment, updateData);
+      const result = strategy.validateUpdateData(
+        currentUser,
+        comment,
+        updateData,
+      );
 
       // Assert
       expect(result).toBe(false);
@@ -255,10 +267,14 @@ describe('RegularCommentStrategy', () => {
       };
 
       // Act
-      const result = strategy.validateUpdateData(currentUser, comment, updateData);
+      const result = strategy.validateUpdateData(
+        currentUser,
+        comment,
+        updateData,
+      );
 
       // Assert
       expect(result).toBe(false);
     });
   });
-}); 
+});

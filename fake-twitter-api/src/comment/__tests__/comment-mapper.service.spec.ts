@@ -149,4 +149,4 @@ describe('CommentMapperService', () => {
       expect(result[0].uuid).toBe('comment-uuid-123');
     });
   });
-}); 
+});

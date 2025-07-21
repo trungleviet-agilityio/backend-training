@@ -5,7 +5,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CommentService } from '../services/comment.service';
 import { CommentMapperService } from '../services/comment-mapper.service';
 import { CommentOperationFactory } from '../factories/comment-operation.factory';
@@ -19,17 +19,19 @@ describe('CommentService', () => {
   let service: CommentService;
   let commentOperationFactory: jest.Mocked<CommentOperationFactory>;
   let commentMapperService: jest.Mocked<CommentMapperService>;
-  let commentRepository: jest.Mocked<any>;
-  let userRepository: jest.Mocked<any>;
-  let postRepository: jest.Mocked<any>;
+  let commentRepository: jest.Mocked<Repository<Comment>>;
+  let userRepository: jest.Mocked<Repository<User>>;
+  let postRepository: jest.Mocked<Repository<Post>>;
   let dataSource: jest.Mocked<DataSource>;
 
   beforeEach(async () => {
     const mockCommentRepository = CommentMockProvider.createCommentRepository();
     const mockUserRepository = CommentMockProvider.createUserRepository();
     const mockPostRepository = CommentMockProvider.createPostRepository();
-    const mockCommentOperationFactory = CommentMockProvider.createCommentOperationFactory();
-    const mockCommentMapperService = CommentMockProvider.createCommentMapperService();
+    const mockCommentOperationFactory =
+      CommentMockProvider.createCommentOperationFactory();
+    const mockCommentMapperService =
+      CommentMockProvider.createCommentMapperService();
     const mockDataSource = {
       createQueryRunner: jest.fn(),
       transaction: jest.fn(),
@@ -38,11 +40,17 @@ describe('CommentService', () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         CommentService,
-        { provide: getRepositoryToken(Comment), useValue: mockCommentRepository },
+        {
+          provide: getRepositoryToken(Comment),
+          useValue: mockCommentRepository,
+        },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: getRepositoryToken(Post), useValue: mockPostRepository },
         { provide: DataSource, useValue: mockDataSource },
-        { provide: CommentOperationFactory, useValue: mockCommentOperationFactory },
+        {
+          provide: CommentOperationFactory,
+          useValue: mockCommentOperationFactory,
+        },
         { provide: CommentMapperService, useValue: mockCommentMapperService },
       ],
     }).compile();
@@ -131,8 +139,6 @@ describe('CommentService', () => {
 
       postRepository.findOne.mockResolvedValue(mockPost);
       commentRepository.findAndCount.mockResolvedValue([mockComments, 1]);
-      
-
 
       // Act
       const result = await service.getPostComments('post-uuid-123', 1, 20);
@@ -241,7 +247,7 @@ describe('CommentService', () => {
       mockStrategy.canCreateComment.mockReturnValue(true);
       mockStrategy.validateCreateData.mockReturnValue(true);
       commentOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-      
+
       // Mock transaction with proper manager methods
       dataSource.transaction.mockImplementation(async (callback: any) => {
         const mockManager = {
@@ -250,16 +256,16 @@ describe('CommentService', () => {
           create: jest.fn(),
           update: jest.fn(),
         };
-        
+
         // Mock the sequence of calls in the transaction
         mockManager.findOne
           .mockResolvedValueOnce(scenario.targetUser) // First call for user
           .mockResolvedValueOnce(scenario.targetPost) // Second call for post
           .mockResolvedValueOnce(scenario.targetComment); // Third call for comment with relations
-        
+
         mockManager.create.mockReturnValue(scenario.targetComment);
         mockManager.save.mockResolvedValue(scenario.targetComment);
-        
+
         return callback(mockManager);
       });
 
@@ -289,19 +295,17 @@ describe('CommentService', () => {
           create: jest.fn(),
           update: jest.fn(),
         };
-        
+
         mockManager.findOne.mockResolvedValue(null); // User not found
-        
+
         return callback(mockManager);
       });
 
       // Act & Assert
       await expect(
-        service.createComment(
-          scenario.currentUser!,
-          'post-uuid-123',
-          { content: 'New comment content' },
-        ),
+        service.createComment(scenario.currentUser!, 'post-uuid-123', {
+          content: 'New comment content',
+        }),
       ).rejects.toThrow('User not found');
     });
 
@@ -320,21 +324,19 @@ describe('CommentService', () => {
           create: jest.fn(),
           update: jest.fn(),
         };
-        
+
         mockManager.findOne
           .mockResolvedValueOnce(scenario.targetUser) // User found
           .mockResolvedValueOnce(null); // Post not found
-        
+
         return callback(mockManager);
       });
 
       // Act & Assert
       await expect(
-        service.createComment(
-          scenario.currentUser!,
-          'non-existent-post',
-          { content: 'New comment content' },
-        ),
+        service.createComment(scenario.currentUser!, 'non-existent-post', {
+          content: 'New comment content',
+        }),
       ).rejects.toThrow('Post not found');
     });
   });
@@ -361,14 +363,17 @@ describe('CommentService', () => {
           create: jest.fn(),
           update: jest.fn(),
         };
-        
+
         mockManager.findOne
           .mockResolvedValueOnce(scenario.targetComment) // First call for comment
           .mockResolvedValueOnce(scenario.targetUser) // Second call for user
-          .mockResolvedValueOnce({ ...scenario.targetComment, content: 'Updated content' }); // Third call for updated comment
-        
+          .mockResolvedValueOnce({
+            ...scenario.targetComment,
+            content: 'Updated content',
+          }); // Third call for updated comment
+
         mockManager.update.mockResolvedValue(undefined);
-        
+
         return callback(mockManager);
       });
 
@@ -399,19 +404,17 @@ describe('CommentService', () => {
           create: jest.fn(),
           update: jest.fn(),
         };
-        
+
         mockManager.findOne.mockResolvedValue(null); // Comment not found
-        
+
         return callback(mockManager);
       });
 
       // Act & Assert
       await expect(
-        service.updateComment(
-          scenario.currentUser!,
-          'non-existent-comment',
-          { content: 'Updated content' },
-        ),
+        service.updateComment(scenario.currentUser!, 'non-existent-comment', {
+          content: 'Updated content',
+        }),
       ).rejects.toThrow('Comment not found');
     });
   });
@@ -438,13 +441,13 @@ describe('CommentService', () => {
           update: jest.fn(),
           softDelete: jest.fn(),
         };
-        
+
         mockManager.findOne
           .mockResolvedValueOnce(scenario.targetComment) // First call for comment
           .mockResolvedValueOnce(scenario.targetUser); // Second call for user
-        
+
         mockManager.softDelete.mockResolvedValue(undefined);
-        
+
         return callback(mockManager);
       });
 
@@ -471,9 +474,9 @@ describe('CommentService', () => {
           update: jest.fn(),
           softDelete: jest.fn(),
         };
-        
+
         mockManager.findOne.mockResolvedValue(null); // Comment not found
-        
+
         return callback(mockManager);
       });
 

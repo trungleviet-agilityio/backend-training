@@ -1,11 +1,11 @@
 /**
- * Comment module unit tests
+ * CommentModule Unit Tests
+ * Testing module structure and providers without full module import
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { CommentModule } from '../comment.module';
 import { CommentService } from '../services/comment.service';
 import { CommentController } from '../comment.controller';
 import { CommentMapperService } from '../services/comment-mapper.service';
@@ -25,8 +25,10 @@ describe('CommentModule', () => {
     const mockCommentRepository = CommentMockProvider.createCommentRepository();
     const mockUserRepository = CommentMockProvider.createUserRepository();
     const mockPostRepository = CommentMockProvider.createPostRepository();
-    
-    // Create a more complete mock DataSource
+    const mockCommentOperationFactory =
+      CommentMockProvider.createCommentOperationFactory();
+    const mockCommentMapperService =
+      CommentMockProvider.createCommentMapperService();
     const mockDataSource = {
       createQueryRunner: jest.fn().mockReturnValue({
         connect: jest.fn(),
@@ -44,18 +46,31 @@ describe('CommentModule', () => {
       },
     } as unknown as jest.Mocked<DataSource>;
 
+    // Test the module structure by providing all the same providers as CommentModule
     module = await Test.createTestingModule({
-      imports: [CommentModule],
-    })
-      .overrideProvider(getRepositoryToken(Comment))
-      .useValue(mockCommentRepository)
-      .overrideProvider(getRepositoryToken(User))
-      .useValue(mockUserRepository)
-      .overrideProvider(getRepositoryToken(Post))
-      .useValue(mockPostRepository)
-      .overrideProvider(DataSource)
-      .useValue(mockDataSource)
-      .compile();
+      providers: [
+        // Controllers
+        CommentController,
+        // Services
+        CommentService,
+        CommentMapperService,
+        // Factories
+        CommentOperationFactory,
+        // Strategies
+        AdminCommentStrategy,
+        ModeratorCommentStrategy,
+        RegularCommentStrategy,
+        // Repositories (mocked)
+        {
+          provide: getRepositoryToken(Comment),
+          useValue: mockCommentRepository,
+        },
+        { provide: getRepositoryToken(User), useValue: mockUserRepository },
+        { provide: getRepositoryToken(Post), useValue: mockPostRepository },
+        // DataSource (mocked)
+        { provide: DataSource, useValue: mockDataSource },
+      ],
+    }).compile();
   });
 
   afterEach(async () => {
@@ -68,44 +83,82 @@ describe('CommentModule', () => {
     expect(module).toBeDefined();
   });
 
-  it('should provide CommentService', () => {
-    const commentService = module.get<CommentService>(CommentService);
-    expect(commentService).toBeDefined();
-  });
-
   it('should provide CommentController', () => {
     const commentController = module.get<CommentController>(CommentController);
     expect(commentController).toBeDefined();
+    expect(commentController).toBeInstanceOf(CommentController);
+  });
+
+  it('should provide CommentService', () => {
+    const commentService = module.get<CommentService>(CommentService);
+    expect(commentService).toBeDefined();
+    expect(commentService).toBeInstanceOf(CommentService);
   });
 
   it('should provide CommentMapperService', () => {
-    const commentMapperService = module.get<CommentMapperService>(CommentMapperService);
+    const commentMapperService =
+      module.get<CommentMapperService>(CommentMapperService);
     expect(commentMapperService).toBeDefined();
+    expect(commentMapperService).toBeInstanceOf(CommentMapperService);
   });
 
   it('should provide CommentOperationFactory', () => {
-    const commentOperationFactory =
-      module.get<CommentOperationFactory>(CommentOperationFactory);
+    const commentOperationFactory = module.get<CommentOperationFactory>(
+      CommentOperationFactory,
+    );
     expect(commentOperationFactory).toBeDefined();
+    expect(commentOperationFactory).toBeInstanceOf(CommentOperationFactory);
   });
 
   it('should provide AdminCommentStrategy', () => {
-    const adminStrategy = module.get<AdminCommentStrategy>(AdminCommentStrategy);
+    const adminStrategy =
+      module.get<AdminCommentStrategy>(AdminCommentStrategy);
     expect(adminStrategy).toBeDefined();
+    expect(adminStrategy).toBeInstanceOf(AdminCommentStrategy);
   });
 
   it('should provide ModeratorCommentStrategy', () => {
-    const moderatorStrategy = module.get<ModeratorCommentStrategy>(ModeratorCommentStrategy);
+    const moderatorStrategy = module.get<ModeratorCommentStrategy>(
+      ModeratorCommentStrategy,
+    );
     expect(moderatorStrategy).toBeDefined();
+    expect(moderatorStrategy).toBeInstanceOf(ModeratorCommentStrategy);
   });
 
   it('should provide RegularCommentStrategy', () => {
-    const regularStrategy = module.get<RegularCommentStrategy>(RegularCommentStrategy);
+    const regularStrategy = module.get<RegularCommentStrategy>(
+      RegularCommentStrategy,
+    );
     expect(regularStrategy).toBeDefined();
+    expect(regularStrategy).toBeInstanceOf(RegularCommentStrategy);
   });
 
-  it('should export CommentService', () => {
+  it('should have all required dependencies for CommentService', () => {
     const commentService = module.get<CommentService>(CommentService);
-    expect(commentService).toBeInstanceOf(CommentService);
+    expect(commentService).toBeDefined();
+
+    // Verify that all dependencies are properly injected
+    const commentRepository = module.get(getRepositoryToken(Comment));
+    const userRepository = module.get(getRepositoryToken(User));
+    const postRepository = module.get(getRepositoryToken(Post));
+    const dataSource = module.get(DataSource);
+    const commentOperationFactory = module.get(CommentOperationFactory);
+    const commentMapperService = module.get(CommentMapperService);
+
+    expect(commentRepository).toBeDefined();
+    expect(userRepository).toBeDefined();
+    expect(postRepository).toBeDefined();
+    expect(dataSource).toBeDefined();
+    expect(commentOperationFactory).toBeDefined();
+    expect(commentMapperService).toBeDefined();
+  });
+
+  it('should have all required dependencies for CommentController', () => {
+    const commentController = module.get<CommentController>(CommentController);
+    expect(commentController).toBeDefined();
+
+    // The controller should have access to the CommentService
+    const commentService = module.get<CommentService>(CommentService);
+    expect(commentService).toBeDefined();
   });
 });

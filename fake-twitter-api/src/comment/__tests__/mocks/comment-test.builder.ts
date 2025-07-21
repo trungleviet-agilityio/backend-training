@@ -85,7 +85,10 @@ export class CommentTestBuilder {
     return this;
   }
 
-  withCurrentUser(currentUser: { uuid: string; role: { name: string } }): CommentTestBuilder {
+  withCurrentUser(currentUser: {
+    uuid: string;
+    role: { name: string };
+  }): CommentTestBuilder {
     this.currentUser = currentUser;
     return this;
   }
@@ -125,7 +128,9 @@ export class CommentTestBuilder {
     return this;
   }
 
-  withPaginatedComments(paginatedComments: PaginatedComments): CommentTestBuilder {
+  withPaginatedComments(
+    paginatedComments: PaginatedComments,
+  ): CommentTestBuilder {
     this.paginatedComments = paginatedComments;
     return this;
   }

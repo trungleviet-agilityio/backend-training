@@ -13,7 +13,9 @@ describe('ModeratorCommentStrategy', () => {
       providers: [ModeratorCommentStrategy],
     }).compile();
 
-    strategy = moduleRef.get<ModeratorCommentStrategy>(ModeratorCommentStrategy);
+    strategy = moduleRef.get<ModeratorCommentStrategy>(
+      ModeratorCommentStrategy,
+    );
   });
 
   describe('canCreateComment', () => {
@@ -65,4 +67,4 @@ describe('ModeratorCommentStrategy', () => {
       expect(result).toBe(true);
     });
   });
-}); 
+});

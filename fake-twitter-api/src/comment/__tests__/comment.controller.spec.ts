@@ -14,7 +14,6 @@ import { CreateCommentDto } from '../dto/create-comment.dto';
 import { UpdateCommentDto } from '../dto/update-comment.dto';
 import { CommentDto } from '../dto/comment-response.dto';
 
-
 describe('CommentController', () => {
   let controller: CommentController;
   let commentService: jest.Mocked<CommentService>;
@@ -22,7 +21,8 @@ describe('CommentController', () => {
 
   beforeEach(async () => {
     const mockCommentService = CommentMockProvider.createCommentService();
-    const mockCommentMapperService = CommentMockProvider.createCommentMapperService();
+    const mockCommentMapperService =
+      CommentMockProvider.createCommentMapperService();
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [CommentController],
@@ -54,11 +54,17 @@ describe('CommentController', () => {
             totalPages: 1,
           },
         })
-        .withCommentDtos([{ uuid: 'comment-uuid-123', content: 'Test comment' }])
+        .withCommentDtos([
+          { uuid: 'comment-uuid-123', content: 'Test comment' },
+        ])
         .build();
 
-      commentService.getPostComments.mockResolvedValue(scenario.paginatedComments!);
-      commentMapperService.toCommentDtoList.mockReturnValue(scenario.commentDtos!);
+      commentService.getPostComments.mockResolvedValue(
+        scenario.paginatedComments!,
+      );
+      commentMapperService.toCommentDtoList.mockReturnValue(
+        scenario.commentDtos!,
+      );
 
       // Act
       const result = await controller.getPostComments('post-uuid-123', 1, 20);
@@ -98,7 +104,10 @@ describe('CommentController', () => {
         .withJwtPayload({ sub: 'user-uuid-123', role: 'user' } as IJwtPayload)
         .withCreateDto({ content: 'New comment content' })
         .withTargetComment(CommentMockProvider.createMockComment())
-        .withCommentDto({ uuid: 'comment-uuid-123', content: 'New comment content' })
+        .withCommentDto({
+          uuid: 'comment-uuid-123',
+          content: 'New comment content',
+        })
         .build();
 
       commentService.createComment.mockResolvedValue(scenario.targetComment!);
@@ -155,7 +164,10 @@ describe('CommentController', () => {
         .withJwtPayload({ sub: 'user-uuid-123', role: 'user' } as IJwtPayload)
         .withUpdateDto({ content: 'Updated comment content' })
         .withTargetComment(CommentMockProvider.createMockComment())
-        .withCommentDto({ uuid: 'comment-uuid-123', content: 'Updated comment content' })
+        .withCommentDto({
+          uuid: 'comment-uuid-123',
+          content: 'Updated comment content',
+        })
         .build();
 
       commentService.updateComment.mockResolvedValue(scenario.targetComment!);
@@ -264,11 +276,19 @@ describe('CommentController', () => {
         .withCommentDtos([{ uuid: 'reply-uuid-123', content: 'Test reply' }])
         .build();
 
-      commentService.getCommentReplies.mockResolvedValue(scenario.paginatedComments!);
-      commentMapperService.toCommentDtoList.mockReturnValue(scenario.commentDtos!);
+      commentService.getCommentReplies.mockResolvedValue(
+        scenario.paginatedComments!,
+      );
+      commentMapperService.toCommentDtoList.mockReturnValue(
+        scenario.commentDtos!,
+      );
 
       // Act
-      const result = await controller.getCommentReplies('comment-uuid-123', 1, 20);
+      const result = await controller.getCommentReplies(
+        'comment-uuid-123',
+        1,
+        20,
+      );
 
       // Assert
       expect(commentService.getCommentReplies).toHaveBeenCalledWith(
@@ -316,10 +336,15 @@ describe('CommentController', () => {
       };
 
       const mockComment = CommentMockProvider.createMockComment();
-      const mockCommentDto = { uuid: 'comment-uuid-123', content: 'Test comment' };
+      const mockCommentDto = {
+        uuid: 'comment-uuid-123',
+        content: 'Test comment',
+      };
 
       commentService.createComment.mockResolvedValue(mockComment);
-      commentMapperService.toCommentDto.mockReturnValue(mockCommentDto as unknown as CommentDto);
+      commentMapperService.toCommentDto.mockReturnValue(
+        mockCommentDto as unknown as CommentDto,
+      );
 
       // Act
       await controller.createComment(jwtPayload, 'post-uuid-123', createDto);
@@ -351,10 +376,15 @@ describe('CommentController', () => {
       };
 
       const mockComment = CommentMockProvider.createMockComment();
-      const mockCommentDto = { uuid: 'comment-uuid-123', content: 'Updated comment' };
+      const mockCommentDto = {
+        uuid: 'comment-uuid-123',
+        content: 'Updated comment',
+      };
 
       commentService.updateComment.mockResolvedValue(mockComment);
-      commentMapperService.toCommentDto.mockReturnValue(mockCommentDto as unknown as CommentDto);
+      commentMapperService.toCommentDto.mockReturnValue(
+        mockCommentDto as unknown as CommentDto,
+      );
 
       // Act
       await controller.updateComment(jwtPayload, 'comment-uuid-123', updateDto);
@@ -410,11 +440,17 @@ describe('CommentController', () => {
             totalPages: 1,
           },
         })
-        .withCommentDtos([{ uuid: 'comment-uuid-123', content: 'Test comment' }])
+        .withCommentDtos([
+          { uuid: 'comment-uuid-123', content: 'Test comment' },
+        ])
         .build();
 
-      commentService.getPostComments.mockResolvedValue(scenario.paginatedComments!);
-      commentMapperService.toCommentDtoList.mockReturnValue(scenario.commentDtos!);
+      commentService.getPostComments.mockResolvedValue(
+        scenario.paginatedComments!,
+      );
+      commentMapperService.toCommentDtoList.mockReturnValue(
+        scenario.commentDtos!,
+      );
 
       // Act
       await controller.getPostComments('post-uuid-123', 2, 10);
@@ -442,8 +478,12 @@ describe('CommentController', () => {
         .withCommentDtos([{ uuid: 'reply-uuid-123', content: 'Test reply' }])
         .build();
 
-      commentService.getCommentReplies.mockResolvedValue(scenario.paginatedComments!);
-      commentMapperService.toCommentDtoList.mockReturnValue(scenario.commentDtos!);
+      commentService.getCommentReplies.mockResolvedValue(
+        scenario.paginatedComments!,
+      );
+      commentMapperService.toCommentDtoList.mockReturnValue(
+        scenario.commentDtos!,
+      );
 
       // Act
       await controller.getCommentReplies('comment-uuid-123', 3, 5);
