@@ -14,21 +14,7 @@ import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
- * UserService Unit Tests - Clean & Focused
- * Following AuthService pattern exactly
- */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { UserService } from '../services/user.service';
-import { UserOperationFactory } from '../factories/user-operation.factory';
-import { UserMapperService } from '../services/user-mapper.service';
-import { User } from '../../database/entities/user.entity';
-import { Post } from '../../database/entities/post.entity';
-import { Comment } from '../../database/entities/comment.entity';
-import { UserTestBuilder } from './mocks/user-test.builder';
-import { UserMockProvider } from './mocks/user-mock.provider';
 
 describe('UserService', () => {
   let service: UserService;
