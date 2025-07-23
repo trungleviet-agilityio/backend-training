@@ -1,11 +1,9 @@
 /**
  * Post service unit tests
- * Comprehensive testing following NestJS best practices and design patterns
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Post } from '../../database/entities/post.entity';
 import { User } from '../../database/entities/user.entity';
 import { PostService } from '../services/post.service';
@@ -13,13 +11,14 @@ import { PostMapperService } from '../services/post-mapper.service';
 import { PostOperationFactory } from '../factories/post-operation.factory';
 import { PostMockProvider } from './mocks/post-mock.provider';
 import { PostTestBuilder } from './mocks/post-test.builder';
+import { Repository, UpdateResult } from 'typeorm';
 
 describe('PostService', () => {
-  let service: PostService;
-  let postRepository: any;
-  let userRepository: any;
-  let postOperationFactory: any;
-  let postMapper: any;
+  let postService: jest.Mocked<PostService>;
+  let postRepository: jest.Mocked<Repository<Post>>;
+  let userRepository: jest.Mocked<Repository<User>>;
+  let postOperationFactory: jest.Mocked<PostOperationFactory>;
+  let postMapper: jest.Mocked<PostMapperService>;
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -59,11 +58,17 @@ describe('PostService', () => {
       ],
     }).compile();
 
-    service = moduleRef.get<PostService>(PostService);
-    postRepository = moduleRef.get<any>(getRepositoryToken(Post));
-    userRepository = moduleRef.get<any>(getRepositoryToken(User));
-    postOperationFactory = moduleRef.get<any>(PostOperationFactory);
-    postMapper = moduleRef.get<any>(PostMapperService);
+    postService = moduleRef.get<jest.Mocked<PostService>>(PostService);
+    postRepository = moduleRef.get<jest.Mocked<Repository<Post>>>(
+      getRepositoryToken(Post),
+    );
+    userRepository = moduleRef.get<jest.Mocked<Repository<User>>>(
+      getRepositoryToken(User),
+    );
+    postOperationFactory =
+      moduleRef.get<jest.Mocked<PostOperationFactory>>(PostOperationFactory);
+    postMapper =
+      moduleRef.get<jest.Mocked<PostMapperService>>(PostMapperService);
   });
 
   afterEach(() => {
@@ -77,10 +82,10 @@ describe('PostService', () => {
         .withTargetPost(PostMockProvider.createMockPost())
         .build();
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
 
       // Act
-      const result = await service.findById(scenario.targetPost!.uuid);
+      const result = await postService.findById(scenario.targetPost!.uuid);
 
       // Assert
       expect(postRepository.findOne).toHaveBeenCalledWith({
@@ -92,10 +97,10 @@ describe('PostService', () => {
 
     it('should handle post not found scenario', async () => {
       // Arrange
-      postRepository.findOne.mockResolvedValue(null);
+      postRepository.findOne.mockResolvedValue(null as unknown as Post);
 
       // Act & Assert
-      await expect(service.findById('non-existent-uuid')).rejects.toThrow(
+      await expect(postService.findById('non-existent-uuid')).rejects.toThrow(
         'Post not found',
       );
     });
@@ -116,12 +121,12 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act
-      const result = await service.findById(scenario.targetPost!.uuid, {
+      const result = await postService.findById(scenario.targetPost!.uuid, {
         uuid: scenario.currentUser!.uuid,
         role: { name: 'user' },
       });
@@ -154,13 +159,13 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
       await expect(
-        service.findById(scenario.targetPost!.uuid, {
+        postService.findById(scenario.targetPost!.uuid, {
           uuid: scenario.currentUser!.uuid,
           role: { name: 'user' },
         }),
@@ -176,10 +181,13 @@ describe('PostService', () => {
         .withPaginatedPosts(posts, 1, 10, 1)
         .build();
 
-      postRepository.findAndCount.mockResolvedValue([posts, 1]);
+      postRepository.findAndCount.mockResolvedValue([posts, 1] as [
+        Post[],
+        number,
+      ]);
 
       // Act
-      const result = await service.getAllPosts(1, 10);
+      const result = await postService.getAllPosts(1, 10);
 
       // Assert
       expect(postRepository.findAndCount).toHaveBeenCalledWith({
@@ -194,10 +202,13 @@ describe('PostService', () => {
 
     it('should handle empty posts list', async () => {
       // Arrange
-      postRepository.findAndCount.mockResolvedValue([[], 0]);
+      postRepository.findAndCount.mockResolvedValue([[], 0] as [
+        Post[],
+        number,
+      ]);
 
       // Act
-      const result = await service.getAllPosts(1, 10);
+      const result = await postService.getAllPosts(1, 10);
 
       // Assert
       expect(result.data).toEqual([]);
@@ -221,14 +232,14 @@ describe('PostService', () => {
       };
       const createdPost = PostMockProvider.createMockPost();
 
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
       postRepository.create.mockReturnValue(createdPost);
       postRepository.save.mockResolvedValue(createdPost);
       postRepository.findOne.mockResolvedValue(createdPost);
 
       // Act
-      const result = await service.createPost(
+      const result = await postService.createPost(
         { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
         scenario.createDto!,
       );
@@ -265,12 +276,12 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
       await expect(
-        service.createPost(
+        postService.createPost(
           { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
           scenario.createDto!,
         ),
@@ -290,12 +301,12 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
       await expect(
-        service.createPost(
+        postService.createPost(
           { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
           scenario.createDto!,
         ),
@@ -320,14 +331,14 @@ describe('PostService', () => {
         content: 'Updated content',
       });
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
       postRepository.update.mockResolvedValue({ affected: 1 } as any);
       postRepository.findOne.mockResolvedValue(updatedPost);
 
       // Act
-      const result = await service.updatePost(
+      const result = await postService.updatePost(
         { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
         scenario.targetPost!.uuid,
         scenario.updateDto!,
@@ -363,13 +374,13 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
       await expect(
-        service.updatePost(
+        postService.updatePost(
           { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
           scenario.targetPost!.uuid,
           scenario.updateDto!,
@@ -392,14 +403,21 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-      postRepository.softDelete.mockResolvedValue(undefined);
+      postRepository.softDelete.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      } as unknown as UpdateResult);
 
       // Act
-      await service.deletePost(
-        { uuid: scenario.currentUser!.uuid, role: { name: 'admin' } },
+      await postService.deletePost(
+        {
+          uuid: scenario.currentUser!.uuid,
+          role: { name: 'admin' },
+        },
         scenario.targetPost!.uuid,
       );
 
@@ -426,13 +444,13 @@ describe('PostService', () => {
         validateUpdateData: jest.fn().mockReturnValue(true),
       };
 
-      postRepository.findOne.mockResolvedValue(scenario.targetPost);
-      userRepository.findOne.mockResolvedValue(scenario.currentUser);
+      postRepository.findOne.mockResolvedValue(scenario.targetPost!);
+      userRepository.findOne.mockResolvedValue(scenario.currentUser!);
       postOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
       await expect(
-        service.deletePost(
+        postService.deletePost(
           { uuid: scenario.currentUser!.uuid, role: { name: 'user' } },
           scenario.targetPost!.uuid,
         ),
@@ -448,10 +466,13 @@ describe('PostService', () => {
         .withPaginatedPosts(posts, 1, 10, 1)
         .build();
 
-      postRepository.findAndCount.mockResolvedValue([posts, 1]);
+      postRepository.findAndCount.mockResolvedValue([posts, 1] as [
+        Post[],
+        number,
+      ]);
 
       // Act
-      const result = await service.getUserPosts('user-uuid-123', 1, 10);
+      const result = await postService.getUserPosts('user-uuid-123', 1, 10);
 
       // Assert
       expect(postRepository.findAndCount).toHaveBeenCalledWith({

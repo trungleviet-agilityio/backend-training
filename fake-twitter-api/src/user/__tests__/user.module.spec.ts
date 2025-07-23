@@ -12,6 +12,7 @@ import { UserOperationFactory } from '../factories/user-operation.factory';
 import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
+import { Repository } from 'typeorm';
 
 describe('UserModule', () => {
   let module: TestingModule;
@@ -21,11 +22,11 @@ describe('UserModule', () => {
       imports: [UserModule],
     })
       .overrideProvider(getRepositoryToken(User))
-      .useValue({})
+      .useValue({} as Repository<User>)
       .overrideProvider(getRepositoryToken(Post))
-      .useValue({})
+      .useValue({} as Repository<Post>)
       .overrideProvider(getRepositoryToken(Comment))
-      .useValue({})
+      .useValue({} as Repository<Comment>)
       .compile();
   });
 

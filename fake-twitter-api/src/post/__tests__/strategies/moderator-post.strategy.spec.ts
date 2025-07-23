@@ -1,23 +1,24 @@
 /**
- * Regular Post Strategy Tests
+ * Moderator Post Strategy Tests
  *
- * Tests the RegularPostStrategy class
+ * Tests the ModeratorPostStrategy class
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { RegularPostStrategy } from '../../strategies/post-regular.strategy';
+import { ModeratorPostStrategy } from '../../strategies/post-moderator.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
 import { PostTestBuilder } from '../mocks/post-test.builder';
+import { Role } from '../../../database/entities/role.entity';
 
-describe('RegularPostStrategy', () => {
-  let strategy: RegularPostStrategy;
+describe('ModeratorPostStrategy', () => {
+  let strategy: ModeratorPostStrategy;
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
-      providers: [RegularPostStrategy],
+      providers: [ModeratorPostStrategy],
     }).compile();
 
-    strategy = moduleRef.get<RegularPostStrategy>(RegularPostStrategy);
+    strategy = moduleRef.get<ModeratorPostStrategy>(ModeratorPostStrategy);
   });
 
   afterEach(() => {
@@ -25,9 +26,11 @@ describe('RegularPostStrategy', () => {
   });
 
   describe('canCreatePost', () => {
-    it('should allow regular users to create posts', () => {
+    it('should allow moderators to create posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.canCreatePost(scenario.currentUser!);
@@ -36,10 +39,10 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow any user to create posts', () => {
+    it('should allow any moderator to create posts', () => {
       // Arrange
       const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
+        role: { name: 'moderator' } as Role,
       });
 
       // Act
@@ -51,11 +54,11 @@ describe('RegularPostStrategy', () => {
   });
 
   describe('canViewPost', () => {
-    it('should allow users to view published posts', () => {
+    it('should allow moderators to view any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.targetPost!.isPublished = true;
-      scenario.targetPost!.authorUuid = 'different-user-uuid';
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.canViewPost(
@@ -67,11 +70,12 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow users to view their own posts regardless of publishing status', () => {
+    it('should allow moderators to view unpublished posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.targetPost!.isPublished = false;
-      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
 
       // Act
       const result = strategy.canViewPost(
@@ -83,10 +87,11 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should not allow users to view unpublished posts from other users', () => {
+    it('should allow moderators to view posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.targetPost!.isPublished = false;
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -96,15 +101,16 @@ describe('RegularPostStrategy', () => {
       );
 
       // Assert
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
   });
 
   describe('canUpdatePost', () => {
-    it('should allow users to update their own posts', () => {
+    it('should allow moderators to update any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.canUpdatePost(
@@ -116,9 +122,11 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should not allow users to update posts from other users', () => {
+    it('should allow moderators to update posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -128,15 +136,16 @@ describe('RegularPostStrategy', () => {
       );
 
       // Assert
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
   });
 
   describe('canDeletePost', () => {
-    it('should allow users to delete their own posts', () => {
+    it('should allow moderators to delete any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.targetPost!.authorUuid = scenario.currentUser!.uuid;
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.canDeletePost(
@@ -148,9 +157,11 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should not allow users to delete posts from other users', () => {
+    it('should allow moderators to delete posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -160,15 +171,16 @@ describe('RegularPostStrategy', () => {
       );
 
       // Assert
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
   });
 
   describe('validateCreateData', () => {
-    it('should allow users to create published posts', () => {
+    it('should allow moderators to create any type of post', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.createDto!.isPublished = true;
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.validateCreateData(
@@ -180,24 +192,11 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow users to create posts with default publishing status', () => {
+    it('should allow moderators to create unpublished posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
-      scenario.createDto!.isPublished = undefined;
-
-      // Act
-      const result = strategy.validateCreateData(
-        scenario.currentUser!,
-        scenario.createDto!,
-      );
-
-      // Assert
-      expect(result).toBe(true);
-    });
-
-    it('should not allow users to create unpublished posts', () => {
-      // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.createDto!.isPublished = false;
 
       // Act
@@ -207,14 +206,16 @@ describe('RegularPostStrategy', () => {
       );
 
       // Assert
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
   });
 
   describe('validateUpdateData', () => {
-    it('should allow users to update any field of their posts', () => {
+    it('should allow moderators to update any field', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
 
       // Act
       const result = strategy.validateUpdateData(
@@ -227,9 +228,11 @@ describe('RegularPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow users to update publishing status', () => {
+    it('should allow moderators to update publishing status', () => {
       // Arrange
-      const scenario = new PostTestBuilder().withRegularUserScenario().build();
+      const scenario = new PostTestBuilder()
+        .withModeratorUserScenario()
+        .build();
       scenario.updateDto!.isPublished = false;
 
       // Act

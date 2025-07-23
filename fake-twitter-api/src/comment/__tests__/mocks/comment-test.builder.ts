@@ -5,7 +5,7 @@
 import { Comment } from '../../../database/entities/comment.entity';
 import { User } from '../../../database/entities/user.entity';
 import { Post } from '../../../database/entities/post.entity';
-import { CreateCommentDto, UpdateCommentDto } from '../../dto';
+import { CommentDto, CreateCommentDto, UpdateCommentDto } from '../../dto';
 import { IJwtPayload } from '../../../auth/interfaces/jwt-payload.interface';
 import { PaginatedComments } from '../../interfaces';
 
@@ -32,8 +32,8 @@ export class CommentTestBuilder {
   private targetUser: User | null = null;
   private targetPost: Post | null = null;
   private paginatedComments: PaginatedComments | null = null;
-  private commentDtos: any[] | null = null;
-  private commentDto: any | null = null;
+  private commentDtos: CommentDto[] | null = null;
+  private commentDto: CommentDto | null = null;
 
   withUuid(uuid: string): CommentTestBuilder {
     this.comment.uuid = uuid;
@@ -135,12 +135,12 @@ export class CommentTestBuilder {
     return this;
   }
 
-  withCommentDtos(commentDtos: any[]): CommentTestBuilder {
+  withCommentDtos(commentDtos: CommentDto[]): CommentTestBuilder {
     this.commentDtos = commentDtos;
     return this;
   }
 
-  withCommentDto(commentDto: any): CommentTestBuilder {
+  withCommentDto(commentDto: CommentDto): CommentTestBuilder {
     this.commentDto = commentDto;
     return this;
   }
@@ -157,8 +157,8 @@ export class CommentTestBuilder {
     targetUser: User | null;
     targetPost: Post | null;
     paginatedComments: PaginatedComments | null;
-    commentDtos: any[] | null;
-    commentDto: any | null;
+    commentDtos: CommentDto[] | null;
+    commentDto: CommentDto | null;
   } {
     return {
       comment: this.comment as Comment,

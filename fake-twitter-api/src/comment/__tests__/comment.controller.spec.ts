@@ -55,7 +55,21 @@ describe('CommentController', () => {
           },
         })
         .withCommentDtos([
-          { uuid: 'comment-uuid-123', content: 'Test comment' },
+          {
+            uuid: 'comment-uuid-123',
+            content: 'Test comment',
+            author: {
+              uuid: 'user-uuid-123',
+              username: 'testuser',
+              firstName: 'Test',
+              lastName: 'User',
+              avatarUrl: 'https://example.com/avatar.jpg',
+            },
+            stats: { likesCount: 0 },
+            depthLevel: 0,
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            updatedAt: new Date('2024-01-01T00:00:00Z'),
+          },
         ])
         .build();
 
@@ -107,6 +121,17 @@ describe('CommentController', () => {
         .withCommentDto({
           uuid: 'comment-uuid-123',
           content: 'New comment content',
+          author: {
+            uuid: 'user-uuid-123',
+            username: 'testuser',
+            firstName: 'Test',
+            lastName: 'User',
+            avatarUrl: 'https://example.com/avatar.jpg',
+          },
+          stats: { likesCount: 0 },
+          depthLevel: 0,
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+          updatedAt: new Date('2024-01-01T00:00:00Z'),
         })
         .build();
 
@@ -167,6 +192,17 @@ describe('CommentController', () => {
         .withCommentDto({
           uuid: 'comment-uuid-123',
           content: 'Updated comment content',
+          author: {
+            uuid: 'user-uuid-123',
+            username: 'testuser',
+            firstName: 'Test',
+            lastName: 'User',
+            avatarUrl: 'https://example.com/avatar.jpg',
+          },
+          stats: { likesCount: 0 },
+          depthLevel: 0,
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+          updatedAt: new Date('2024-01-01T00:00:00Z'),
         })
         .build();
 
@@ -273,7 +309,23 @@ describe('CommentController', () => {
             totalPages: 1,
           },
         })
-        .withCommentDtos([{ uuid: 'reply-uuid-123', content: 'Test reply' }])
+        .withCommentDtos([
+          {
+            uuid: 'reply-uuid-123',
+            content: 'Test reply',
+            author: {
+              uuid: 'user-uuid-123',
+              username: 'testuser',
+              firstName: 'Test',
+              lastName: 'User',
+              avatarUrl: 'https://example.com/avatar.jpg',
+            },
+            stats: { likesCount: 0 },
+            depthLevel: 0,
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            updatedAt: new Date('2024-01-01T00:00:00Z'),
+          },
+        ])
         .build();
 
       commentService.getCommentReplies.mockResolvedValue(
@@ -441,7 +493,21 @@ describe('CommentController', () => {
           },
         })
         .withCommentDtos([
-          { uuid: 'comment-uuid-123', content: 'Test comment' },
+          {
+            uuid: 'comment-uuid-123',
+            content: 'Test comment',
+            author: {
+              uuid: 'user-uuid-123',
+              username: 'testuser',
+              firstName: 'Test',
+              lastName: 'User',
+              avatarUrl: 'https://example.com/avatar.jpg',
+            },
+            stats: { likesCount: 0 },
+            depthLevel: 0,
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            updatedAt: new Date('2024-01-01T00:00:00Z'),
+          },
         ])
         .build();
 
@@ -475,7 +541,23 @@ describe('CommentController', () => {
             totalPages: 1,
           },
         })
-        .withCommentDtos([{ uuid: 'reply-uuid-123', content: 'Test reply' }])
+        .withCommentDtos([
+          {
+            uuid: 'reply-uuid-123',
+            content: 'Test reply',
+            author: {
+              uuid: 'user-uuid-123',
+              username: 'testuser',
+              firstName: 'Test',
+              lastName: 'User',
+              avatarUrl: 'https://example.com/avatar.jpg',
+            },
+            stats: { likesCount: 0 },
+            depthLevel: 0,
+            createdAt: new Date('2024-01-01T00:00:00Z'),
+            updatedAt: new Date('2024-01-01T00:00:00Z'),
+          },
+        ])
         .build();
 
       commentService.getCommentReplies.mockResolvedValue(

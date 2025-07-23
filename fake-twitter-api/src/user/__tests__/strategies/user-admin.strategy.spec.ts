@@ -8,6 +8,7 @@
 import { UpdateUserDto } from '../../dto/update-user.dto';
 import { UserTestBuilder } from '../mocks/user-test.builder';
 import { AdminUserStrategy } from '../../strategies';
+import { Role } from '../../../database/entities/role.entity';
 
 describe('AdminUserStrategy', () => {
   let strategy: AdminUserStrategy;
@@ -22,7 +23,7 @@ describe('AdminUserStrategy', () => {
     it('should return true when current user is admin', () => {
       // Arrange
       const adminUser = userTestBuilder
-        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as any })
+        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -39,7 +40,7 @@ describe('AdminUserStrategy', () => {
     it('should return true when current user is updating their own profile', () => {
       // Arrange
       const currentUser = userTestBuilder
-        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as any })
+        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -56,7 +57,7 @@ describe('AdminUserStrategy', () => {
     it('should return false when regular user tries to update another user', () => {
       // Arrange
       const currentUser = userTestBuilder
-        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as any })
+        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -75,7 +76,7 @@ describe('AdminUserStrategy', () => {
     it('should always return true for admin strategy', () => {
       // Arrange
       const currentUser = userTestBuilder
-        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as any })
+        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -94,7 +95,7 @@ describe('AdminUserStrategy', () => {
     it('should return true when admin deletes another user', () => {
       // Arrange
       const adminUser = userTestBuilder
-        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as any })
+        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -111,7 +112,7 @@ describe('AdminUserStrategy', () => {
     it('should return false when admin tries to delete themselves', () => {
       // Arrange
       const adminUser = userTestBuilder
-        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as any })
+        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -128,7 +129,7 @@ describe('AdminUserStrategy', () => {
     it('should return false when regular user tries to delete any user', () => {
       // Arrange
       const currentUser = userTestBuilder
-        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as any })
+        .withTargetUser({ uuid: 'user-uuid', role: { name: 'user' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder
@@ -147,7 +148,7 @@ describe('AdminUserStrategy', () => {
     it('should always return true for admin strategy', () => {
       // Arrange
       const currentUser = userTestBuilder
-        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as any })
+        .withTargetUser({ uuid: 'admin-uuid', role: { name: 'admin' } as Role })
         .buildTargetUser();
 
       const targetUser = userTestBuilder

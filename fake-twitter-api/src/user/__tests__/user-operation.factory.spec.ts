@@ -110,7 +110,7 @@ describe('UserOperationFactory', () => {
 
     it('should return RegularUserStrategy for null role', () => {
       // Act
-      const strategy = factory.createStrategy(null as any);
+      const strategy = factory.createStrategy(null as unknown as string);
 
       // Assert
       expect(strategy).toBe(regularStrategy);
@@ -118,7 +118,7 @@ describe('UserOperationFactory', () => {
 
     it('should return RegularUserStrategy for undefined role', () => {
       // Act
-      const strategy = factory.createStrategy(undefined as any);
+      const strategy = factory.createStrategy(undefined as unknown as string);
 
       // Assert
       expect(strategy).toBe(regularStrategy);

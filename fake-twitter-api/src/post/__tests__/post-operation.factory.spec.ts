@@ -9,13 +9,9 @@ import { PostOperationFactory } from '../factories/post-operation.factory';
 import { AdminPostStrategy } from '../strategies/post-admin.strategy';
 import { RegularPostStrategy } from '../strategies/post-regular.strategy';
 import { ModeratorPostStrategy } from '../strategies/post-moderator.strategy';
-import { PostMockProvider } from './mocks/post-mock.provider';
 
 describe('PostOperationFactory', () => {
   let factory: PostOperationFactory;
-  let adminStrategy: AdminPostStrategy;
-  let regularStrategy: RegularPostStrategy;
-  let moderatorStrategy: ModeratorPostStrategy;
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -28,11 +24,6 @@ describe('PostOperationFactory', () => {
     }).compile();
 
     factory = moduleRef.get<PostOperationFactory>(PostOperationFactory);
-    adminStrategy = moduleRef.get<AdminPostStrategy>(AdminPostStrategy);
-    regularStrategy = moduleRef.get<RegularPostStrategy>(RegularPostStrategy);
-    moderatorStrategy = moduleRef.get<ModeratorPostStrategy>(
-      ModeratorPostStrategy,
-    );
   });
 
   afterEach(() => {
@@ -97,7 +88,7 @@ describe('PostOperationFactory', () => {
 
     it('should create regular strategy for undefined role', () => {
       // Arrange
-      const roleName = undefined as any;
+      const roleName = undefined as unknown as string;
 
       // Act
       const result = factory.createStrategy(roleName);

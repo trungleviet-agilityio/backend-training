@@ -28,7 +28,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from '../dto';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -275,7 +275,7 @@ describe('AuthController', () => {
   describe('POST /auth/logout', () => {
     it('should logout user successfully', async () => {
       // Arrange
-      const user: JwtPayload = {
+      const user: IJwtPayload = {
         sub: 'test-user-uuid',
         email: 'test@example.com',
         username: 'testuser',
@@ -295,7 +295,7 @@ describe('AuthController', () => {
 
     it('should handle logout failure', async () => {
       // Arrange
-      const user: JwtPayload = {
+      const user: IJwtPayload = {
         sub: 'invalid-user-uuid',
         email: 'test@example.com',
         username: 'testuser',

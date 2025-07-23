@@ -8,6 +8,7 @@
 import { ModeratorUserStrategy } from '../../strategies/user-moderator.strategy';
 import { UpdateUserDto } from '../../dto/update-user.dto';
 import { UserTestBuilder } from '../mocks/user-test.builder';
+import { Role } from '../../../database/entities/role.entity';
 
 describe('ModeratorUserStrategy', () => {
   let strategy: ModeratorUserStrategy;
@@ -24,7 +25,7 @@ describe('ModeratorUserStrategy', () => {
       const currentUser = userTestBuilder
         .withTargetUser({
           uuid: 'mod-uuid',
-          role: { name: 'moderator' } as any,
+          role: { name: 'moderator' } as Role,
         })
         .buildTargetUser();
       const targetUser = userTestBuilder
@@ -43,7 +44,7 @@ describe('ModeratorUserStrategy', () => {
       const currentUser = userTestBuilder
         .withTargetUser({
           uuid: 'mod-uuid',
-          role: { name: 'moderator' } as any,
+          role: { name: 'moderator' } as Role,
         })
         .buildTargetUser();
       const targetUser = userTestBuilder
@@ -64,7 +65,7 @@ describe('ModeratorUserStrategy', () => {
       const currentUser = userTestBuilder
         .withTargetUser({
           uuid: 'mod-uuid',
-          role: { name: 'moderator' } as any,
+          role: { name: 'moderator' } as Role,
         })
         .buildTargetUser();
       const targetUser = userTestBuilder
@@ -85,7 +86,7 @@ describe('ModeratorUserStrategy', () => {
       const currentUser = userTestBuilder
         .withTargetUser({
           uuid: 'mod-uuid',
-          role: { name: 'moderator' } as any,
+          role: { name: 'moderator' } as Role,
         })
         .buildTargetUser();
       const targetUser = userTestBuilder

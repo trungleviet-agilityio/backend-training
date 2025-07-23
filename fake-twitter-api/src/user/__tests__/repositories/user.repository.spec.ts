@@ -7,7 +7,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { UserRepository } from '../../repositories/user.repository';
 import { User } from '../../../database/entities/user.entity';
 import { Post } from '../../../database/entities/post.entity';
@@ -160,7 +160,11 @@ describe('UserRepository', () => {
         })
         .buildTargetUser();
 
-      userRepository.update.mockResolvedValue({ affected: 1 } as any);
+      userRepository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      } as unknown as UpdateResult);
       userRepository.findOne.mockResolvedValue(updatedUser);
 
       // Act

@@ -1,23 +1,24 @@
 /**
- * Moderator Post Strategy Tests
+ * Admin Post Strategy Tests
  *
- * Tests the ModeratorPostStrategy class
+ * Tests the AdminPostStrategy class
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ModeratorPostStrategy } from '../../strategies/post-moderator.strategy';
+import { AdminPostStrategy } from '../../strategies/post-admin.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
 import { PostTestBuilder } from '../mocks/post-test.builder';
+import { Role } from '../../../database/entities/role.entity';
 
-describe('ModeratorPostStrategy', () => {
-  let strategy: ModeratorPostStrategy;
+describe('AdminPostStrategy', () => {
+  let strategy: AdminPostStrategy;
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
-      providers: [ModeratorPostStrategy],
+      providers: [AdminPostStrategy],
     }).compile();
 
-    strategy = moduleRef.get<ModeratorPostStrategy>(ModeratorPostStrategy);
+    strategy = moduleRef.get<AdminPostStrategy>(AdminPostStrategy);
   });
 
   afterEach(() => {
@@ -25,11 +26,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canCreatePost', () => {
-    it('should allow moderators to create posts', () => {
+    it('should allow admin to create posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.canCreatePost(scenario.currentUser!);
@@ -38,10 +37,10 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow any moderator to create posts', () => {
+    it('should allow admin to create posts regardless of user data', () => {
       // Arrange
       const user = PostMockProvider.createMockUser({
-        role: { name: 'moderator' } as any,
+        role: { name: 'admin' } as Role,
       });
 
       // Act
@@ -53,11 +52,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canViewPost', () => {
-    it('should allow moderators to view any post', () => {
+    it('should allow admin to view any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.canViewPost(
@@ -69,11 +66,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to view unpublished posts', () => {
+    it('should allow admin to view unpublished posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.targetPost!.isPublished = false;
 
       // Act
@@ -86,11 +81,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to view posts from other users', () => {
+    it('should allow admin to view posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -105,11 +98,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canUpdatePost', () => {
-    it('should allow moderators to update any post', () => {
+    it('should allow admin to update any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.canUpdatePost(
@@ -121,11 +112,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to update posts from other users', () => {
+    it('should allow admin to update posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -140,11 +129,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('canDeletePost', () => {
-    it('should allow moderators to delete any post', () => {
+    it('should allow admin to delete any post', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.canDeletePost(
@@ -156,11 +143,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to delete posts from other users', () => {
+    it('should allow admin to delete posts from other users', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.targetPost!.authorUuid = 'different-user-uuid';
 
       // Act
@@ -175,11 +160,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('validateCreateData', () => {
-    it('should allow moderators to create any type of post', () => {
+    it('should allow admin to create any type of post', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.validateCreateData(
@@ -191,11 +174,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to create unpublished posts', () => {
+    it('should allow admin to create unpublished posts', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.createDto!.isPublished = false;
 
       // Act
@@ -210,11 +191,9 @@ describe('ModeratorPostStrategy', () => {
   });
 
   describe('validateUpdateData', () => {
-    it('should allow moderators to update any field', () => {
+    it('should allow admin to update any field', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
 
       // Act
       const result = strategy.validateUpdateData(
@@ -227,11 +206,9 @@ describe('ModeratorPostStrategy', () => {
       expect(result).toBe(true);
     });
 
-    it('should allow moderators to update publishing status', () => {
+    it('should allow admin to update publishing status', () => {
       // Arrange
-      const scenario = new PostTestBuilder()
-        .withModeratorUserScenario()
-        .build();
+      const scenario = new PostTestBuilder().withAdminUserScenario().build();
       scenario.updateDto!.isPublished = false;
 
       // Act

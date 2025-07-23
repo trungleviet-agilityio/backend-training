@@ -30,7 +30,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards';
-import { Public, ResponseMessage } from '../common';
+import { ResponseMessage } from '../common';
+import { Public } from './decorators';
 
 @ApiTags('Authentication')
 @Controller('auth')
