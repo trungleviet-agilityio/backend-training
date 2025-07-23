@@ -4,6 +4,7 @@
  * Comprehensive scenario building for post module tests
  */
 
+import { Role } from '../../../database/entities/role.entity';
 import { Post } from '../../../database/entities/post.entity';
 import { User } from '../../../database/entities/user.entity';
 import { CreatePostDto, UpdatePostDto } from '../../dto';
@@ -91,7 +92,7 @@ export class PostTestBuilder {
 
   withAdminUserScenario(): this {
     this.scenario.currentUser = PostMockProvider.createMockUser({
-      role: { name: 'admin' } as any,
+      role: { name: 'admin' } as Role,
     });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
@@ -101,7 +102,7 @@ export class PostTestBuilder {
 
   withRegularUserScenario(): this {
     this.scenario.currentUser = PostMockProvider.createMockUser({
-      role: { name: 'user' } as any,
+      role: { name: 'user' } as Role,
     });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();
@@ -111,7 +112,7 @@ export class PostTestBuilder {
 
   withModeratorUserScenario(): this {
     this.scenario.currentUser = PostMockProvider.createMockUser({
-      role: { name: 'moderator' } as any,
+      role: { name: 'moderator' } as Role,
     });
     this.scenario.targetPost = PostMockProvider.createMockPost();
     this.scenario.createDto = PostMockProvider.createMockCreatePostDto();

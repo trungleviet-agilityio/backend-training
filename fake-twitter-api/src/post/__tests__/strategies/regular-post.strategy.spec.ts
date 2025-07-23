@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RegularPostStrategy } from '../../strategies/post-regular.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
 import { PostTestBuilder } from '../mocks/post-test.builder';
+import { Role } from '../../../database/entities/role.entity';
 
 describe('RegularPostStrategy', () => {
   let strategy: RegularPostStrategy;
@@ -39,7 +40,7 @@ describe('RegularPostStrategy', () => {
     it('should allow any user to create posts', () => {
       // Arrange
       const user = PostMockProvider.createMockUser({
-        role: { name: 'user' } as any,
+        role: { name: 'user' } as Role,
       });
 
       // Act

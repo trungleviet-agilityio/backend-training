@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AdminPostStrategy } from '../../strategies/post-admin.strategy';
 import { PostMockProvider } from '../mocks/post-mock.provider';
 import { PostTestBuilder } from '../mocks/post-test.builder';
+import { Role } from '../../../database/entities/role.entity';
 
 describe('AdminPostStrategy', () => {
   let strategy: AdminPostStrategy;
@@ -39,7 +40,7 @@ describe('AdminPostStrategy', () => {
     it('should allow admin to create posts regardless of user data', () => {
       // Arrange
       const user = PostMockProvider.createMockUser({
-        role: { name: 'admin' } as any,
+        role: { name: 'admin' } as Role,
       });
 
       // Act

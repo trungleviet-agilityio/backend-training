@@ -29,8 +29,10 @@ describe('AuthModule', () => {
     const mockConfigService = AuthMockProvider.createConfigService();
     const mockUserRepository = AuthMockProvider.createUserRepository();
     const mockRoleRepository = AuthMockProvider.createRoleRepository();
-    const mockAuthSessionRepository = AuthMockProvider.createAuthSessionRepository();
-    const mockAuthPasswordResetRepository = AuthMockProvider.createAuthPasswordResetRepository();
+    const mockAuthSessionRepository =
+      AuthMockProvider.createAuthSessionRepository();
+    const mockAuthPasswordResetRepository =
+      AuthMockProvider.createAuthPasswordResetRepository();
     const mockDataSource = AuthMockProvider.createDataSource();
 
     // Test the module structure by providing all the same providers as AuthModule
@@ -139,9 +141,8 @@ describe('AuthModule', () => {
   });
 
   it('should provide AuthOperationFactory', () => {
-    const authOperationFactory = module.get<AuthOperationFactory>(
-      AuthOperationFactory,
-    );
+    const authOperationFactory =
+      module.get<AuthOperationFactory>(AuthOperationFactory);
     expect(authOperationFactory).toBeDefined();
     expect(authOperationFactory).toBeInstanceOf(AuthOperationFactory);
   });
@@ -193,9 +194,12 @@ describe('AuthModule', () => {
       getRepositoryToken(AuthPasswordReset),
     );
     const configService = module.get<ConfigService>(ConfigService);
-    const authOperationFactory = module.get<AuthOperationFactory>(AuthOperationFactory);
+    const authOperationFactory =
+      module.get<AuthOperationFactory>(AuthOperationFactory);
     const authMapperService = module.get<AuthMapperService>(AuthMapperService);
-    const authPasswordResetService = module.get<AuthPasswordResetService>(AuthPasswordResetService);
+    const authPasswordResetService = module.get<AuthPasswordResetService>(
+      AuthPasswordResetService,
+    );
 
     expect(userRepository).toBeDefined();
     expect(roleRepository).toBeDefined();

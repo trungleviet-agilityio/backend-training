@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PostMapperService } from '../services/post-mapper.service';
 import { PostMockProvider } from './mocks/post-mock.provider';
 import { PostTestBuilder } from './mocks/post-test.builder';
+import { Post } from '../../database/entities/post.entity';
 
 describe('PostMapperService', () => {
   let service: PostMapperService;
@@ -117,7 +118,7 @@ describe('PostMapperService', () => {
 
     it('should handle empty posts list', () => {
       // Arrange
-      const posts: any[] = [];
+      const posts: Post[] = [];
 
       // Act
       const result = service.toPostDtoList(posts);

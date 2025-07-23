@@ -31,7 +31,7 @@ export class PostMockProvider {
         lastName: 'User',
         email: 'test@example.com',
         role: { name: 'user' },
-      } as any,
+      } as User,
       comments: [],
     };
 
@@ -49,7 +49,7 @@ export class PostMockProvider {
       lastName: 'User',
       email: 'test@example.com',
       role: { name: 'user' },
-    } as any;
+    } as User;
 
     return { ...defaultUser, ...overrides } as User;
   }
@@ -87,12 +87,12 @@ export class PostMockProvider {
    */
   static createPostStrategy(): IPostOperationStrategy {
     return {
-      canCreatePost: jest.fn().mockReturnValue(true) as any,
-      canViewPost: jest.fn().mockReturnValue(true) as any,
-      canUpdatePost: jest.fn().mockReturnValue(true) as any,
-      canDeletePost: jest.fn().mockReturnValue(true) as any,
-      validateCreateData: jest.fn().mockReturnValue(true) as any,
-      validateUpdateData: jest.fn().mockReturnValue(true) as any,
+      canCreatePost: jest.fn().mockReturnValue(true) as jest.Mock,
+      canViewPost: jest.fn().mockReturnValue(true) as jest.Mock,
+      canUpdatePost: jest.fn().mockReturnValue(true) as jest.Mock,
+      canDeletePost: jest.fn().mockReturnValue(true) as jest.Mock,
+      validateCreateData: jest.fn().mockReturnValue(true) as jest.Mock,
+      validateUpdateData: jest.fn().mockReturnValue(true) as jest.Mock,
     };
   }
 

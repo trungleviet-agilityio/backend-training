@@ -38,7 +38,9 @@ export class AuthMockProvider {
   /**
    * Creates a mock auth operation factory
    */
-  static createAuthOperationFactory(): jest.Mocked<Partial<AuthOperationFactory>> {
+  static createAuthOperationFactory(): jest.Mocked<
+    Partial<AuthOperationFactory>
+  > {
     return {
       createStrategy: jest.fn(),
     } as jest.Mocked<Partial<AuthOperationFactory>>;
@@ -47,7 +49,9 @@ export class AuthMockProvider {
   /**
    * Creates a mock auth password reset service
    */
-  static createAuthPasswordResetService(): jest.Mocked<Partial<AuthPasswordResetService>> {
+  static createAuthPasswordResetService(): jest.Mocked<
+    Partial<AuthPasswordResetService>
+  > {
     return {
       forgotPassword: jest.fn(),
       resetPassword: jest.fn(),
@@ -57,7 +61,9 @@ export class AuthMockProvider {
   /**
    * Creates a standardized mock repository with common methods
    */
-  private static createBaseRepository<T extends ObjectLiteral>(): jest.Mocked<Partial<Repository<T>>> {
+  private static createBaseRepository<T extends ObjectLiteral>(): jest.Mocked<
+    Partial<Repository<T>>
+  > {
     return {
       findOne: jest.fn(),
       find: jest.fn(),
@@ -68,23 +74,26 @@ export class AuthMockProvider {
       softDelete: jest.fn(),
       restore: jest.fn(),
       count: jest.fn(),
-      createQueryBuilder: jest.fn(() => ({
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        innerJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        addOrderBy: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        offset: jest.fn().mockReturnThis(),
-        getOne: jest.fn(),
-        getMany: jest.fn(),
-        getManyAndCount: jest.fn(),
-        getRawOne: jest.fn(),
-        getRawMany: jest.fn(),
-        execute: jest.fn(),
-      } as any)),
+      createQueryBuilder: jest.fn(
+        () =>
+          ({
+            leftJoinAndSelect: jest.fn().mockReturnThis(),
+            innerJoinAndSelect: jest.fn().mockReturnThis(),
+            where: jest.fn().mockReturnThis(),
+            andWhere: jest.fn().mockReturnThis(),
+            orWhere: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
+            addOrderBy: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            offset: jest.fn().mockReturnThis(),
+            getOne: jest.fn(),
+            getMany: jest.fn(),
+            getManyAndCount: jest.fn(),
+            getRawOne: jest.fn(),
+            getRawMany: jest.fn(),
+            execute: jest.fn(),
+          }) as any,
+      ),
     } as jest.Mocked<Partial<Repository<T>>>;
   }
 
@@ -105,14 +114,18 @@ export class AuthMockProvider {
   /**
    * Creates a mock auth session repository
    */
-  static createAuthSessionRepository(): jest.Mocked<Partial<Repository<AuthSession>>> {
+  static createAuthSessionRepository(): jest.Mocked<
+    Partial<Repository<AuthSession>>
+  > {
     return this.createBaseRepository<AuthSession>();
   }
 
   /**
    * Creates a mock auth password reset repository
    */
-  static createAuthPasswordResetRepository(): jest.Mocked<Partial<Repository<AuthPasswordReset>>> {
+  static createAuthPasswordResetRepository(): jest.Mocked<
+    Partial<Repository<AuthPasswordReset>>
+  > {
     return this.createBaseRepository<AuthPasswordReset>();
   }
 

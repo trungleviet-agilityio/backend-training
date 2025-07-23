@@ -1,6 +1,5 @@
 /**
  * PostModule Unit Tests
- * Comprehensive testing following NestJS best practices and design patterns
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -17,6 +16,7 @@ import {
 } from '../strategies';
 import { Post } from '../../database/entities/post.entity';
 import { User } from '../../database/entities/user.entity';
+import { Repository } from 'typeorm';
 
 describe('PostModule', () => {
   let module: TestingModule;
@@ -26,9 +26,9 @@ describe('PostModule', () => {
       imports: [PostModule],
     })
       .overrideProvider(getRepositoryToken(Post))
-      .useValue({})
+      .useValue({} as Repository<Post>)
       .overrideProvider(getRepositoryToken(User))
-      .useValue({})
+      .useValue({} as Repository<User>)
       .compile();
   });
 

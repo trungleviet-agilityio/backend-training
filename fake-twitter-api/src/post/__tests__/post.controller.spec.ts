@@ -10,11 +10,12 @@ import { PostService } from '../services/post.service';
 import { PostMapperService } from '../services/post-mapper.service';
 import { PostMockProvider } from './mocks/post-mock.provider';
 import { PostTestBuilder } from './mocks/post-test.builder';
+import { PostDto } from '../dto';
 
 describe('PostController', () => {
   let controller: PostController;
-  let postService: any;
-  let postMapper: any;
+  let postService: jest.Mocked<PostService>;
+  let postMapper: jest.Mocked<PostMapperService>;
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -41,8 +42,9 @@ describe('PostController', () => {
     }).compile();
 
     controller = moduleRef.get<PostController>(PostController);
-    postService = moduleRef.get<any>(PostService);
-    postMapper = moduleRef.get<any>(PostMapperService);
+    postService = moduleRef.get<jest.Mocked<PostService>>(PostService);
+    postMapper =
+      moduleRef.get<jest.Mocked<PostMapperService>>(PostMapperService);
   });
 
   afterEach(() => {
@@ -60,8 +62,10 @@ describe('PostController', () => {
       const mockPostDto = { uuid: 'post-uuid', content: 'Test post' };
       const mockPostDtoList = [mockPostDto];
 
-      postService.getAllPosts.mockResolvedValue(scenario.paginatedPosts);
-      postMapper.toPostDtoList.mockReturnValue(mockPostDtoList);
+      postService.getAllPosts.mockResolvedValue(scenario.paginatedPosts!);
+      postMapper.toPostDtoList.mockReturnValue(
+        mockPostDtoList as unknown as PostDto[],
+      );
 
       // Act
       const result = await controller.getAllPosts(1, 20);
@@ -82,7 +86,7 @@ describe('PostController', () => {
         .withPaginatedPosts(posts, 1, 20, 1)
         .build();
 
-      postService.getAllPosts.mockResolvedValue(scenario.paginatedPosts);
+      postService.getAllPosts.mockResolvedValue(scenario.paginatedPosts!);
       postMapper.toPostDtoList.mockReturnValue([]);
 
       // Act
@@ -102,7 +106,7 @@ describe('PostController', () => {
       const mockPostDto = { uuid: 'post-uuid', content: 'Test post' };
 
       postService.createPost.mockResolvedValue(mockPost);
-      postMapper.toPostDto.mockReturnValue(mockPostDto);
+      postMapper.toPostDto.mockReturnValue(mockPostDto as unknown as PostDto);
 
       // Act
       const result = await controller.createPost(
@@ -136,8 +140,8 @@ describe('PostController', () => {
 
       const mockPostDto = { uuid: 'post-uuid', content: 'Test post' };
 
-      postService.findById.mockResolvedValue(scenario.targetPost);
-      postMapper.toPostDto.mockReturnValue(mockPostDto);
+      postService.findById.mockResolvedValue(scenario.targetPost!);
+      postMapper.toPostDto.mockReturnValue(mockPostDto as unknown as PostDto);
 
       // Act
       const result = await controller.getPost(
@@ -173,7 +177,7 @@ describe('PostController', () => {
       const mockPostDto = { uuid: 'post-uuid', content: 'Updated content' };
 
       postService.updatePost.mockResolvedValue(updatedPost);
-      postMapper.toPostDto.mockReturnValue(mockPostDto);
+      postMapper.toPostDto.mockReturnValue(mockPostDto as unknown as PostDto);
 
       // Act
       const result = await controller.updatePost(
