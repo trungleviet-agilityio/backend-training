@@ -67,7 +67,7 @@ export class PostController {
 
     const result = await this.postService.getAllPosts(page, limit);
     return {
-      data: this.postMapper.toPostDtoList(result.data),
+      items: this.postMapper.toPostDtoList(result.data),
       meta: result.meta,
     };
   }

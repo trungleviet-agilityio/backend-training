@@ -74,7 +74,7 @@ export class CommentController {
       limit,
     );
     return {
-      data: this.commentMapper.toCommentDtoList(result.data),
+      items: this.commentMapper.toCommentDtoList(result.data),
       meta: result.meta,
     };
   }
@@ -206,7 +206,7 @@ export class CommentController {
       limit,
     );
     return {
-      data: this.commentMapper.toCommentDtoList(result.data),
+      items: this.commentMapper.toCommentDtoList(result.data),
       meta: result.meta,
     };
   }

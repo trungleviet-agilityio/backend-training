@@ -74,7 +74,7 @@ describe('PostController', () => {
       expect(postService.getAllPosts).toHaveBeenCalledWith(1, 20);
       expect(postMapper.toPostDtoList).toHaveBeenCalledWith(posts);
       expect(result).toEqual({
-        data: mockPostDtoList,
+        items: mockPostDtoList,
         meta: scenario.paginatedPosts!.meta,
       });
     });

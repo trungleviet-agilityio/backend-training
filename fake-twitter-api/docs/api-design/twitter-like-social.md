@@ -31,9 +31,8 @@ Authorization: Bearer <access_token>
 {
   "success": true,
   "data": <response_data>,
-  "meta": {
-    "timestamp": "2024-01-15T10:30:00Z"
-  }
+  "timestamp": "2024-01-15T10:30:00Z",
+  "path": "/api/v1/..."
 }
 ```
 
@@ -41,10 +40,11 @@ Authorization: Bearer <access_token>
 ```json
 {
   "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human readable message"
-  }
+  "message": "Human readable message",
+  "errors": ["Error details"],
+  "statusCode": 400,
+  "timestamp": "...",
+  "path": "/api/v1/..."
 }
 ```
 
@@ -53,74 +53,191 @@ Query: `?page=1&limit=20`
 ```json
 {
   "success": true,
-  "data": [...],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 100,
-    "totalPages": 5
-  }
+  "data": {
+    "items": [...],
+    "meta": {
+      "page": 1,
+      "limit": 20,
+      "total": 100,
+      "totalPages": 5
+    }
+  },
+  "timestamp": "...",
+  "path": "/api/v1/posts?page=1&limit=20"
 }
 ```
 
-## 3. Authentication Module
-
-| Method | Endpoint | Purpose | Request | Response | Auth Required |
-|--------|----------|---------|---------|----------|---------------|
-| POST | `/api/v1/auth/register` | User registration | `{ "email": "john@example.com", "username": "johndoe", "password": "SecurePass123!", "firstName": "John", "lastName": "Doe" }` | `{ "success": true, "data": { "access_token": "eyJhbGci...", "refresh_token": "eyJhbGci...", "user": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "email": "john@example.com", "username": "johndoe", "firstName": "John", "lastName": "Doe", "role": { "name": "user" } } } }` | No |
-| POST | `/api/v1/auth/login` | User login | `{ "email": "john@example.com", "password": "SecurePass123!" }` | `{ "success": true, "data": { "access_token": "eyJhbGci...", "refresh_token": "eyJhbGci...", "user": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "username": "johndoe", "firstName": "John", "lastName": "Doe", "role": { "name": "user" } } } }` | No |
-| POST | `/api/v1/auth/refresh` | Refresh tokens | `{ "refresh_token": "eyJhbGci..." }` | `{ "success": true, "data": { "access_token": "eyJhbGci...", "refresh_token": "eyJhbGci..." } }` | No |
-| POST | `/api/v1/auth/logout` | User logout | `{}` | `{ "success": true, "data": { "message": "Successfully logged out" } }` | Yes |
-| POST | `/api/v1/auth/forgot-password` | Request password reset | `{ "email": "john@example.com" }` | `{ "success": true, "data": { "message": "Password reset email sent" } }` | No |
-| POST | `/api/v1/auth/reset-password` | Reset password | `{ "token": "reset_token_here", "password": "NewSecurePass123!" }` | `{ "success": true, "data": { "message": "Password reset successfully" } }` | No |
-
-## 4. User Management Module
-
-| Method | Endpoint | Purpose | Request | Response | Auth Required |
-|--------|----------|---------|---------|----------|---------------|
-| GET | `/api/v1/users/{uuid}` | Get user profile | N/A | `{ "success": true, "data": { "user": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "username": "johndoe", "firstName": "John", "lastName": "Doe", "bio": "Software developer", "avatar_url": "https://cdn.example.com/avatar.jpg", "role": { "name": "user" }, "stats": { "posts_count": 42, "comments_count": 156 }, "created_at": "2024-01-15T10:30:00Z" } } }` | Yes |
-| PATCH | `/api/v1/users/{uuid}` | Update user profile | `{ "firstName": "John", "lastName": "Smith", "bio": "Senior Software Developer" }` | `{ "success": true, "data": { "user": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "username": "johndoe", "firstName": "John", "lastName": "Smith", "bio": "Senior Software Developer", "updated_at": "2024-01-15T11:30:00Z" } } }` | Yes |
-| GET | `/api/v1/users/{uuid}/posts` | Get user's posts | N/A | `{ "success": true, "data": [{ "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Hello, fake Twitter!", "author": { "username": "johndoe", "firstName": "John" }, "stats": { "likes_count": 10, "comments_count": 5 }, "created_at": "2024-01-15T10:30:00Z" }], "meta": { "page": 1, "limit": 20, "total": 42, "totalPages": 3 } }` | Yes |
-| GET | `/api/v1/users/{uuid}/comments` | Get user's comments | N/A | `{ "success": true, "data": [{ "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Great post!", "post": { "uuid": "123e4567-e89b-12d3-a456-426614174002", "content": "Original post...", "author": { "username": "janedoe" } }, "stats": { "likes_count": 3 }, "created_at": "2024-01-15T10:30:00Z" }], "meta": { "page": 1, "limit": 20, "total": 156, "totalPages": 8 } }` | Yes |
+---
 
 ## 5. Post Management Module
 
-| Method | Endpoint | Purpose | Request | Response | Auth Required |
-|--------|----------|---------|---------|----------|---------------|
-| GET | `/api/v1/posts` | Get all posts | N/A | `{ "success": true, "data": [{ "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Hello, fake Twitter!", "author": { "uuid": "123e4567-e89b-12d3-a456-426614174001", "username": "johndoe", "firstName": "John", "lastName": "Doe", "avatar_url": "https://cdn.example.com/avatar.jpg" }, "stats": { "likes_count": 10, "comments_count": 5 }, "is_published": true, "created_at": "2024-01-15T10:30:00Z" }], "meta": { "page": 1, "limit": 20, "total": 500, "totalPages": 25 } }` | Yes |
-| POST | `/api/v1/posts` | Create new post | `{ "content": "Hello, fake Twitter!", "is_published": true }` | `{ "success": true, "data": { "post": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Hello, fake Twitter!", "author": { "uuid": "123e4567-e89b-12d3-a456-426614174001", "username": "johndoe", "firstName": "John", "lastName": "Doe" }, "stats": { "likes_count": 0, "comments_count": 0 }, "is_published": true, "created_at": "2024-01-15T10:30:00Z" } } }` | Yes |
-| GET | `/api/v1/posts/{uuid}` | Get single post | N/A | `{ "success": true, "data": { "post": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Hello, fake Twitter!", "author": { "username": "johndoe", "firstName": "John", "lastName": "Doe", "avatar_url": "https://cdn.example.com/avatar.jpg" }, "stats": { "likes_count": 10, "comments_count": 5 }, "is_published": true, "created_at": "2024-01-15T10:30:00Z" } } }` | Yes |
-| PATCH | `/api/v1/posts/{uuid}` | Update post | `{ "content": "Updated post content!", "is_published": true }` | `{ "success": true, "data": { "post": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Updated post content!", "updated_at": "2024-01-15T11:30:00Z" } } }` | Yes |
-| DELETE | `/api/v1/posts/{uuid}` | Delete post | N/A | `{ "success": true, "data": { "message": "Post deleted successfully" } }` | Yes |
+### Permissions
+- **Admin**: Full access (CRUD any post)
+- **Moderator**: CRUD any post
+- **User**: CRUD own posts, view published/own posts
+
+### Endpoints
+
+| Method | Endpoint | Purpose | Auth Required | Status Codes |
+|--------|----------|---------|--------------|--------------|
+| GET | `/api/v1/posts` | Get all posts | Yes | 200, 401, 500 |
+| POST | `/api/v1/posts` | Create new post | Yes | 201, 400, 401, 403 |
+| GET | `/api/v1/posts/{uuid}` | Get single post | Yes | 200, 401, 404 |
+| PATCH | `/api/v1/posts/{uuid}` | Update post | Yes | 200, 400, 401, 403, 404 |
+| DELETE | `/api/v1/posts/{uuid}` | Delete post | Yes | 200, 401, 403, 404 |
+
+#### GET /api/v1/posts
+**Request Example:**
+```
+GET /api/v1/posts?page=1&limit=20
+Authorization: Bearer <access_token>
+```
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "uuid": "...",
+        "content": "Hello, fake Twitter!",
+        "author": { "uuid": "...", "username": "johndoe", "firstName": "John", "lastName": "Doe", "avatarUrl": "..." },
+        "stats": { "likesCount": 10, "commentsCount": 5 },
+        "isPublished": true,
+        "createdAt": "2024-01-15T10:30:00Z",
+        "updatedAt": "2024-01-15T11:30:00Z"
+      }
+    ],
+    "meta": { "page": 1, "limit": 20, "total": 100, "totalPages": 5 }
+  },
+  "timestamp": "...",
+  "path": "/api/v1/posts?page=1&limit=20"
+}
+```
+**Error Response (Unauthorized):**
+```json
+{
+  "success": false,
+  "message": "No valid authorization header",
+  "errors": ["No valid authorization header"],
+  "statusCode": 401,
+  "timestamp": "...",
+  "path": "/api/v1/posts?page=1&limit=20"
+}
+```
+
+#### POST /api/v1/posts
+**Request Example:**
+```json
+{
+  "content": "Hello, fake Twitter!",
+  "isPublished": true
+}
+```
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "post": {
+      "uuid": "...",
+      "content": "Hello, fake Twitter!",
+      "author": { "uuid": "...", "username": "johndoe", "firstName": "John", "lastName": "Doe" },
+      "stats": { "likesCount": 0, "commentsCount": 0 },
+      "isPublished": true,
+      "createdAt": "2024-01-15T10:30:00Z"
+    }
+  },
+  "timestamp": "...",
+  "path": "/api/v1/posts"
+}
+```
+
+#### Field Descriptions (Post)
+- `uuid`: string, post ID
+- `content`: string, post content
+- `author`: object, post author (uuid, username, firstName, lastName, avatarUrl)
+- `stats`: object, likesCount (int), commentsCount (int)
+- `isPublished`: boolean
+- `createdAt`, `updatedAt`: ISO date strings
+
+---
 
 ## 6. Comment Management Module
 
-| Method | Endpoint | Purpose | Request | Response | Auth Required |
-|--------|----------|---------|---------|----------|---------------|
-| GET | `/api/v1/posts/{uuid}/comments` | Get post comments | N/A | `{ "success": true, "data": [{ "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Great post!", "author": { "uuid": "123e4567-e89b-12d3-a456-426614174001", "username": "janedoe", "firstName": "Jane", "lastName": "Doe", "avatar_url": "https://cdn.example.com/avatar.jpg" }, "post_uuid": "123e4567-e89b-12d3-a456-426614174002", "parent_uuid": null, "depth_level": 0, "stats": { "likes_count": 0 }, "replies": [], "created_at": "2024-01-15T10:30:00Z" }], "meta": { "page": 1, "limit": 20, "total": 5, "totalPages": 1 } }` | Yes |
-| POST | `/api/v1/posts/{uuid}/comments` | Create comment | `{ "content": "Great post!", "parent_uuid": null }` | `{ "success": true, "data": { "comment": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Great post!", "author": { "uuid": "123e4567-e89b-12d3-a456-426614174001", "username": "janedoe", "firstName": "Jane", "lastName": "Doe" }, "post_uuid": "123e4567-e89b-12d3-a456-426614174002", "parent_uuid": null, "depth_level": 0, "stats": { "likes_count": 0 }, "created_at": "2024-01-15T10:30:00Z" } } }` | Yes |
-| PATCH | `/api/v1/comments/{uuid}` | Update comment | `{ "content": "Updated comment content!" }` | `{ "success": true, "data": { "comment": { "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Updated comment content!", "updated_at": "2024-01-15T11:30:00Z" } } }` | Yes |
-| DELETE | `/api/v1/comments/{uuid}` | Delete comment | N/A | `{ "success": true, "data": { "message": "Comment deleted successfully" } }` | Yes |
-| GET | `/api/v1/comments/{uuid}/replies` | Get comment replies | N/A | `{ "success": true, "data": [{ "uuid": "123e4567-e89b-12d3-a456-426614174000", "content": "Reply to comment", "author": { "username": "bobsmith", "firstName": "Bob" }, "parent_uuid": "123e4567-e89b-12d3-a456-426614174001", "depth_level": 1, "stats": { "likes_count": 2 }, "created_at": "2024-01-15T10:35:00Z" }], "meta": { "page": 1, "limit": 20, "total": 3, "totalPages": 1 } }` | Yes |
+### Permissions
+- **Admin/Moderator**: CRUD any comment
+- **User**: CRUD own comments, create on any post
 
-## 7. Key Relationships Implementation
+### Endpoints
+| Method | Endpoint | Purpose | Auth Required | Status Codes |
+|--------|----------|---------|--------------|--------------|
+| GET | `/api/v1/posts/{uuid}/comments` | Get post comments | Yes | 200, 401, 404 |
+| POST | `/api/v1/posts/{uuid}/comments` | Create comment | Yes | 201, 400, 401, 403, 404 |
+| PATCH | `/api/v1/comments/{uuid}` | Update comment | Yes | 200, 400, 401, 403, 404 |
+| DELETE | `/api/v1/comments/{uuid}` | Delete comment | Yes | 200, 401, 403, 404 |
+| GET | `/api/v1/comments/{uuid}/replies` | Get comment replies | Yes | 200, 401, 404 |
 
-### **Has-Many-Through: User → Comments (through Posts)**
-**Endpoint:** `GET /api/v1/users/{uuid}/comments`
+#### GET /api/v1/posts/{uuid}/comments
+**Request Example:**
+```
+GET /api/v1/posts/abc-123/comments?page=1&limit=20
+Authorization: Bearer <access_token>
+```
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "uuid": "...",
+        "content": "Great post!",
+        "author": { "uuid": "...", "username": "janedoe", "firstName": "Jane", "lastName": "Doe", "avatarUrl": "..." },
+        "postUuid": "...",
+        "parentUuid": null,
+        "depthLevel": 0,
+        "stats": { "likesCount": 0 },
+        "replies": [],
+        "createdAt": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "meta": { "page": 1, "limit": 20, "total": 5, "totalPages": 1 }
+  },
+  "timestamp": "...",
+  "path": "/api/v1/posts/abc-123/comments?page=1&limit=20"
+}
+```
+**Error Response (Not Found):**
+```json
+{
+  "success": false,
+  "message": "Post not found",
+  "errors": ["Post not found"],
+  "statusCode": 404,
+  "timestamp": "...",
+  "path": "/api/v1/posts/abc-123/comments?page=1&limit=20"
+}
+```
 
-This implements the relationship described in the blog post where "Users resource is related to Comments resource through Posts resource. This relation enables us to get all comments written by one user."
+#### Field Descriptions (Comment)
+- `uuid`: string, comment ID
+- `content`: string, comment content
+- `author`: object, comment author (uuid, username, firstName, lastName, avatarUrl)
+- `postUuid`: string, post ID
+- `parentUuid`: string or null, parent comment ID
+- `depthLevel`: int, nesting level
+- `stats`: object, likesCount (int)
+- `replies`: array, nested replies
+- `createdAt`, `updatedAt`: ISO date strings
 
-### **Comment Threading**
-**Self-referencing relationship:** `comments.parent_uuid → comments.uuid`
-- `depth_level` prevents infinite nesting
-- `parent_uuid = null` for top-level comments
-- Replies reference parent comment via `parent_uuid`
+---
 
-### **Role-Based Access Control**
-**Relationship:** `roles.uuid → users.role_uuid`
-- **admin**: Full system access
-- **user**: Standard user permissions
-- **moderator**: Content moderation permissions
+## 7. Interactive API Documentation
+
+- Visit [Swagger UI](http://localhost:5555/api/v1/docs) for live, interactive API docs and to try endpoints with authentication.
+
+---
 
 ## 8. Error Codes
 
@@ -132,6 +249,8 @@ This implements the relationship described in the blog post where "Users resourc
 | `NOT_FOUND` | 404 | Resource not found |
 | `CONFLICT` | 409 | Resource already exists |
 | `INTERNAL_ERROR` | 500 | Server error |
+
+---
 
 ## 9. Implementation Notes
 
