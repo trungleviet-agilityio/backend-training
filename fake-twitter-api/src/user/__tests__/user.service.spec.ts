@@ -4,7 +4,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from '../services/user.service';
 import { UserOperationFactory } from '../factories/user-operation.factory';
@@ -14,14 +14,16 @@ import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
+import { Repository, UpdateResult } from 'typeorm';
+import { Role } from '../../database/entities/role.entity';
 
 describe('UserService', () => {
   let service: UserService;
   let userOperationFactory: jest.Mocked<UserOperationFactory>;
   let userMapperService: jest.Mocked<UserMapperService>;
-  let userRepository: jest.Mocked<any>;
-  let postRepository: jest.Mocked<any>;
-  let commentRepository: jest.Mocked<any>;
+  let userRepository: jest.Mocked<Repository<User>>;
+  let postRepository: jest.Mocked<Repository<Post>>;
+  let commentRepository: jest.Mocked<Repository<Comment>>;
 
   beforeEach(async () => {
     const mockUserRepository = UserMockProvider.createUserRepository();
@@ -64,7 +66,7 @@ describe('UserService', () => {
         .withTargetUser(UserMockProvider.createMockUser())
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
 
       // Act
       const result = await service.findById(scenario.targetUser!.uuid);
@@ -97,7 +99,7 @@ describe('UserService', () => {
         )
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
 
       // Act
       const result = await service.findByEmail('test@example.com');
@@ -130,7 +132,7 @@ describe('UserService', () => {
         )
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
 
       // Act
       const result = await service.findByUsername('testuser');
@@ -163,7 +165,7 @@ describe('UserService', () => {
         .withUserProfile({ uuid: 'user-uuid-123', username: 'testuser' })
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       postRepository.count.mockResolvedValue(scenario.userStats!.postsCount);
       commentRepository.count.mockResolvedValue(
         scenario.userStats!.commentsCount,
@@ -196,9 +198,11 @@ describe('UserService', () => {
       mockStrategy.canUpdateUser.mockReturnValue(true);
       mockStrategy.validateUpdateData.mockReturnValue(true);
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-      userRepository.update.mockResolvedValue({ affected: 1 } as any);
+      userRepository.update.mockResolvedValue({
+        affected: 1,
+      } as unknown as UpdateResult);
       userMapperService.toUserProfileDto.mockReturnValue(scenario.userProfile!);
       postRepository.count.mockResolvedValue(0);
       commentRepository.count.mockResolvedValue(0);
@@ -242,7 +246,7 @@ describe('UserService', () => {
         throw scenario.error;
       });
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
@@ -265,7 +269,7 @@ describe('UserService', () => {
         .withPaginatedPosts(posts, 1, 10, 1)
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       postRepository.findAndCount.mockResolvedValue([posts, 1]);
 
       // Act
@@ -295,7 +299,7 @@ describe('UserService', () => {
         .withUserStats({ postsCount: 5, commentsCount: 10 })
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       postRepository.count.mockResolvedValue(scenario.userStats!.postsCount);
       commentRepository.count.mockResolvedValue(
         scenario.userStats!.commentsCount,
@@ -334,7 +338,7 @@ describe('UserService', () => {
         .withPaginatedComments(comments, 1, 10, 1)
         .build();
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       commentRepository.findAndCount.mockResolvedValue([comments, 1]);
 
       // Act
@@ -379,9 +383,11 @@ describe('UserService', () => {
       const mockStrategy = UserMockProvider.createUserStrategy();
       mockStrategy.canDeleteUser.mockReturnValue(true);
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-      userRepository.update.mockResolvedValue({ affected: 1 } as any);
+      userRepository.update.mockResolvedValue({
+        affected: 1,
+      } as unknown as UpdateResult);
 
       // Act
       await service.deleteUser(
@@ -416,7 +422,7 @@ describe('UserService', () => {
       const mockStrategy = UserMockProvider.createUserStrategy();
       mockStrategy.canDeleteUser.mockReturnValue(false);
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
@@ -429,17 +435,21 @@ describe('UserService', () => {
       // Arrange
       const scenario = new UserTestBuilder()
         .withCurrentUser(
-          UserMockProvider.createMockUser({ role: { name: 'user' } } as any),
+          UserMockProvider.createMockUser({
+            role: { name: 'user' },
+          } as unknown as Role),
         )
         .withTargetUser(
-          UserMockProvider.createMockUser({ uuid: 'different-uuid' }),
+          UserMockProvider.createMockUser({
+            uuid: 'different-uuid',
+          } as unknown as User),
         )
         .build();
 
       const mockStrategy = UserMockProvider.createUserStrategy();
       mockStrategy.canDeleteUser.mockReturnValue(false);
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert
@@ -454,7 +464,7 @@ describe('UserService', () => {
         .withCurrentUser(
           UserMockProvider.createMockUser({
             role: { name: 'moderator' },
-          } as any),
+          } as unknown as User),
         )
         .withTargetUser(
           UserMockProvider.createMockUser({ uuid: 'different-uuid' }),
@@ -464,7 +474,7 @@ describe('UserService', () => {
       const mockStrategy = UserMockProvider.createUserStrategy();
       mockStrategy.canDeleteUser.mockReturnValue(false);
 
-      userRepository.findOne.mockResolvedValue(scenario.targetUser);
+      userRepository.findOne.mockResolvedValue(scenario.targetUser!);
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Act & Assert

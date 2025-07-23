@@ -15,6 +15,7 @@ import {
 } from '../../interfaces/user.interface';
 import { IJwtPayload } from '../../../auth/interfaces/jwt-payload.interface';
 import { TestDataFactory } from '../../../common/__tests__/test-utils';
+import { Role } from '../../../database/entities/role.entity';
 
 export interface IUserTestScenario {
   currentUser?: User;
@@ -39,14 +40,14 @@ export class UserTestBuilder {
   static createMockAdminUser(overrides: Partial<User> = {}): User {
     return TestDataFactory.createUser({
       ...overrides,
-      role: { name: 'admin', uuid: 'admin-role-uuid' } as any,
+      role: { name: 'admin', uuid: 'admin-role-uuid' } as Role,
     });
   }
 
   static createMockModeratorUser(overrides: Partial<User> = {}): User {
     return TestDataFactory.createUser({
       ...overrides,
-      role: { name: 'moderator', uuid: 'moderator-role-uuid' } as any,
+      role: { name: 'moderator', uuid: 'moderator-role-uuid' } as Role,
     });
   }
 
@@ -56,7 +57,7 @@ export class UserTestBuilder {
   ): User {
     return TestDataFactory.createUser({
       ...overrides,
-      role: { name: role, uuid: `${role}-role-uuid` } as any,
+      role: { name: role, uuid: `${role}-role-uuid` } as Role,
     });
   }
 
