@@ -24,4 +24,9 @@ export class AuthPasswordReset extends AbstractEntity<AuthPasswordReset> {
   @ManyToOne(() => User, user => user.authPasswordResets)
   @JoinColumn({ name: 'user_uuid' })
   user: User;
+
+  constructor(entity: Partial<AuthPasswordReset> = {}) {
+    super(entity);
+    Object.assign(this, entity);
+  }
 }
