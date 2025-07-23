@@ -1,7 +1,5 @@
 /**
- * This file contains the decorators for the common.
+ * This file contains the decorators for the common module.
  */
 
-export * from './roles.decorator';
 export * from './response-message.decorator';
-export * from './public.decorator';

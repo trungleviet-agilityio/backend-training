@@ -1,11 +1,9 @@
 /**
  * Post service unit tests
- * Comprehensive testing following NestJS best practices and design patterns
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Post } from '../../database/entities/post.entity';
 import { User } from '../../database/entities/user.entity';
 import { PostService } from '../services/post.service';
