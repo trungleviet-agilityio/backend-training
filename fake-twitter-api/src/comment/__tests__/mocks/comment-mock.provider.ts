@@ -49,7 +49,7 @@ export class CommentMockProvider {
       delete: jest.fn(),
       count: jest.fn(),
       findAndCount: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Repository<Comment>>;
   }
 
   static createUserRepository(): jest.Mocked<Repository<User>> {
@@ -62,7 +62,7 @@ export class CommentMockProvider {
       delete: jest.fn(),
       count: jest.fn(),
       findAndCount: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Repository<User>>;
   }
 
   static createPostRepository(): jest.Mocked<Repository<Post>> {
@@ -75,7 +75,7 @@ export class CommentMockProvider {
       delete: jest.fn(),
       count: jest.fn(),
       findAndCount: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Repository<Post>>;
   }
 
   // Strategy Mock

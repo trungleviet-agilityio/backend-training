@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RegularCommentStrategy } from '../../strategies/comment-regular.strategy';
 import { CreateCommentDto, UpdateCommentDto } from '../../dto';
 import { CommentMockProvider } from '../mocks/comment-mock.provider';
+import { User } from 'src/database/entities/user.entity';
 
 describe('RegularCommentStrategy', () => {
   let strategy: RegularCommentStrategy;
@@ -45,7 +46,7 @@ describe('RegularCommentStrategy', () => {
 
     it('should deny comment creation for null user', () => {
       // Arrange
-      const currentUser = null as any;
+      const currentUser = null as unknown as User;
       const postAuthorId = 'user-uuid-123';
 
       // Act
@@ -87,7 +88,7 @@ describe('RegularCommentStrategy', () => {
 
     it('should deny update for null user', () => {
       // Arrange
-      const currentUser = null as any;
+      const currentUser = null as unknown as User;
       const comment = CommentMockProvider.createMockComment();
 
       // Act & Assert
@@ -126,7 +127,7 @@ describe('RegularCommentStrategy', () => {
 
     it('should deny delete for null user', () => {
       // Arrange
-      const currentUser = null as any;
+      const currentUser = null as unknown as User;
       const comment = CommentMockProvider.createMockComment();
 
       // Act & Assert
@@ -167,7 +168,7 @@ describe('RegularCommentStrategy', () => {
       // Arrange
       const currentUser = CommentMockProvider.createMockUser();
       const createData: CreateCommentDto = {
-        content: null as any,
+        content: null as unknown as string,
       };
 
       // Act
@@ -181,7 +182,7 @@ describe('RegularCommentStrategy', () => {
       // Arrange
       const currentUser = CommentMockProvider.createMockUser();
       const createData: CreateCommentDto = {
-        content: undefined as any,
+        content: undefined as unknown as string,
       };
 
       // Act
@@ -263,7 +264,7 @@ describe('RegularCommentStrategy', () => {
         authorUuid: currentUser.uuid,
       });
       const updateData: UpdateCommentDto = {
-        content: null as any,
+        content: null as unknown as string,
       };
 
       // Act

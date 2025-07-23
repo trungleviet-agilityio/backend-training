@@ -1,6 +1,5 @@
 /**
  * CommentModule Unit Tests
- * Testing module structure and providers without full module import
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -25,10 +24,8 @@ describe('CommentModule', () => {
     const mockCommentRepository = CommentMockProvider.createCommentRepository();
     const mockUserRepository = CommentMockProvider.createUserRepository();
     const mockPostRepository = CommentMockProvider.createPostRepository();
-    const mockCommentOperationFactory =
-      CommentMockProvider.createCommentOperationFactory();
-    const mockCommentMapperService =
-      CommentMockProvider.createCommentMapperService();
+    CommentMockProvider.createCommentOperationFactory();
+    CommentMockProvider.createCommentMapperService();
     const mockDataSource = {
       createQueryRunner: jest.fn().mockReturnValue({
         connect: jest.fn(),

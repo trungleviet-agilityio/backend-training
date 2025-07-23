@@ -3,9 +3,8 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CommentService } from '../services/comment.service';
 import { CommentMapperService } from '../services/comment-mapper.service';
 import { CommentOperationFactory } from '../factories/comment-operation.factory';
@@ -14,6 +13,7 @@ import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
 import { CommentTestBuilder } from './mocks/comment-test.builder';
 import { CommentMockProvider } from './mocks/comment-mock.provider';
+import { IsolationLevel } from 'typeorm/driver/types/IsolationLevel';
 
 describe('CommentService', () => {
   let service: CommentService;
@@ -25,33 +25,35 @@ describe('CommentService', () => {
   let dataSource: jest.Mocked<DataSource>;
 
   beforeEach(async () => {
-    const mockCommentRepository = CommentMockProvider.createCommentRepository();
-    const mockUserRepository = CommentMockProvider.createUserRepository();
-    const mockPostRepository = CommentMockProvider.createPostRepository();
-    const mockCommentOperationFactory =
-      CommentMockProvider.createCommentOperationFactory();
-    const mockCommentMapperService =
-      CommentMockProvider.createCommentMapperService();
-    const mockDataSource = {
-      createQueryRunner: jest.fn(),
-      transaction: jest.fn(),
-    } as unknown as jest.Mocked<DataSource>;
-
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         CommentService,
         {
           provide: getRepositoryToken(Comment),
-          useValue: mockCommentRepository,
+          useValue: CommentMockProvider.createCommentRepository(),
         },
-        { provide: getRepositoryToken(User), useValue: mockUserRepository },
-        { provide: getRepositoryToken(Post), useValue: mockPostRepository },
-        { provide: DataSource, useValue: mockDataSource },
+        {
+          provide: getRepositoryToken(User),
+          useValue: CommentMockProvider.createUserRepository(),
+        },
+        {
+          provide: getRepositoryToken(Post),
+          useValue: CommentMockProvider.createPostRepository(),
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn(),
+          } as unknown as jest.Mocked<DataSource>,
+        },
         {
           provide: CommentOperationFactory,
-          useValue: mockCommentOperationFactory,
+          useValue: CommentMockProvider.createCommentOperationFactory(),
         },
-        { provide: CommentMapperService, useValue: mockCommentMapperService },
+        {
+          provide: CommentMapperService,
+          useValue: CommentMockProvider.createCommentMapperService(),
+        },
       ],
     }).compile();
 
@@ -248,26 +250,39 @@ describe('CommentService', () => {
       mockStrategy.validateCreateData.mockReturnValue(true);
       commentOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
-      // Mock transaction with proper manager methods
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        };
+      // Mock transaction with unified signature
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        // Mock the sequence of calls in the transaction
-        mockManager.findOne
-          .mockResolvedValueOnce(scenario.targetUser) // First call for user
-          .mockResolvedValueOnce(scenario.targetPost) // Second call for post
-          .mockResolvedValueOnce(scenario.targetComment); // Third call for comment with relations
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          };
 
-        mockManager.create.mockReturnValue(scenario.targetComment);
-        mockManager.save.mockResolvedValue(scenario.targetComment);
+          // Mock the sequence of calls in the transaction
+          mockManager.findOne
+            .mockResolvedValueOnce(scenario.targetUser) // User found
+            .mockResolvedValueOnce(scenario.targetPost) // Post found
+            .mockResolvedValueOnce(scenario.targetComment); // Comment with relations
 
-        return callback(mockManager);
-      });
+          mockManager.create.mockReturnValue(scenario.targetComment);
+          mockManager.save.mockResolvedValue(scenario.targetComment);
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act
       const result = await service.createComment(
@@ -288,18 +303,31 @@ describe('CommentService', () => {
         .build();
 
       // Mock transaction to return null for user
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne.mockResolvedValue(null); // User not found
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          };
 
-        return callback(mockManager);
-      });
+          mockManager.findOne.mockResolvedValue(null); // User not found
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act & Assert
       await expect(
@@ -317,20 +345,33 @@ describe('CommentService', () => {
         .build();
 
       // Mock transaction to return null for post
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne
-          .mockResolvedValueOnce(scenario.targetUser) // User found
-          .mockResolvedValueOnce(null); // Post not found
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          };
 
-        return callback(mockManager);
-      });
+          mockManager.findOne
+            .mockResolvedValueOnce(scenario.targetUser) // User found
+            .mockResolvedValueOnce(null); // Post not found
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act & Assert
       await expect(
@@ -356,26 +397,39 @@ describe('CommentService', () => {
       commentOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Mock transaction
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne
-          .mockResolvedValueOnce(scenario.targetComment) // First call for comment
-          .mockResolvedValueOnce(scenario.targetUser) // Second call for user
-          .mockResolvedValueOnce({
-            ...scenario.targetComment,
-            content: 'Updated content',
-          }); // Third call for updated comment
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          };
 
-        mockManager.update.mockResolvedValue(undefined);
+          mockManager.findOne
+            .mockResolvedValueOnce(scenario.targetComment) // First call for comment
+            .mockResolvedValueOnce(scenario.targetUser) // Second call for user
+            .mockResolvedValueOnce({
+              ...scenario.targetComment,
+              content: 'Updated content',
+            }); // Third call for updated comment
 
-        return callback(mockManager);
-      });
+          mockManager.update.mockResolvedValue(undefined);
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act
       const result = await service.updateComment(
@@ -397,18 +451,31 @@ describe('CommentService', () => {
         .build();
 
       // Mock transaction to return null for comment
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne.mockResolvedValue(null); // Comment not found
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          };
 
-        return callback(mockManager);
-      });
+          mockManager.findOne.mockResolvedValue(null); // Comment not found
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act & Assert
       await expect(
@@ -433,23 +500,36 @@ describe('CommentService', () => {
       commentOperationFactory.createStrategy.mockReturnValue(mockStrategy);
 
       // Mock transaction with softDelete method
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-          softDelete: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne
-          .mockResolvedValueOnce(scenario.targetComment) // First call for comment
-          .mockResolvedValueOnce(scenario.targetUser); // Second call for user
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            softDelete: jest.fn(),
+          };
 
-        mockManager.softDelete.mockResolvedValue(undefined);
+          mockManager.findOne
+            .mockResolvedValueOnce(scenario.targetComment) // First call for comment
+            .mockResolvedValueOnce(scenario.targetUser); // Second call for user
 
-        return callback(mockManager);
-      });
+          mockManager.softDelete.mockResolvedValue(undefined);
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act
       await service.deleteComment(scenario.currentUser!, 'comment-uuid-123');
@@ -466,19 +546,32 @@ describe('CommentService', () => {
         .build();
 
       // Mock transaction to return null for comment
-      dataSource.transaction.mockImplementation(async (callback: any) => {
-        const mockManager = {
-          findOne: jest.fn(),
-          save: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-          softDelete: jest.fn(),
-        };
+      dataSource.transaction.mockImplementation(
+        async (
+          isolationLevelOrCallback:
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<unknown>)
+            | undefined,
+          runInTransaction?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const callback =
+            typeof isolationLevelOrCallback === 'function'
+              ? isolationLevelOrCallback
+              : runInTransaction!;
 
-        mockManager.findOne.mockResolvedValue(null); // Comment not found
+          const mockManager = {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            softDelete: jest.fn(),
+          };
 
-        return callback(mockManager);
-      });
+          mockManager.findOne.mockResolvedValue(null); // Comment not found
+
+          return await callback(mockManager as unknown as EntityManager);
+        },
+      );
 
       // Act & Assert
       await expect(
