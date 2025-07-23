@@ -27,7 +27,7 @@ import { NotificationModule } from '../notifications/notification.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Role, AuthSession, AuthPasswordReset]),
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow('JWT_SECRET'),
@@ -60,6 +60,6 @@ import { NotificationModule } from '../notifications/notification.module';
       useExisting: AuthMapperService,
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

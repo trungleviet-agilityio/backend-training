@@ -59,4 +59,9 @@ export class User extends AbstractEntity<User> {
 
   @OneToMany(() => Comment, comment => comment.author)
   comments: Comment[];
+
+  constructor(entity: Partial<User> = {}) {
+    super(entity);
+    Object.assign(this, entity);
+  }
 }

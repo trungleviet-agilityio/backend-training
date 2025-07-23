@@ -7,9 +7,10 @@ import { Repository } from 'typeorm';
 
 import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 import { User } from 'src/database/entities/user.entity';
+import { UserInfoDto } from '../dto';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   /**
    * Constructor
    *
@@ -28,12 +29,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: IJwtPayload): Promise<IJwtPayload> {
+  async validate(
+    payload: IJwtPayload,
+  ): Promise<IJwtPayload & { user: UserInfoDto }> {
     /**
      * Validate
      *
      * @param payload - Jwt payload
-     * @returns IJwtPayload
+     * @returns User object with JWT payload
      */
 
     const user = await this.userRepository.findOne({
@@ -45,7 +48,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token');
     }
 
-    // Return the JWT payload instead of User entity
-    return payload;
+    // Return user object with JWT payload
+    return {
+      ...payload,
+      user: {
+        uuid: user.uuid,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: {
+          name: user.role.name,
+        },
+      },
+    };
   }
 }

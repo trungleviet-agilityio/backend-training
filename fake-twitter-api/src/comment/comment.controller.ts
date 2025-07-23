@@ -36,7 +36,7 @@ import {
 @ApiTags('Comments')
 @Controller('')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class CommentController {
   /**
    * Constructor

@@ -31,4 +31,9 @@ export class Post extends AbstractEntity<Post> {
 
   @OneToMany(() => Comment, comment => comment.post)
   comments: Comment[];
+
+  constructor(entity: Partial<Post> = {}) {
+    super(entity);
+    Object.assign(this, entity);
+  }
 }

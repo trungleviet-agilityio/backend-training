@@ -30,7 +30,7 @@ import { PostMapperService } from '../post/services';
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class UserController {
   /**
    * Constructor

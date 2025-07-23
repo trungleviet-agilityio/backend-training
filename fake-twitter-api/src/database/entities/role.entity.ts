@@ -21,4 +21,9 @@ export class Role extends AbstractEntity<Role> {
   // Relations
   @OneToMany(() => User, user => user.role)
   users: User[];
+
+  constructor(entity: Partial<Role> = {}) {
+    super(entity);
+    Object.assign(this, entity);
+  }
 }
