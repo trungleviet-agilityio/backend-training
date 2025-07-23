@@ -36,7 +36,7 @@ import {
 @ApiTags('Posts')
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class PostController {
   /**
    * Constructor
