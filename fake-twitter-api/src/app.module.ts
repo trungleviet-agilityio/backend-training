@@ -6,6 +6,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -18,6 +20,16 @@ import { GlobalAuthGuard } from './common/guards';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', `.env.${process.env.NODE_ENV || 'local'}`],
+    }),
+    JwtModule.registerAsync({
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.getOrThrow('JWT_SECRET'),
+        signOptions: {
+          expiresIn: '15m',
+          algorithm: 'HS256',
+        },
+      }),
+      inject: [ConfigService],
     }),
     DatabaseModule,
     AuthModule,
