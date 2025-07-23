@@ -30,12 +30,24 @@ export interface InterceptorApiResponse<T = ResponseData> {
 export class ResponseInterceptor<T = ResponseData>
   implements NestInterceptor<T, InterceptorApiResponse<T>>
 {
+  /**
+   * Constructor
+   * @param reflector - The reflector
+   */
+
   constructor(private reflector: Reflector) {}
 
   intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<InterceptorApiResponse<T>> {
+    /**
+     * Intercept the request and response
+     * @param context - The execution context
+     * @param next - The next handler
+     * @returns The observable response
+     */
+
     const request = context.switchToHttp().getRequest();
     const { statusCode } = context.switchToHttp().getResponse();
 
@@ -57,6 +69,12 @@ export class ResponseInterceptor<T = ResponseData>
   }
 
   private getDefaultMessage(statusCode: number): string {
+    /**
+     * Get the default message for the status code
+     * @param statusCode - The status code
+     * @returns The default message
+     */
+
     switch (statusCode) {
       case 200:
         return 'Success';

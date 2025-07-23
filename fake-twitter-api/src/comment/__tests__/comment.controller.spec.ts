@@ -93,7 +93,7 @@ describe('CommentController', () => {
         scenario.paginatedComments!.data,
       );
       expect(result).toEqual({
-        data: scenario.commentDtos,
+        items: scenario.commentDtos,
         meta: scenario.paginatedComments!.meta,
       });
     });
@@ -352,7 +352,7 @@ describe('CommentController', () => {
         scenario.paginatedComments!.data,
       );
       expect(result).toEqual({
-        data: scenario.commentDtos,
+        items: scenario.commentDtos,
         meta: scenario.paginatedComments!.meta,
       });
     });
