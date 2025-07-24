@@ -8,7 +8,6 @@ import { ForbiddenException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from '../services/user.service';
 import { UserOperationFactory } from '../factories/user-operation.factory';
-import { UserMapperService } from '../services/user-mapper.service';
 import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
@@ -20,7 +19,6 @@ import { Role } from '../../database/entities/role.entity';
 describe('UserService', () => {
   let service: UserService;
   let userOperationFactory: jest.Mocked<UserOperationFactory>;
-  let userMapperService: jest.Mocked<UserMapperService>;
   let userRepository: jest.Mocked<Repository<User>>;
   let postRepository: jest.Mocked<Repository<Post>>;
   let commentRepository: jest.Mocked<Repository<Comment>>;
@@ -31,7 +29,6 @@ describe('UserService', () => {
     const mockCommentRepository = UserMockProvider.createCommentRepository();
     const mockUserOperationFactory =
       UserMockProvider.createUserOperationFactory();
-    const mockUserMapperService = UserMockProvider.createUserMapperService();
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,13 +40,11 @@ describe('UserService', () => {
           useValue: mockCommentRepository,
         },
         { provide: UserOperationFactory, useValue: mockUserOperationFactory },
-        { provide: UserMapperService, useValue: mockUserMapperService },
       ],
     }).compile();
 
     service = moduleRef.get<UserService>(UserService);
     userOperationFactory = moduleRef.get(UserOperationFactory);
-    userMapperService = moduleRef.get(UserMapperService);
     userRepository = moduleRef.get(getRepositoryToken(User));
     postRepository = moduleRef.get(getRepositoryToken(Post));
     commentRepository = moduleRef.get(getRepositoryToken(Comment));
@@ -170,16 +165,14 @@ describe('UserService', () => {
       commentRepository.count.mockResolvedValue(
         scenario.userStats!.commentsCount,
       );
-      userMapperService.toUserProfileDto.mockReturnValue(scenario.userProfile!);
 
       // Act
-      const result = await service.getUserProfile(scenario.targetUser!.uuid);
+      const result = await service.getUserProfile(
+        scenario.currentUser!,
+        scenario.targetUser!.uuid,
+      );
 
       // Assert
-      expect(userMapperService.toUserProfileDto).toHaveBeenCalledWith(
-        scenario.targetUser,
-        scenario.userStats,
-      );
       expect(result).toEqual(scenario.userProfile);
     });
   });
@@ -203,7 +196,6 @@ describe('UserService', () => {
       userRepository.update.mockResolvedValue({
         affected: 1,
       } as unknown as UpdateResult);
-      userMapperService.toUserProfileDto.mockReturnValue(scenario.userProfile!);
       postRepository.count.mockResolvedValue(0);
       commentRepository.count.mockResolvedValue(0);
 
@@ -223,7 +215,7 @@ describe('UserService', () => {
         scenario.targetUser!.uuid,
         scenario.updateDto,
       );
-      expect(result).toEqual(scenario.targetUser);
+      expect(result).toEqual(scenario.userProfile);
     });
 
     it('should handle insufficient permissions for update', async () => {
@@ -287,7 +279,7 @@ describe('UserService', () => {
         skip: 0,
         take: 10,
       });
-      expect(result).toEqual(scenario.paginatedPosts);
+      expect(result).toEqual(scenario.userPostsResponse);
     });
   });
 
@@ -315,7 +307,7 @@ describe('UserService', () => {
       expect(commentRepository.count).toHaveBeenCalledWith({
         where: { authorUuid: scenario.targetUser!.uuid },
       });
-      expect(result).toEqual(scenario.userStats);
+      expect(result).toEqual(scenario.userStatsResponse);
     });
 
     it('should handle user not found when getting stats', async () => {
@@ -343,6 +335,7 @@ describe('UserService', () => {
 
       // Act
       const result = await service.getUserComments(
+        scenario.currentUser!,
         scenario.targetUser!.uuid,
         1,
         10,
@@ -356,7 +349,7 @@ describe('UserService', () => {
         skip: 0,
         take: 10,
       });
-      expect(result).toEqual(scenario.paginatedComments);
+      expect(result).toEqual(scenario.userCommentsResponse);
     });
 
     it('should handle user not found when getting comments', async () => {
@@ -365,7 +358,12 @@ describe('UserService', () => {
 
       // Act & Assert
       await expect(
-        service.getUserComments('non-existent-uuid', 1, 10),
+        service.getUserComments(
+          UserMockProvider.createMockUser(),
+          'non-existent-uuid',
+          1,
+          10,
+        ),
       ).rejects.toThrow('User not found');
     });
   });

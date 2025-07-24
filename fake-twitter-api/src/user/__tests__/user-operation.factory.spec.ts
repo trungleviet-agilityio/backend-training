@@ -5,11 +5,9 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserOperationFactory } from '../factories/user-operation.factory';
-import {
-  AdminUserStrategy,
-  ModeratorUserStrategy,
-  RegularUserStrategy,
-} from '../strategies';
+import { AdminUserStrategy } from '../strategies/user-admin.strategy';
+import { ModeratorUserStrategy } from '../strategies/user-moderator.strategy';
+import { RegularUserStrategy } from '../strategies/user-regular.strategy';
 
 describe('UserOperationFactory', () => {
   let factory: UserOperationFactory;

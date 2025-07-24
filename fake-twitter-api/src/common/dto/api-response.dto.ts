@@ -99,7 +99,7 @@ export class ErrorResponse extends BaseApiResponse<null> {
   constructor(
     message: string,
     errors: string[] = [],
-    statusCode = 400,
+    statusCode = HttpStatus.BAD_REQUEST,
     path?: string,
   ) {
     super({
@@ -238,30 +238,36 @@ export class NotFoundResponse extends ErrorResponse {
     const message = id
       ? `${resource} with ID '${id}' not found`
       : `${resource} not found`;
-    super(message, [], 404);
+    super(message, [], HttpStatus.NOT_FOUND);
   }
 }
 
 export class UnauthorizedResponse extends ErrorResponse {
   constructor(message = 'Unauthorized access') {
-    super(message, [], 401);
+    super(message, [], HttpStatus.UNAUTHORIZED);
   }
 }
 
 export class ForbiddenResponse extends ErrorResponse {
   constructor(message = 'Access forbidden') {
-    super(message, [], 403);
+    super(message, [], HttpStatus.FORBIDDEN);
   }
 }
 
 export class ValidationErrorResponse extends ErrorResponse {
   constructor(errors: string[]) {
-    super('Validation failed', errors, 422);
+    super('Validation failed', errors, HttpStatus.UNPROCESSABLE_ENTITY);
   }
 }
 
 export class ConflictResponse extends ErrorResponse {
   constructor(message = 'Resource already exists') {
-    super(message, [], 409);
+    super(message, [], HttpStatus.CONFLICT);
+  }
+}
+
+export class InternalServerError extends ErrorResponse {
+  constructor(message = 'Internal server error') {
+    super(message, [], HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

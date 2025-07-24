@@ -9,7 +9,6 @@ import { Post } from '../../../database/entities/post.entity';
 import { Comment } from '../../../database/entities/comment.entity';
 import { UserService } from '../../services/user.service';
 import { UserOperationFactory } from '../../factories/user-operation.factory';
-import { UserMapperService } from '../../services/user-mapper.service';
 import { IUserOperationStrategy } from '../../strategies/user-operation.strategy';
 
 export class UserMockProvider {
@@ -32,14 +31,6 @@ export class UserMockProvider {
     return {
       createStrategy: jest.fn(),
     } as unknown as jest.Mocked<UserOperationFactory>;
-  }
-
-  static createUserMapperService(): jest.Mocked<UserMapperService> {
-    return {
-      toUserProfileDto: jest.fn(),
-      toUserPostDto: jest.fn(),
-      toUserCommentDto: jest.fn(),
-    } as unknown as jest.Mocked<UserMapperService>;
   }
 
   // Repository Mocks
