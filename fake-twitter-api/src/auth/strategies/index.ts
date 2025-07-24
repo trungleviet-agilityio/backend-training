@@ -1,8 +1,5 @@
 /**
- * Auth strategies index
+ * Auth strategies - Only Passport essentials
  */
 
-export * from './auth-jwt.strategy';
-export * from './auth-operation.strategy';
 export * from './jwt.strategy';
-export * from './local.strategy';

@@ -11,6 +11,14 @@ import { randomBytes } from 'crypto';
 import { User } from '../../database/entities/user.entity';
 import { AuthPasswordReset } from '../../database/entities/auth-password-reset.entity';
 import { NotificationService } from '../../notifications/services';
+import {
+  ForgotPasswordPayloadDto,
+  ForgotPasswordResponseDto,
+} from '../dto/forgot-password.dto';
+import {
+  ResetPasswordPayloadDto,
+  ResetPasswordResponseDto,
+} from '../dto/reset-password.dto';
 
 @Injectable()
 export class AuthPasswordResetService {
@@ -36,17 +44,21 @@ export class AuthPasswordResetService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
+  async forgotPassword(
+    forgotPasswordPayloadDto: ForgotPasswordPayloadDto,
+  ): Promise<ForgotPasswordResponseDto> {
     /**
      * Forgot password
      *
      * @param email - User email
      * @returns Message
      */
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.userRepository.findOne({
+      where: { email: forgotPasswordPayloadDto.email },
+    });
     if (!user) {
       // Don't reveal if user exists or not
-      return { message: 'If the email exists, a reset link has been sent' };
+      return new ForgotPasswordResponseDto();
     }
 
     const resetToken = randomBytes(32).toString('hex');
@@ -66,13 +78,14 @@ export class AuthPasswordResetService {
       resetToken,
     );
 
-    return { message: 'If the email exists, a reset link has been sent' };
+    this.logger.log('Forgot password email sent', user.email);
+
+    return new ForgotPasswordResponseDto();
   }
 
   async resetPassword(
-    token: string,
-    newPassword: string,
-  ): Promise<{ message: string }> {
+    resetPasswordPayloadDto: ResetPasswordPayloadDto,
+  ): Promise<ResetPasswordResponseDto> {
     /**
      * Reset password
      *
@@ -92,7 +105,10 @@ export class AuthPasswordResetService {
     // Find the correct token by comparing with all available tokens
     let validPasswordReset: AuthPasswordReset | null = null;
     for (const reset of passwordResets) {
-      const isValidToken = await bcrypt.compare(token, reset.tokenHash);
+      const isValidToken = await bcrypt.compare(
+        resetPasswordPayloadDto.token,
+        reset.tokenHash,
+      );
       if (isValidToken) {
         validPasswordReset = reset;
         break;
@@ -103,7 +119,10 @@ export class AuthPasswordResetService {
       throw new UnauthorizedException('Invalid or expired reset token');
     }
 
-    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+    const newPasswordHash = await bcrypt.hash(
+      resetPasswordPayloadDto.password,
+      12,
+    );
     await this.userRepository.update(validPasswordReset.userUuid, {
       passwordHash: newPasswordHash,
     });
@@ -112,6 +131,8 @@ export class AuthPasswordResetService {
       isUsed: true,
     });
 
-    return { message: 'Password reset successfully' };
+    this.logger.log('Password reset successfully');
+
+    return new ResetPasswordResponseDto();
   }
 }

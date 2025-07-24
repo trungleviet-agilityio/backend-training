@@ -3,7 +3,7 @@
  */
 
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { HttpStatus } from '@nestjs/common';
 
 // Generic type constraint for response data
 export type ResponseData =
@@ -45,7 +45,6 @@ export class BaseApiResponse<T = ResponseData> implements IApiResponse<T> {
 
   @ApiProperty({
     description: 'Request path',
-    example: '/api/v1/auth/login',
     required: false,
   })
   path?: string;
@@ -88,13 +87,12 @@ export class ErrorResponse extends BaseApiResponse<null> {
 
   @ApiProperty({
     description: 'HTTP status code',
-    example: 400,
+    example: HttpStatus.BAD_REQUEST,
   })
   statusCode: number;
 
   @ApiProperty({
     description: 'Error details',
-    example: ['Validation failed', 'Email is required'],
   })
   declare errors: string[];
 
@@ -116,7 +114,7 @@ export class ErrorResponse extends BaseApiResponse<null> {
   }
 }
 
-// 📄 Pagination Metadata
+// Pagination Metadata
 export class PaginationMeta {
   @ApiProperty({
     description: 'Current page number',

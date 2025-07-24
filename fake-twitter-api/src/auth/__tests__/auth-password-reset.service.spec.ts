@@ -101,7 +101,7 @@ describe('AuthPasswordResetService', () => {
       notificationService.sendPasswordResetEmail.mockResolvedValue(true);
 
       // Act
-      const result = await service.forgotPassword(email);
+      const result = await service.forgotPassword({ email });
 
       // Assert
       expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email } });
@@ -112,9 +112,14 @@ describe('AuthPasswordResetService', () => {
         user.email,
         resetToken,
       );
-      expect(result).toEqual({
-        message: 'If the email exists, a reset link has been sent',
-      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          message:
+            'If an account with this email exists, a password reset link has been sent.',
+          success: true,
+          data: null,
+        }),
+      );
 
       mockRandomBytes.mockRestore();
     });
@@ -125,13 +130,18 @@ describe('AuthPasswordResetService', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       // Act
-      const result = await service.forgotPassword(email);
+      const result = await service.forgotPassword({ email });
 
       // Assert
       expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email } });
-      expect(result).toEqual({
-        message: 'If the email exists, a reset link has been sent',
-      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          message:
+            'If an account with this email exists, a password reset link has been sent.',
+          success: true,
+          data: null,
+        }),
+      );
     });
   });
 
@@ -156,7 +166,10 @@ describe('AuthPasswordResetService', () => {
       } as any);
 
       // Act
-      const result = await service.resetPassword(token, newPassword);
+      const result = await service.resetPassword({
+        token,
+        password: newPassword,
+      });
 
       // Assert
       expect(authPasswordResetRepository.find).toHaveBeenCalledWith({
@@ -179,7 +192,13 @@ describe('AuthPasswordResetService', () => {
           isUsed: true,
         },
       );
-      expect(result).toEqual({ message: 'Password reset successfully' });
+      expect(result).toEqual(
+        expect.objectContaining({
+          message: 'Password reset successfully',
+          success: true,
+          data: null,
+        }),
+      );
     });
 
     it('should throw UnauthorizedException for invalid token', async () => {
@@ -195,9 +214,9 @@ describe('AuthPasswordResetService', () => {
       mockedBcrypt.compare.mockResolvedValue(false as never);
 
       // Act & Assert
-      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.resetPassword({ token, password: newPassword }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for expired token', async () => {
@@ -214,9 +233,9 @@ describe('AuthPasswordResetService', () => {
       ]);
 
       // Act & Assert
-      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.resetPassword({ token, password: newPassword }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });
