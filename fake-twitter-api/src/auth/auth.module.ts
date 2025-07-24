@@ -14,13 +14,18 @@ import { AuthSession } from '../database/entities/auth-session.entity';
 import { AuthPasswordReset } from '../database/entities/auth-password-reset.entity';
 
 import { AuthController } from './auth.controller';
+
 import {
-  AuthMapperService,
-  AuthPasswordResetService,
   AuthService,
+  AuthUserService,
+  AuthTokenService,
+  AuthPasswordService,
+  AuthSessionService,
+  AuthErrorHandler,
+  AuthPasswordResetService,
 } from './services';
-import { AuthOperationFactory } from './factories';
-import { JwtAuthStrategy, JwtStrategy, LocalStrategy } from './strategies';
+
+import { JwtStrategy } from './strategies';
 import { JwtAuthGuard, RolesGuard } from './guards';
 import { NotificationModule } from '../notifications/notification.module';
 
@@ -43,22 +48,15 @@ import { NotificationModule } from '../notifications/notification.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthUserService,
+    AuthTokenService,
+    AuthPasswordService,
+    AuthSessionService,
+    AuthErrorHandler,
     AuthPasswordResetService,
-    AuthMapperService,
-    AuthOperationFactory,
-    JwtAuthStrategy,
     JwtStrategy,
-    LocalStrategy,
     JwtAuthGuard,
     RolesGuard,
-    {
-      provide: 'JWT_AUTH_STRATEGY',
-      useExisting: JwtAuthStrategy,
-    },
-    {
-      provide: 'AUTH_MAPPER_SERVICE',
-      useExisting: AuthMapperService,
-    },
   ],
   exports: [AuthService, JwtStrategy],
 })

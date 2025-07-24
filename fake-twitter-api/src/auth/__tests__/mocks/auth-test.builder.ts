@@ -8,7 +8,7 @@
 import { User } from '../../../database/entities/user.entity';
 import { AuthSession } from '../../../database/entities/auth-session.entity';
 import { AuthPasswordReset } from '../../../database/entities/auth-password-reset.entity';
-import { LoginDto, RegisterDto } from '../../dto';
+import { LoginPayloadDto, RegisterPayloadDto } from '../../dto';
 import { AuthTokensWithUserDto, AuthRefreshTokenDto } from '../../dto/auth.dto';
 import { TestDataFactory } from '../../../common/__tests__/test-utils';
 
@@ -16,8 +16,8 @@ export interface IAuthTestScenario {
   user?: User;
   tokens?: AuthTokensWithUserDto;
   refreshTokens?: AuthRefreshTokenDto;
-  loginDto?: LoginDto;
-  registerDto?: RegisterDto;
+  loginPayloadDto?: LoginPayloadDto;
+  registerPayloadDto?: RegisterPayloadDto;
   session?: AuthSession;
   passwordReset?: AuthPasswordReset;
   error?: Error;
@@ -64,22 +64,26 @@ export class AuthTestBuilder {
   /**
    * Adds login DTO to the test scenario
    */
-  withLoginDto(loginDto: LoginDto | Partial<LoginDto>): this {
-    this.scenario.loginDto =
-      'email' in loginDto
-        ? (loginDto as LoginDto)
-        : TestDataFactory.createLoginDto(loginDto);
+  withLoginDto(
+    loginPayloadDto: LoginPayloadDto | Partial<LoginPayloadDto>,
+  ): this {
+    this.scenario.loginPayloadDto =
+      'email' in loginPayloadDto
+        ? (loginPayloadDto as LoginPayloadDto)
+        : TestDataFactory.createLoginDto(loginPayloadDto);
     return this;
   }
 
   /**
    * Adds register DTO to the test scenario
    */
-  withRegisterDto(registerDto: RegisterDto | Partial<RegisterDto>): this {
-    this.scenario.registerDto =
-      'email' in registerDto
-        ? (registerDto as RegisterDto)
-        : TestDataFactory.createRegisterDto(registerDto);
+  withRegisterDto(
+    registerPayloadDto: RegisterPayloadDto | Partial<RegisterPayloadDto>,
+  ): this {
+    this.scenario.registerPayloadDto =
+      'email' in registerPayloadDto
+        ? (registerPayloadDto as RegisterPayloadDto)
+        : TestDataFactory.createRegisterDto(registerPayloadDto);
     return this;
   }
 

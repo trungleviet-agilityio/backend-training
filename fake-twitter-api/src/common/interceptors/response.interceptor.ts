@@ -6,13 +6,15 @@
 import {
   CallHandler,
   ExecutionContext,
+  HttpStatus,
   Injectable,
+  Logger,
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
-import { ResponseData } from '../dto/api-response.dto';
+import { ResponseData, BaseApiResponse } from '../dto/api-response.dto';
 
 // Metadata key for custom response messages
 export const RESPONSE_MESSAGE_METADATA = 'custom_response_message';
@@ -30,24 +32,13 @@ export interface InterceptorApiResponse<T = ResponseData> {
 export class ResponseInterceptor<T = ResponseData>
   implements NestInterceptor<T, InterceptorApiResponse<T>>
 {
-  /**
-   * Constructor
-   * @param reflector - The reflector
-   */
-
+  private readonly logger = new Logger(ResponseInterceptor.name);
   constructor(private reflector: Reflector) {}
 
   intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<InterceptorApiResponse<T>> {
-    /**
-     * Intercept the request and response
-     * @param context - The execution context
-     * @param next - The next handler
-     * @returns The observable response
-     */
-
     const request = context.switchToHttp().getRequest();
     const { statusCode } = context.switchToHttp().getResponse();
 
@@ -58,29 +49,59 @@ export class ResponseInterceptor<T = ResponseData>
     );
 
     return next.handle().pipe(
-      map((data: T) => ({
-        success: true,
-        message: customMessage || this.getDefaultMessage(statusCode),
-        data,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      })),
+      map((data: T) => {
+        // Check if the response is already wrapped (instance of BaseApiResponse)
+        if (this.isAlreadyWrapped(data)) {
+          this.logger.debug('Response already wrapped, returning as-is');
+          return data as InterceptorApiResponse<T>;
+        }
+
+        // If not wrapped, apply the standard wrapping
+        const wrappedResponse = {
+          success: true,
+          message: customMessage || this.getDefaultMessage(statusCode),
+          data,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        };
+
+        this.logger.debug('Wrapping response', wrappedResponse);
+        return wrappedResponse;
+      }),
     );
   }
 
-  private getDefaultMessage(statusCode: number): string {
-    /**
-     * Get the default message for the status code
-     * @param statusCode - The status code
-     * @returns The default message
-     */
+  /**
+   * Check if the response is already wrapped in the expected format
+   */
+  private isAlreadyWrapped(data: any): boolean {
+    // Check if it's an instance of BaseApiResponse or its subclasses
+    if (data instanceof BaseApiResponse) {
+      this.logger.debug('Data is instance of BaseApiResponse');
+      return true;
+    }
 
+    // Check if it has the expected structure of a wrapped response
+    const isWrapped = (
+      data &&
+      typeof data === 'object' &&
+      typeof data.success === 'boolean' &&
+      typeof data.message === 'string' &&
+      typeof data.timestamp === 'string' &&
+      data.hasOwnProperty('data')
+    );
+
+    this.logger.debug('Structure check for wrapped response:', isWrapped);
+    return isWrapped;
+  }
+
+  private getDefaultMessage(statusCode: number): string {
     switch (statusCode) {
-      case 200:
+      case HttpStatus.OK:
         return 'Success';
-      case 201:
+      case HttpStatus.CREATED:
         return 'Created successfully';
-      case 204:
+      case HttpStatus.NO_CONTENT:
         return 'Updated successfully';
       default:
         return 'Success';

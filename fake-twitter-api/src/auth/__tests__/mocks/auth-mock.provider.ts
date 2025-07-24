@@ -168,11 +168,14 @@ export class AuthMockProvider {
    */
   static createAuthStrategy(): jest.Mocked<IAuthOperationStrategy> {
     return {
-      authenticate: jest.fn(),
+      login: jest.fn(),
       register: jest.fn(),
       refreshToken: jest.fn(),
       logout: jest.fn(),
-      validateToken: jest.fn(),
+      validateUserByEmail: jest.fn(),
+      validateUserByEmailAndPassword: jest.fn(),
+      forgotPassword: jest.fn(),
+      resetPassword: jest.fn(),
     } as jest.Mocked<IAuthOperationStrategy>;
   }
 
