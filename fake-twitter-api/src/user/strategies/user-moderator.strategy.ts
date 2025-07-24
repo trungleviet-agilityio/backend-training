@@ -4,7 +4,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { User } from '../../database/entities/user.entity';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserUpdatePayloadDto } from '../dto/update-user.dto';
 import { IUserOperationStrategy } from './user-operation.strategy';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class ModeratorUserStrategy implements IUserOperationStrategy {
   validateUpdateData(
     currentUser: User,
     targetUser: User,
-    updateData: UpdateUserDto,
+    updateData: UserUpdatePayloadDto,
   ): boolean {
     /**
      * Moderators can only update their own profile fields

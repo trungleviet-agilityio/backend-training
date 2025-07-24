@@ -6,8 +6,8 @@
 import { User } from '../../../database/entities/user.entity';
 import { Post } from '../../../database/entities/post.entity';
 import { Comment } from '../../../database/entities/comment.entity';
-import { UpdateUserDto } from '../../dto/update-user.dto';
-import { UserProfileDto } from '../../dto/user-response.dto';
+import { UpdateUserPayloadDto } from '../../dto/update-user.dto';
+import { UserProfileDto } from '../../dto/user.dto';
 import {
   UserStats,
   PaginatedPosts,
@@ -22,7 +22,7 @@ export interface IUserTestScenario {
   targetUser?: User;
   userProfile?: UserProfileDto;
   userStats?: UserStats;
-  updateDto?: UpdateUserDto;
+  updateDto?: UpdateUserPayloadDto;
   paginatedPosts?: PaginatedPosts;
   paginatedComments?: PaginatedComments;
   jwtPayload?: IJwtPayload;
@@ -89,7 +89,9 @@ export class UserTestBuilder {
     return this;
   }
 
-  withUpdateDto(updateDto: UpdateUserDto | Partial<UpdateUserDto>): this {
+  withUpdateDto(
+    updateDto: UpdateUserPayloadDto | Partial<UpdateUserPayloadDto>,
+  ): this {
     this.scenario.updateDto = {
       firstName: 'Updated First',
       lastName: 'Updated Last',

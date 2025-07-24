@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,18 +9,21 @@ import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
 import { Comment } from '../../database/entities/comment.entity';
+import { UserUpdatePayloadDto } from '../dto/update-user.dto';
 import { UserOperationFactory } from '../factories/user-operation.factory';
-import { UserMapperService } from './user-mapper.service';
-import { UpdateUserDto } from '../dto/update-user.dto';
-import { UserProfileDto } from '../dto/user-response.dto';
 import {
-  PaginatedComments,
-  PaginatedPosts,
-  UserStats,
-} from '../interfaces/user.interface';
+  UserCommentsResponseDto,
+  UserPostsResponseDto,
+  UserProfileResponseDto,
+  UserStatsResponseDto,
+} from '../dto/user-response.dto';
+import { UserProfileDto, UserPostDto, UserCommentDto } from '../dto/user.dto';
+import { PaginationMeta } from '../../common/dto/api-response.dto';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   /**
    * Constructor
    * @param userRepository - The repository for the user entity
@@ -37,7 +41,6 @@ export class UserService {
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
     private readonly userOperationFactory: UserOperationFactory,
-    private readonly userMapper: UserMapperService,
   ) {}
 
   async findById(uuid: string): Promise<User> {
@@ -49,7 +52,7 @@ export class UserService {
 
     const user = await this.userRepository.findOne({
       where: { uuid },
-      relations: ['role'],
+      relations: ['role', 'posts', 'comments'],
     });
 
     if (!user) {
@@ -94,24 +97,37 @@ export class UserService {
     return user;
   }
 
-  async getUserProfile(uuid: string): Promise<UserProfileDto> {
+  async getUserProfile(
+    currentUserObj: User,
+    uuid: string,
+  ): Promise<UserProfileResponseDto> {
     /**
      * Get a user's profile
      * @param uuid - The UUID of the user
      * @returns The user's profile
      */
-
     const user = await this.findById(uuid);
-    const stats = await this.getUserStats(uuid);
 
-    return this.userMapper.toUserProfileDto(user, stats);
+    const strategy = this.userOperationFactory.createStrategy(user.role.name);
+
+    // Only admins and owners can view user profiles
+    if (!strategy.canViewUser(currentUserObj, user)) {
+      throw new ForbiddenException('You cannot view this user profile');
+    }
+
+    // If the user is not the current user, return the user's profile
+    if (currentUserObj.role.name !== 'admin') {
+      throw new ForbiddenException('You cannot view this user profile');
+    }
+
+    return new UserProfileResponseDto(new UserProfileDto(user));
   }
 
   async updateUserProfile(
     currentUser: User,
     targetUuid: string,
-    updateData: UpdateUserDto,
-  ): Promise<User> {
+    updateData: UserUpdatePayloadDto,
+  ): Promise<UserProfileResponseDto> {
     /**
      * Update a user's profile
      * @param currentUser - The current user
@@ -125,19 +141,24 @@ export class UserService {
       currentUser.role.name,
     );
 
+    // Only admins and owners can update user profiles
     if (!strategy.canUpdateUser(currentUser, targetUser)) {
       throw new ForbiddenException('You cannot update this user');
     }
 
+    // Validate update data
     if (!strategy.validateUpdateData(currentUser, targetUser, updateData)) {
       throw new ForbiddenException('Invalid update data for your role');
     }
 
+    // Update user profile
     await this.userRepository.update(targetUuid, updateData);
-    return this.findById(targetUuid);
+
+    // Return updated user profile
+    return new UserProfileResponseDto(new UserProfileDto(targetUser));
   }
 
-  async getUserStats(uuid: string): Promise<UserStats> {
+  async getUserStats(uuid: string): Promise<UserStatsResponseDto> {
     /**
      * Get a user's stats
      * @param uuid - The UUID of the user
@@ -151,29 +172,20 @@ export class UserService {
       this.commentRepository.count({ where: { authorUuid: uuid } }),
     ]);
 
-    return {
+    return new UserStatsResponseDto({
       postsCount,
       commentsCount,
       followersCount: 0, // TODO: Implement when adding follow system
       followingCount: 0, // TODO: Implement when adding follow system
-    };
+    });
   }
 
   async getUserPosts(
     uuid: string,
     page: number,
     limit: number,
-  ): Promise<PaginatedPosts> {
-    /**
-     * Get a user's posts
-     * @param uuid - The UUID of the user
-     * @param page - The page number
-     * @param limit - The number of posts per page
-     * @returns The user's posts
-     */
-
+  ): Promise<UserPostsResponseDto> {
     await this.findById(uuid); // Verify user exists
-
     const [posts, total] = await this.postRepository.findAndCount({
       where: { authorUuid: uuid },
       relations: ['author'],
@@ -181,53 +193,38 @@ export class UserService {
       take: limit,
       order: { createdAt: 'DESC' },
     });
-
-    return {
-      data: posts,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return new UserPostsResponseDto(
+      posts.map(post => new UserPostDto(post)),
+      new PaginationMeta(page, limit, total),
+    );
   }
 
   async getUserComments(
+    currentUserObj: User,
     uuid: string,
     page: number,
     limit: number,
-  ): Promise<PaginatedComments> {
-    /**
-     * Get a user's comments
-     * @param uuid - The UUID of the user
-     * @param page - The page number
-     * @param limit - The number of comments per page
-     * @returns The user's comments
-     */
-
-    await this.findById(uuid); // Verify user exists
-
+  ): Promise<UserCommentsResponseDto> {
+    const user = await this.findById(uuid);
+    const strategy = this.userOperationFactory.createStrategy(user.role.name);
+    // Only admins and owners can view user comments
+    if (!strategy.canViewUser(currentUserObj, user)) {
+      throw new ForbiddenException('You cannot view this user comments');
+    }
     const [comments, total] = await this.commentRepository.findAndCount({
-      where: { authorUuid: uuid },
+      where: { authorUuid: user.uuid },
       relations: ['author', 'post'],
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
     });
-
-    return {
-      data: comments,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return new UserCommentsResponseDto(
+      comments.map(comment => new UserCommentDto(comment)),
+      new PaginationMeta(page, limit, total),
+    );
   }
 
-  async deleteUser(currentUser: User, targetUuid: string): Promise<void> {
+  async deleteUser(currentUser: User, targetUuid: string): Promise<User> {
     /**
      * Delete a user
      * @param currentUser - The current user performing the deletion
@@ -241,7 +238,7 @@ export class UserService {
     );
 
     if (!strategy.canDeleteUser(currentUser, targetUser)) {
-      // Provide more specific error messages based on the scenario
+      // Provide more specific error messages based on the
       if (currentUser.uuid === targetUser.uuid) {
         throw new ForbiddenException('You cannot delete your own account');
       }
@@ -260,5 +257,7 @@ export class UserService {
       deleted: true,
       isActive: false,
     });
+
+    return targetUser;
   }
 }

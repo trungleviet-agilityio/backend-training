@@ -4,12 +4,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '../../common/constants/roles.constant';
-import {
-  AdminUserStrategy,
-  IUserOperationStrategy,
-  ModeratorUserStrategy,
-  RegularUserStrategy,
-} from '../strategies';
+import { AdminUserStrategy } from '../strategies/user-admin.strategy';
+import { ModeratorUserStrategy } from '../strategies/user-moderator.strategy';
+import { RegularUserStrategy } from '../strategies/user-regular.strategy';
+import { IUserOperationStrategy } from '../strategies/user-operation.strategy';
 
 @Injectable()
 export class UserOperationFactory {
