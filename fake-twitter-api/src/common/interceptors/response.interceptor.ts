@@ -82,14 +82,13 @@ export class ResponseInterceptor<T = ResponseData>
     }
 
     // Check if it has the expected structure of a wrapped response
-    const isWrapped = (
+    const isWrapped =
       data &&
       typeof data === 'object' &&
       typeof data.success === 'boolean' &&
       typeof data.message === 'string' &&
       typeof data.timestamp === 'string' &&
-      data.hasOwnProperty('data')
-    );
+      data.hasOwnProperty('data');
 
     this.logger.debug('Structure check for wrapped response:', isWrapped);
     return isWrapped;

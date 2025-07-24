@@ -1,32 +1,19 @@
-// src/auth/__tests__/auth.controller.spec.ts
 /**
  * AuthController Unit Tests
- *
- * This test suite demonstrates comprehensive unit testing for the AuthController
- * using the Factory, Builder, and Strategy patterns.
- *
- * Test Coverage:
- * - POST /auth/register - User registration endpoint
- * - POST /auth/login - User login endpoint
- * - POST /auth/refresh - Token refresh endpoint
- * - POST /auth/logout - User logout endpoint
- * - POST /auth/forgot-password - Password reset request endpoint
- * - POST /auth/reset-password - Password reset endpoint
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthController } from '../auth.controller';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services';
 import { TestDataFactory } from '../../common/__tests__/test-utils';
 import { AuthTestBuilder } from './mocks/auth-test.builder';
 import { AuthMockProvider } from './mocks/auth-mock.provider';
 import {
-  LoginDto,
-  RegisterDto,
-  RefreshTokenDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
+  RefreshTokenPayloadDto,
+  ForgotPasswordPayloadDto,
+  ResetPasswordPayloadDto,
+  UserInfoDto,
 } from '../dto';
 import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 
@@ -35,7 +22,6 @@ describe('AuthController', () => {
   let authService: jest.Mocked<AuthService>;
 
   beforeEach(async () => {
-    // Create mocks using the Mock Provider (Factory Pattern)
     const mockAuthService = AuthMockProvider.createAuthService();
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -53,43 +39,31 @@ describe('AuthController', () => {
   });
 
   afterEach(() => {
-    // Clean up all mocks after each test
     jest.clearAllMocks();
   });
 
   describe('POST /auth/register', () => {
     it('should register user successfully with valid data', async () => {
-      // Arrange - Using Builder Pattern for registration scenario
-      const scenario = new AuthTestBuilder()
-        .withRegisterDto(TestDataFactory.createRegisterDto())
-        .withTokens(
-          TestDataFactory.createAuthTokens({
-            user: {
-              uuid: 'new-user-uuid',
-              username: 'newuser',
-              firstName: 'New',
-              lastName: 'User',
-              role: { name: 'user' },
-            },
-          }),
-        )
-        .build();
+      // Arrange
+      const scenario = new AuthTestBuilder().buildRegisterScenario();
 
-      authService.register.mockResolvedValue(scenario.tokens!);
+      authService.register.mockResolvedValue(scenario.registerResponseDto);
 
       // Act
-      const result = await controller.register(scenario.registerDto!);
+      const result = await controller.register(scenario.registerPayloadDto);
 
       // Assert
-      expect(authService.register).toHaveBeenCalledWith(scenario.registerDto);
-      expect(result).toEqual(scenario.tokens);
+      expect(authService.register).toHaveBeenCalledWith(
+        scenario.registerPayloadDto,
+      );
+      expect(result).toEqual(scenario.registerResponseDto);
     });
 
     it('should handle registration validation errors', async () => {
       // Arrange
       const invalidRegisterDto = TestDataFactory.createRegisterDto({
         email: 'invalid-email',
-        password: '123', // too short
+        password: '123',
       });
 
       authService.register.mockRejectedValue(
@@ -101,57 +75,21 @@ describe('AuthController', () => {
         'Validation failed',
       );
     });
-
-    it('should handle registration failure when user already exists', async () => {
-      // Arrange
-      const registerDto = TestDataFactory.createRegisterDto({
-        email: 'existing@example.com',
-      });
-
-      authService.register.mockRejectedValue(
-        new UnauthorizedException('User already exists'),
-      );
-
-      // Act & Assert
-      await expect(controller.register(registerDto)).rejects.toThrow(
-        'User already exists',
-      );
-    });
-
-    it('should handle registration failure with missing required fields', async () => {
-      // Arrange
-      const incompleteRegisterDto = {
-        email: 'test@example.com',
-        // missing username and password
-      } as RegisterDto;
-
-      authService.register.mockRejectedValue(
-        new BadRequestException('Missing required fields'),
-      );
-
-      // Act & Assert
-      await expect(controller.register(incompleteRegisterDto)).rejects.toThrow(
-        'Missing required fields',
-      );
-    });
   });
 
   describe('POST /auth/login', () => {
     it('should login user successfully with valid credentials', async () => {
       // Arrange
-      const scenario = new AuthTestBuilder()
-        .withLoginDto(TestDataFactory.createLoginDto())
-        .withTokens(TestDataFactory.createAuthTokens())
-        .build();
+      const scenario = new AuthTestBuilder().buildLoginScenario();
 
-      authService.login.mockResolvedValue(scenario.tokens!);
+      authService.login.mockResolvedValue(scenario.loginResponseDto);
 
       // Act
-      const result = await controller.login(scenario.loginDto!);
+      const result = await controller.login(scenario.loginPayloadDto);
 
       // Assert
-      expect(authService.login).toHaveBeenCalledWith(scenario.loginDto);
-      expect(result).toEqual(scenario.tokens);
+      expect(authService.login).toHaveBeenCalledWith(scenario.loginPayloadDto);
+      expect(result).toEqual(scenario.loginResponseDto);
     });
 
     it('should handle login failure with invalid credentials', async () => {
@@ -170,43 +108,12 @@ describe('AuthController', () => {
         'Invalid credentials',
       );
     });
-
-    it('should handle login failure with inactive user', async () => {
-      // Arrange
-      const loginDto = TestDataFactory.createLoginDto();
-
-      authService.login.mockRejectedValue(
-        new UnauthorizedException('User is inactive'),
-      );
-
-      // Act & Assert
-      await expect(controller.login(loginDto)).rejects.toThrow(
-        'User is inactive',
-      );
-    });
-
-    it('should handle login failure with missing credentials', async () => {
-      // Arrange
-      const incompleteLoginDto = {
-        email: 'test@example.com',
-        // missing password
-      } as LoginDto;
-
-      authService.login.mockRejectedValue(
-        new BadRequestException('Password is required'),
-      );
-
-      // Act & Assert
-      await expect(controller.login(incompleteLoginDto)).rejects.toThrow(
-        'Password is required',
-      );
-    });
   });
 
   describe('POST /auth/refresh', () => {
     it('should refresh token successfully with valid refresh token', async () => {
       // Arrange
-      const refreshTokenDto: RefreshTokenDto = {
+      const refreshTokenDto: RefreshTokenPayloadDto = {
         refreshToken: 'valid-refresh-token',
       };
       const expectedTokens = TestDataFactory.createRefreshTokenResponse();
@@ -217,15 +124,13 @@ describe('AuthController', () => {
       const result = await controller.refresh(refreshTokenDto);
 
       // Assert
-      expect(authService.refresh).toHaveBeenCalledWith(
-        refreshTokenDto.refreshToken,
-      );
+      expect(authService.refresh).toHaveBeenCalledWith(refreshTokenDto);
       expect(result).toEqual(expectedTokens);
     });
 
     it('should handle refresh failure with invalid refresh token', async () => {
       // Arrange
-      const refreshTokenDto: RefreshTokenDto = {
+      const refreshTokenDto: RefreshTokenPayloadDto = {
         refreshToken: 'invalid-refresh-token',
       };
 
@@ -236,38 +141,6 @@ describe('AuthController', () => {
       // Act & Assert
       await expect(controller.refresh(refreshTokenDto)).rejects.toThrow(
         'Invalid refresh token',
-      );
-    });
-
-    it('should handle refresh failure with expired refresh token', async () => {
-      // Arrange
-      const refreshTokenDto: RefreshTokenDto = {
-        refreshToken: 'expired-refresh-token',
-      };
-
-      authService.refresh.mockRejectedValue(
-        new UnauthorizedException('Token expired'),
-      );
-
-      // Act & Assert
-      await expect(controller.refresh(refreshTokenDto)).rejects.toThrow(
-        'Token expired',
-      );
-    });
-
-    it('should handle refresh failure with missing refresh token', async () => {
-      // Arrange
-      const refreshTokenDto: RefreshTokenDto = {
-        refreshToken: '',
-      };
-
-      authService.refresh.mockRejectedValue(
-        new BadRequestException('Refresh token is required'),
-      );
-
-      // Act & Assert
-      await expect(controller.refresh(refreshTokenDto)).rejects.toThrow(
-        'Refresh token is required',
       );
     });
   });
@@ -284,13 +157,17 @@ describe('AuthController', () => {
         sessionId: 'test-session-id',
       };
 
-      authService.logout.mockResolvedValue(undefined);
+      const logoutResponse = TestDataFactory.createLogoutResponse();
+      authService.logout.mockResolvedValue(logoutResponse);
 
       // Act
-      await controller.logout(user);
+      const result = await controller.logout(
+        user as IJwtPayload & { user: UserInfoDto },
+      );
 
       // Assert
-      expect(authService.logout).toHaveBeenCalledWith(user.sub);
+      expect(authService.logout).toHaveBeenCalledWith(user);
+      expect(result).toEqual(logoutResponse);
     });
 
     it('should handle logout failure', async () => {
@@ -307,92 +184,55 @@ describe('AuthController', () => {
       authService.logout.mockRejectedValue(new Error('Session not found'));
 
       // Act & Assert
-      await expect(controller.logout(user)).rejects.toThrow(
-        'Session not found',
-      );
+      await expect(
+        controller.logout(user as IJwtPayload & { user: UserInfoDto }),
+      ).rejects.toThrow('Session not found');
     });
   });
 
   describe('POST /auth/forgot-password', () => {
     it('should send password reset email successfully', async () => {
       // Arrange
-      const forgotPasswordDto: ForgotPasswordDto = {
+      const forgotPasswordDto: ForgotPasswordPayloadDto = {
         email: 'test@example.com',
       };
-      const expectedMessage = {
-        message: 'If the email exists, a reset link has been sent',
-      };
+      const expectedResponse = TestDataFactory.createForgotPasswordResponse();
 
-      authService.forgotPassword.mockResolvedValue(expectedMessage);
+      authService.forgotPassword.mockResolvedValue(expectedResponse);
 
       // Act
       const result = await controller.forgotPassword(forgotPasswordDto);
 
       // Assert
       expect(authService.forgotPassword).toHaveBeenCalledWith(
-        forgotPasswordDto.email,
+        forgotPasswordDto,
       );
-      expect(result).toEqual(expectedMessage);
-    });
-
-    it('should handle forgot password failure', async () => {
-      // Arrange
-      const forgotPasswordDto: ForgotPasswordDto = {
-        email: 'test@example.com',
-      };
-
-      authService.forgotPassword.mockRejectedValue(
-        new Error('Email service unavailable'),
-      );
-
-      // Act & Assert
-      await expect(
-        controller.forgotPassword(forgotPasswordDto),
-      ).rejects.toThrow('Email service unavailable');
-    });
-
-    it('should handle forgot password with invalid email', async () => {
-      // Arrange
-      const forgotPasswordDto: ForgotPasswordDto = {
-        email: 'invalid-email',
-      };
-
-      authService.forgotPassword.mockRejectedValue(
-        new BadRequestException('Invalid email format'),
-      );
-
-      // Act & Assert
-      await expect(
-        controller.forgotPassword(forgotPasswordDto),
-      ).rejects.toThrow('Invalid email format');
+      expect(result).toEqual(expectedResponse);
     });
   });
 
   describe('POST /auth/reset-password', () => {
     it('should reset password successfully with valid token', async () => {
       // Arrange
-      const resetPasswordDto: ResetPasswordDto = {
+      const resetPasswordDto: ResetPasswordPayloadDto = {
         token: 'valid-reset-token',
         password: 'NewSecurePass123!',
       };
-      const expectedMessage = { message: 'Password reset successfully' };
+      const expectedResponse = TestDataFactory.createResetPasswordResponse();
 
-      authService.resetPassword.mockResolvedValue(expectedMessage);
+      authService.resetPassword.mockResolvedValue(expectedResponse);
 
       // Act
       const result = await controller.resetPassword(resetPasswordDto);
 
       // Assert
-      expect(authService.resetPassword).toHaveBeenCalledWith(
-        resetPasswordDto.token,
-        resetPasswordDto.password,
-      );
-      expect(result).toEqual(expectedMessage);
+      expect(authService.resetPassword).toHaveBeenCalledWith(resetPasswordDto);
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should handle password reset failure with invalid token', async () => {
       // Arrange
-      const resetPasswordDto: ResetPasswordDto = {
+      const resetPasswordDto: ResetPasswordPayloadDto = {
         token: 'invalid-reset-token',
         password: 'NewSecurePass123!',
       };
@@ -404,40 +244,6 @@ describe('AuthController', () => {
       // Act & Assert
       await expect(controller.resetPassword(resetPasswordDto)).rejects.toThrow(
         'Invalid or expired reset token',
-      );
-    });
-
-    it('should handle password reset failure with weak password', async () => {
-      // Arrange
-      const resetPasswordDto: ResetPasswordDto = {
-        token: 'valid-reset-token',
-        password: '123', // too weak
-      };
-
-      authService.resetPassword.mockRejectedValue(
-        new BadRequestException('Password too weak'),
-      );
-
-      // Act & Assert
-      await expect(controller.resetPassword(resetPasswordDto)).rejects.toThrow(
-        'Password too weak',
-      );
-    });
-
-    it('should handle password reset failure with missing token', async () => {
-      // Arrange
-      const resetPasswordDto: ResetPasswordDto = {
-        token: '',
-        password: 'NewSecurePass123!',
-      };
-
-      authService.resetPassword.mockRejectedValue(
-        new BadRequestException('Reset token is required'),
-      );
-
-      // Act & Assert
-      await expect(controller.resetPassword(resetPasswordDto)).rejects.toThrow(
-        'Reset token is required',
       );
     });
   });

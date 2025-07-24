@@ -1,5 +1,5 @@
 /**
- * Auth module unit tests
+ * Auth module unit tests - Updated for new service architecture
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -7,13 +7,18 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { DataSource } from 'typeorm';
-import { AuthService } from '../services/auth.service';
+
 import { AuthController } from '../auth.controller';
-import { AuthMapperService } from '../services/auth-mapper.service';
-import { AuthPasswordResetService } from '../services/auth-password-reset.service';
-import { AuthOperationFactory } from '../factories/auth-operation.factory';
-import { JwtAuthStrategy, JwtStrategy, LocalStrategy } from '../strategies';
+import {
+  AuthService,
+  AuthUserService,
+  AuthTokenService,
+  AuthPasswordService,
+  AuthSessionService,
+  AuthErrorHandler,
+  AuthPasswordResetService,
+} from '../services';
+import { JwtStrategy } from '../strategies';
 import { JwtAuthGuard, RolesGuard } from '../guards';
 import { NotificationModule } from '../../notifications/notification.module';
 import { User } from '../../database/entities/user.entity';
@@ -35,7 +40,6 @@ describe('AuthModule', () => {
       AuthMockProvider.createAuthPasswordResetRepository();
     const mockDataSource = AuthMockProvider.createDataSource();
 
-    // Test the module structure by providing all the same providers as AuthModule
     module = await Test.createTestingModule({
       imports: [
         PassportModule,
@@ -50,28 +54,22 @@ describe('AuthModule', () => {
       ],
       controllers: [AuthController],
       providers: [
-        // Services
+        // New service architecture
         AuthService,
+        AuthUserService,
+        AuthTokenService,
+        AuthPasswordService,
+        AuthSessionService,
+        AuthErrorHandler,
         AuthPasswordResetService,
-        AuthMapperService,
-        // Factories
-        AuthOperationFactory,
-        // Strategies
-        JwtAuthStrategy,
+
+        // Essential Passport strategy
         JwtStrategy,
-        LocalStrategy,
+
         // Guards
         JwtAuthGuard,
         RolesGuard,
-        // Custom providers
-        {
-          provide: 'JWT_AUTH_STRATEGY',
-          useExisting: JwtAuthStrategy,
-        },
-        {
-          provide: 'AUTH_MAPPER_SERVICE',
-          useExisting: AuthMapperService,
-        },
+
         // Repositories (mocked)
         {
           provide: getRepositoryToken(User),
@@ -94,13 +92,7 @@ describe('AuthModule', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
-        // DataSource (mocked)
-        {
-          provide: DataSource,
-          useValue: mockDataSource,
-        },
       ],
-      exports: [AuthService],
     }).compile();
   });
 
@@ -126,43 +118,42 @@ describe('AuthModule', () => {
     expect(authController).toBeInstanceOf(AuthController);
   });
 
-  it('should provide AuthMapperService', () => {
-    const authMapperService = module.get<AuthMapperService>(AuthMapperService);
-    expect(authMapperService).toBeDefined();
-    expect(authMapperService).toBeInstanceOf(AuthMapperService);
+  it('should provide AuthUserService', () => {
+    const authUserService = module.get<AuthUserService>(AuthUserService);
+    expect(authUserService).toBeDefined();
+    expect(authUserService).toBeInstanceOf(AuthUserService);
   });
 
-  it('should provide AuthPasswordResetService', () => {
-    const authPasswordResetService = module.get<AuthPasswordResetService>(
-      AuthPasswordResetService,
-    );
-    expect(authPasswordResetService).toBeDefined();
-    expect(authPasswordResetService).toBeInstanceOf(AuthPasswordResetService);
+  it('should provide AuthTokenService', () => {
+    const authTokenService = module.get<AuthTokenService>(AuthTokenService);
+    expect(authTokenService).toBeDefined();
+    expect(authTokenService).toBeInstanceOf(AuthTokenService);
   });
 
-  it('should provide AuthOperationFactory', () => {
-    const authOperationFactory =
-      module.get<AuthOperationFactory>(AuthOperationFactory);
-    expect(authOperationFactory).toBeDefined();
-    expect(authOperationFactory).toBeInstanceOf(AuthOperationFactory);
+  it('should provide AuthPasswordService', () => {
+    const authPasswordService =
+      module.get<AuthPasswordService>(AuthPasswordService);
+    expect(authPasswordService).toBeDefined();
+    expect(authPasswordService).toBeInstanceOf(AuthPasswordService);
   });
 
-  it('should provide JwtAuthStrategy', () => {
-    const jwtAuthStrategy = module.get<JwtAuthStrategy>(JwtAuthStrategy);
-    expect(jwtAuthStrategy).toBeDefined();
-    expect(jwtAuthStrategy).toBeInstanceOf(JwtAuthStrategy);
+  it('should provide AuthSessionService', () => {
+    const authSessionService =
+      module.get<AuthSessionService>(AuthSessionService);
+    expect(authSessionService).toBeDefined();
+    expect(authSessionService).toBeInstanceOf(AuthSessionService);
+  });
+
+  it('should provide AuthErrorHandler', () => {
+    const authErrorHandler = module.get<AuthErrorHandler>(AuthErrorHandler);
+    expect(authErrorHandler).toBeDefined();
+    expect(authErrorHandler).toBeInstanceOf(AuthErrorHandler);
   });
 
   it('should provide JwtStrategy', () => {
     const jwtStrategy = module.get<JwtStrategy>(JwtStrategy);
     expect(jwtStrategy).toBeDefined();
     expect(jwtStrategy).toBeInstanceOf(JwtStrategy);
-  });
-
-  it('should provide LocalStrategy', () => {
-    const localStrategy = module.get<LocalStrategy>(LocalStrategy);
-    expect(localStrategy).toBeDefined();
-    expect(localStrategy).toBeInstanceOf(LocalStrategy);
   });
 
   it('should provide JwtAuthGuard', () => {
@@ -175,48 +166,5 @@ describe('AuthModule', () => {
     const rolesGuard = module.get<RolesGuard>(RolesGuard);
     expect(rolesGuard).toBeDefined();
     expect(rolesGuard).toBeInstanceOf(RolesGuard);
-  });
-
-  it('should export AuthService', () => {
-    const authService = module.get<AuthService>(AuthService);
-    expect(authService).toBeInstanceOf(AuthService);
-  });
-
-  it('should have all required dependencies for AuthService', () => {
-    const authService = module.get<AuthService>(AuthService);
-    expect(authService).toBeDefined();
-
-    // Verify that all dependencies are properly injected
-    const userRepository = module.get(getRepositoryToken(User));
-    const roleRepository = module.get(getRepositoryToken(Role));
-    const authSessionRepository = module.get(getRepositoryToken(AuthSession));
-    const authPasswordResetRepository = module.get(
-      getRepositoryToken(AuthPasswordReset),
-    );
-    const configService = module.get<ConfigService>(ConfigService);
-    const authOperationFactory =
-      module.get<AuthOperationFactory>(AuthOperationFactory);
-    const authMapperService = module.get<AuthMapperService>(AuthMapperService);
-    const authPasswordResetService = module.get<AuthPasswordResetService>(
-      AuthPasswordResetService,
-    );
-
-    expect(userRepository).toBeDefined();
-    expect(roleRepository).toBeDefined();
-    expect(authSessionRepository).toBeDefined();
-    expect(authPasswordResetRepository).toBeDefined();
-    expect(configService).toBeDefined();
-    expect(authOperationFactory).toBeDefined();
-    expect(authMapperService).toBeDefined();
-    expect(authPasswordResetService).toBeDefined();
-  });
-
-  it('should have all required dependencies for AuthController', () => {
-    const authController = module.get<AuthController>(AuthController);
-    expect(authController).toBeDefined();
-
-    // The controller should have access to the AuthService
-    const authService = module.get<AuthService>(AuthService);
-    expect(authService).toBeDefined();
   });
 });

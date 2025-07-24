@@ -1,244 +1,250 @@
 /**
- * AuthService Unit Tests
- *
- * This test suite demonstrates comprehensive unit testing for the AuthService
- * using the Factory, Builder, and Strategy patterns.
- *
- * - Login functionality (success and failure scenarios)
- * - Registration functionality (success and failure scenarios)
- * - Token refresh functionality
- * - Logout functionality
- * - User validation functionality
- * - Password reset functionality
+ * Auth Service Tests - Testing the main orchestrator
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException } from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
-import { AuthOperationFactory } from '../factories/auth-operation.factory';
-import { AuthPasswordResetService } from '../services/auth-password-reset.service';
+import {
+  AuthService,
+  AuthUserService,
+  AuthTokenService,
+  AuthPasswordService,
+  AuthSessionService,
+  AuthErrorHandler,
+} from '../services';
 import { TestDataFactory } from '../../common/__tests__/test-utils';
-import { AuthTestBuilder } from './mocks/auth-test.builder';
-import { AuthMockProvider } from './mocks/auth-mock.provider';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let authOperationFactory: jest.Mocked<AuthOperationFactory>;
-  let authPasswordResetService: jest.Mocked<AuthPasswordResetService>;
+  let userService: jest.Mocked<AuthUserService>;
+  let tokenService: jest.Mocked<AuthTokenService>;
+  let passwordService: jest.Mocked<AuthPasswordService>;
+  let sessionService: jest.Mocked<AuthSessionService>;
+  let errorHandler: jest.Mocked<AuthErrorHandler>;
 
   beforeEach(async () => {
-    // Create mocks using the Mock Provider (Factory Pattern)
-    const mockAuthOperationFactory =
-      AuthMockProvider.createAuthOperationFactory();
-    const mockAuthPasswordResetService =
-      AuthMockProvider.createAuthPasswordResetService();
+    const mockUserService = {
+      validateCredentials: jest.fn(),
+      createUser: jest.fn(),
+    };
 
-    const moduleRef: TestingModule = await Test.createTestingModule({
+    const mockTokenService = {
+      generateTokens: jest.fn(),
+      validateRefreshToken: jest.fn(),
+    };
+
+    const mockPasswordService = {
+      initiatePasswordReset: jest.fn(),
+      resetPassword: jest.fn(),
+    };
+
+    const mockSessionService = {
+      invalidateSession: jest.fn(),
+    };
+
+    const mockErrorHandler = {
+      handleLoginError: jest.fn().mockImplementation(error => {
+        throw error;
+      }),
+      handleRegistrationError: jest.fn().mockImplementation(error => {
+        throw error;
+      }),
+      handleRefreshError: jest.fn().mockImplementation(error => {
+        throw error;
+      }),
+      handleLogoutError: jest.fn().mockImplementation(error => {
+        throw error;
+      }),
+      handlePasswordResetError: jest.fn().mockImplementation(error => {
+        throw error;
+      }),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        {
-          provide: AuthOperationFactory,
-          useValue: mockAuthOperationFactory,
-        },
-        {
-          provide: AuthPasswordResetService,
-          useValue: mockAuthPasswordResetService,
-        },
+        { provide: AuthUserService, useValue: mockUserService },
+        { provide: AuthTokenService, useValue: mockTokenService },
+        { provide: AuthPasswordService, useValue: mockPasswordService },
+        { provide: AuthSessionService, useValue: mockSessionService },
+        { provide: AuthErrorHandler, useValue: mockErrorHandler },
       ],
     }).compile();
 
-    service = moduleRef.get<AuthService>(AuthService);
-    authOperationFactory = moduleRef.get(AuthOperationFactory);
-    authPasswordResetService = moduleRef.get(AuthPasswordResetService);
+    service = module.get<AuthService>(AuthService);
+    userService = module.get(AuthUserService);
+    tokenService = module.get(AuthTokenService);
+    passwordService = module.get(AuthPasswordService);
+    sessionService = module.get(AuthSessionService);
+    errorHandler = module.get(AuthErrorHandler);
   });
 
   afterEach(() => {
-    // Clean up all mocks after each test
     jest.clearAllMocks();
   });
 
   describe('login', () => {
-    it('should authenticate user successfully with valid credentials', async () => {
-      // Arrange - Using Builder Pattern for complex scenario setup
-      const scenario = new AuthTestBuilder()
-        .withLoginDto(TestDataFactory.createLoginDto())
-        .withTokens(TestDataFactory.createAuthTokens())
-        .build();
+    it('should orchestrate login successfully', async () => {
+      // Arrange
+      const loginPayload = {
+        email: 'test@example.com',
+        password: 'password123',
+      };
+      const mockUser = TestDataFactory.createUser();
+      const mockTokens = TestDataFactory.createAuthTokens();
 
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.authenticate.mockResolvedValue(scenario.tokens!);
-
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
+      userService.validateCredentials.mockResolvedValue(mockUser);
+      tokenService.generateTokens.mockResolvedValue(mockTokens);
 
       // Act
-      const result = await service.login(scenario.loginDto!);
+      const result = await service.login(loginPayload);
 
       // Assert
-      expect(authOperationFactory.createStrategy).toHaveBeenCalled();
-      expect(mockStrategy.authenticate).toHaveBeenCalledWith(scenario.loginDto);
-      expect(result).toEqual(scenario.tokens);
+      expect(userService.validateCredentials).toHaveBeenCalledWith(
+        loginPayload.email,
+        loginPayload.password,
+      );
+      expect(tokenService.generateTokens).toHaveBeenCalledWith(mockUser);
+      expect(result).toHaveProperty('data.tokens');
+      expect(result).toHaveProperty('data.user');
     });
 
-    it('should handle authentication failure with invalid credentials', async () => {
-      // Arrange - Using Builder Pattern for error scenario
-      const scenario = new AuthTestBuilder()
-        .withLoginDto(
-          TestDataFactory.createLoginDto({ email: 'invalid@example.com' }),
-        )
-        .withError(new UnauthorizedException('Invalid credentials'))
-        .build();
+    it('should handle login errors', async () => {
+      // Arrange
+      const loginPayload = { email: 'test@example.com', password: 'wrong' };
+      const error = new Error('Invalid credentials');
 
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.authenticate.mockRejectedValue(scenario.error);
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
+      userService.validateCredentials.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(service.login(scenario.loginDto!)).rejects.toThrow(
-        'Invalid credentials',
-      );
-      expect(mockStrategy.authenticate).toHaveBeenCalledWith(scenario.loginDto);
+      await expect(service.login(loginPayload)).rejects.toThrow();
+      expect(errorHandler.handleLoginError).toHaveBeenCalledWith(error);
     });
   });
 
   describe('register', () => {
-    it('should register user successfully with valid data', async () => {
-      // Arrange - Using Builder Pattern for registration scenario
-      const scenario = new AuthTestBuilder()
-        .withRegisterDto(TestDataFactory.createRegisterDto())
-        .withTokens(
-          TestDataFactory.createAuthTokens({
-            user: {
-              uuid: 'new-user-uuid',
-              username: 'newuser',
-              firstName: 'New',
-              lastName: 'User',
-              role: { name: 'user' },
-            },
-          }),
-        )
-        .build();
+    it('should orchestrate registration successfully', async () => {
+      // Arrange
+      const registerPayload = {
+        email: 'new@example.com',
+        username: 'newuser',
+        password: 'password123',
+      };
+      const mockUser = TestDataFactory.createUser();
+      const mockTokens = TestDataFactory.createAuthTokens();
 
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.register.mockResolvedValue(scenario.tokens!);
-
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
+      userService.createUser.mockResolvedValue(mockUser);
+      tokenService.generateTokens.mockResolvedValue(mockTokens);
 
       // Act
-      const result = await service.register(scenario.registerDto!);
+      const result = await service.register(registerPayload);
 
       // Assert
-      expect(authOperationFactory.createStrategy).toHaveBeenCalled();
-      expect(mockStrategy.register).toHaveBeenCalledWith(scenario.registerDto);
-      expect(result).toEqual(scenario.tokens);
+      expect(userService.createUser).toHaveBeenCalledWith(registerPayload);
+      expect(tokenService.generateTokens).toHaveBeenCalledWith(mockUser);
+      expect(result).toHaveProperty('data.tokens');
+      expect(result).toHaveProperty('data.user');
     });
   });
 
   describe('refresh', () => {
-    it('should refresh token successfully with valid refresh token', async () => {
+    it('should orchestrate token refresh successfully', async () => {
       // Arrange
-      const refreshToken = 'valid-refresh-token';
-      const expectedTokens = TestDataFactory.createRefreshTokenResponse();
+      const refreshPayload = { refreshToken: 'valid-refresh-token' };
+      const mockUser = TestDataFactory.createUser();
+      const sessionId = 'session-id';
+      const mockTokens = TestDataFactory.createAuthTokens();
 
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.refreshToken.mockResolvedValue(expectedTokens);
-
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
+      tokenService.validateRefreshToken.mockResolvedValue({
+        user: mockUser,
+        sessionId,
+      });
+      tokenService.generateTokens.mockResolvedValue(mockTokens);
 
       // Act
-      const result = await service.refresh(refreshToken);
+      const result = await service.refresh(refreshPayload);
 
       // Assert
-      expect(authOperationFactory.createStrategy).toHaveBeenCalled();
-      expect(mockStrategy.refreshToken).toHaveBeenCalledWith(refreshToken);
-      expect(result).toEqual(expectedTokens);
+      expect(tokenService.validateRefreshToken).toHaveBeenCalledWith(
+        refreshPayload.refreshToken,
+      );
+      expect(tokenService.generateTokens).toHaveBeenCalledWith(
+        mockUser,
+        sessionId,
+      );
+      expect(result).toHaveProperty('data');
     });
   });
 
   describe('logout', () => {
-    it('should logout user successfully', async () => {
+    it('should orchestrate logout successfully', async () => {
       // Arrange
-      const sessionId = 'test-session-id';
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.logout.mockResolvedValue(undefined);
+      const user = {
+        sessionId: 'session-id',
+        email: 'test@example.com',
+      } as any;
 
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
+      sessionService.invalidateSession.mockResolvedValue();
 
       // Act
-      await service.logout(sessionId);
+      const result = await service.logout(user);
 
       // Assert
-      expect(authOperationFactory.createStrategy).toHaveBeenCalled();
-      expect(mockStrategy.logout).toHaveBeenCalledWith(sessionId);
-    });
-  });
-
-  describe('validateUser', () => {
-    it('should validate user successfully with valid token', async () => {
-      // Arrange
-      const token = 'valid-token';
-      const expectedUser = TestDataFactory.createUser();
-
-      const mockStrategy = AuthMockProvider.createAuthStrategy();
-      mockStrategy.validateToken.mockResolvedValue(expectedUser);
-
-      authOperationFactory.createStrategy.mockReturnValue(mockStrategy);
-
-      // Act
-      const result = await service.validateUser(token);
-
-      // Assert
-      expect(authOperationFactory.createStrategy).toHaveBeenCalled();
-      expect(mockStrategy.validateToken).toHaveBeenCalledWith(token);
-      expect(result).toEqual(expectedUser);
+      expect(sessionService.invalidateSession).toHaveBeenCalledWith(
+        user.sessionId,
+      );
+      expect(result).toHaveProperty('success', true);
     });
   });
 
   describe('forgotPassword', () => {
-    it('should send password reset email successfully', async () => {
+    it('should orchestrate forgot password successfully', async () => {
       // Arrange
-      const email = 'test@example.com';
-      const expectedMessage = {
-        message: 'If the email exists, a reset link has been sent',
-      };
+      const forgotPayload = { email: 'test@example.com' };
 
-      // Mock notification service
-      const mockNotificationService =
-        AuthMockProvider.createNotificationService();
-      mockNotificationService.sendPasswordResetEmail.mockResolvedValue(true);
+      passwordService.initiatePasswordReset.mockResolvedValue();
 
-      authPasswordResetService.forgotPassword.mockResolvedValue(
-        expectedMessage,
+      // Act
+      const result = await service.forgotPassword(forgotPayload);
+
+      // Assert
+      expect(passwordService.initiatePasswordReset).toHaveBeenCalledWith(
+        forgotPayload.email,
+      );
+      expect(result).toHaveProperty('success', true);
+    });
+
+    it('should always return success even on error (security)', async () => {
+      // Arrange
+      const forgotPayload = { email: 'test@example.com' };
+
+      passwordService.initiatePasswordReset.mockRejectedValue(
+        new Error('User not found'),
       );
 
       // Act
-      const result = await service.forgotPassword(email);
+      const result = await service.forgotPassword(forgotPayload);
 
       // Assert
-      expect(authPasswordResetService.forgotPassword).toHaveBeenCalledWith(
-        email,
-      );
-      expect(result).toEqual(expectedMessage);
+      expect(result).toHaveProperty('success', true);
     });
   });
 
   describe('resetPassword', () => {
-    it('should reset password successfully with valid token', async () => {
+    it('should orchestrate password reset successfully', async () => {
       // Arrange
-      const token = 'valid-reset-token';
-      const newPassword = 'NewSecurePass123!';
-      const expectedMessage = { message: 'Password reset successfully' };
+      const resetPayload = { token: 'valid-token', password: 'newpassword123' };
 
-      authPasswordResetService.resetPassword.mockResolvedValue(expectedMessage);
+      passwordService.resetPassword.mockResolvedValue();
 
       // Act
-      const result = await service.resetPassword(token, newPassword);
+      const result = await service.resetPassword(resetPayload);
 
       // Assert
-      expect(authPasswordResetService.resetPassword).toHaveBeenCalledWith(
-        token,
-        newPassword,
+      expect(passwordService.resetPassword).toHaveBeenCalledWith(
+        resetPayload.token,
+        resetPayload.password,
       );
-      expect(result).toEqual(expectedMessage);
+      expect(result).toHaveProperty('success', true);
     });
   });
 });

@@ -292,9 +292,7 @@ export class TestDataFactory {
   /**
    * Creates test login response DTO
    */
-  static createLoginResponse(
-    tokens?: AuthTokensWithUserDto,
-  ): LoginResponseDto {
+  static createLoginResponse(tokens?: AuthTokensWithUserDto): LoginResponseDto {
     const authTokens = tokens || TestDataFactory.createAuthTokens();
     return new LoginResponseDto(authTokens);
   }
@@ -376,7 +374,9 @@ export class TestDataFactory {
   /**
    * Creates an expired session for testing
    */
-  static createExpiredSession(overrides: Partial<AuthSession> = {}): AuthSession {
+  static createExpiredSession(
+    overrides: Partial<AuthSession> = {},
+  ): AuthSession {
     return TestDataFactory.createAuthSession({
       expiresAt: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
       isActive: false,
