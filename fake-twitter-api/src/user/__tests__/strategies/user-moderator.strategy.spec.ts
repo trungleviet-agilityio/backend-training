@@ -6,7 +6,7 @@
  */
 
 import { ModeratorUserStrategy } from '../../strategies/user-moderator.strategy';
-import { UpdateUserDto } from '../../dto/update-user.dto';
+import { UserUpdatePayloadDto } from '../../dto/update-user.dto';
 import { UserTestBuilder } from '../mocks/user-test.builder';
 import { Role } from '../../../database/entities/role.entity';
 
@@ -111,7 +111,7 @@ describe('ModeratorUserStrategy', () => {
         .withTargetUser({ uuid: 'mod-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'Jane',
         lastName: 'Doe',
         bio: 'Updated bio',
@@ -138,13 +138,13 @@ describe('ModeratorUserStrategy', () => {
         .withTargetUser({ uuid: 'mod-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'Jane',
         lastName: 'Doe',
         bio: 'Updated bio',
         avatarUrl: 'https://example.com/avatar.jpg',
         email: 'newemail@example.com', // Restricted field
-      } as UpdateUserDto;
+      } as UserUpdatePayloadDto;
 
       // Act
       const result = strategy.validateUpdateData(
@@ -166,7 +166,7 @@ describe('ModeratorUserStrategy', () => {
         .withTargetUser({ uuid: 'mod-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'Jane',
         bio: 'Updated bio',
       };
@@ -191,7 +191,7 @@ describe('ModeratorUserStrategy', () => {
         .withTargetUser({ uuid: 'mod-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {};
+      const updateData: UserUpdatePayloadDto = {};
 
       // Act
       const result = strategy.validateUpdateData(

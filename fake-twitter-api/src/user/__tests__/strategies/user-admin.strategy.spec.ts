@@ -5,9 +5,9 @@
  * the Strategy Pattern and Single Responsibility Principle
  */
 
-import { UpdateUserDto } from '../../dto/update-user.dto';
+import { UserUpdatePayloadDto } from '../../dto/update-user.dto';
 import { UserTestBuilder } from '../mocks/user-test.builder';
-import { AdminUserStrategy } from '../../strategies';
+import { AdminUserStrategy } from '../../strategies/user-admin.strategy';
 import { Role } from '../../../database/entities/role.entity';
 
 describe('AdminUserStrategy', () => {
@@ -155,7 +155,7 @@ describe('AdminUserStrategy', () => {
         .withTargetUser({ uuid: 'target-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'John',
         lastName: 'Doe',
         bio: 'Updated bio',

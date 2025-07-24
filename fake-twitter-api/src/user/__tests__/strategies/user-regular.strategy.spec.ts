@@ -5,8 +5,8 @@
  * the Strategy Pattern and Single Responsibility Principle
  */
 
-import { RegularUserStrategy } from '../../strategies';
-import { UpdateUserDto } from '../../dto/update-user.dto';
+import { RegularUserStrategy } from '../../strategies/user-regular.strategy';
+import { UserUpdatePayloadDto } from '../../dto/update-user.dto';
 import { UserTestBuilder } from '../mocks/user-test.builder';
 
 describe('RegularUserStrategy', () => {
@@ -102,7 +102,7 @@ describe('RegularUserStrategy', () => {
         .withTargetUser({ uuid: 'target-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'John',
         lastName: 'Doe',
         bio: 'Updated bio',
@@ -129,13 +129,13 @@ describe('RegularUserStrategy', () => {
         .withTargetUser({ uuid: 'target-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'John',
         lastName: 'Doe',
         bio: 'Updated bio',
         avatarUrl: 'https://example.com/avatar.jpg',
         email: 'newemail@example.com', // Restricted field
-      } as UpdateUserDto;
+      } as UserUpdatePayloadDto;
 
       // Act
       const result = strategy.validateUpdateData(
@@ -157,7 +157,7 @@ describe('RegularUserStrategy', () => {
         .withTargetUser({ uuid: 'target-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {
+      const updateData: UserUpdatePayloadDto = {
         firstName: 'John',
         bio: 'Updated bio',
       };
@@ -182,7 +182,7 @@ describe('RegularUserStrategy', () => {
         .withTargetUser({ uuid: 'target-uuid' })
         .buildTargetUser();
 
-      const updateData: UpdateUserDto = {};
+      const updateData: UserUpdatePayloadDto = {};
 
       // Act
       const result = strategy.validateUpdateData(

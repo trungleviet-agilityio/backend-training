@@ -7,33 +7,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { UserController } from '../user.controller';
 import { UserService } from '../services/user.service';
-import { PostMapperService } from '../../post/services/post-mapper.service';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
-import { PostDto } from '../../post/dto';
+import {
+  UserBaseResponseDto,
+  UserProfileResponseDto,
+} from '../dto/user-response.dto';
 
 describe('UserController', () => {
   let controller: UserController;
   let userService: jest.Mocked<UserService>;
-  let postMapperService: jest.Mocked<PostMapperService>;
 
   beforeEach(async () => {
     const mockUserService = UserMockProvider.createUserService();
-    const mockPostMapperService = {
-      toPostDtoList: jest.fn(),
-    } as unknown as jest.Mocked<PostMapperService>;
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [
-        { provide: UserService, useValue: mockUserService },
-        { provide: PostMapperService, useValue: mockPostMapperService },
-      ],
+      providers: [{ provide: UserService, useValue: mockUserService }],
     }).compile();
 
     controller = moduleRef.get<UserController>(UserController);
     userService = moduleRef.get(UserService);
-    postMapperService = moduleRef.get(PostMapperService);
   });
 
   afterEach(() => {
@@ -47,8 +41,9 @@ describe('UserController', () => {
         .withUserProfile({ uuid: 'user-uuid-123', username: 'testuser' })
         .build();
 
-      userService.getUserProfile.mockResolvedValue(scenario.userProfile!);
-
+      userService.getUserProfile.mockResolvedValue(
+        new UserProfileResponseDto(scenario.userProfile!),
+      );
       // Act
       const result = await controller.getUserProfile('user-uuid-123');
 
@@ -79,7 +74,9 @@ describe('UserController', () => {
         .withUserProfile({ firstName: 'Updated First' })
         .build();
 
-      userService.updateUserProfile.mockResolvedValue(scenario.targetUser!);
+      userService.updateUserProfile.mockResolvedValue(
+        new UserBaseResponseDto(scenario.targetUser!),
+      );
 
       // Act
       const result = await controller.updateUserProfile(
@@ -130,15 +127,7 @@ describe('UserController', () => {
       const scenario = new UserTestBuilder()
         .withPaginatedPosts(posts, 1, 10, 1)
         .build();
-      const mockPostDto = {
-        uuid: 'post-uuid',
-        content: 'Test post',
-      } as PostDto;
-      const mockPostDtoList = [mockPostDto];
       userService.getUserPosts.mockResolvedValue(scenario.paginatedPosts!);
-      postMapperService.toPostDtoList.mockReturnValue(
-        mockPostDtoList as unknown as PostDto[],
-      );
 
       // Act
       const result = await controller.getUserPosts('user-uuid-123', 1, 10);
@@ -148,7 +137,7 @@ describe('UserController', () => {
         1,
         10,
       );
-      expect(result.data).toEqual(mockPostDtoList);
+      expect(result.data).toEqual(scenario.paginatedPosts);
     });
   });
 
@@ -159,7 +148,7 @@ describe('UserController', () => {
         .withJwtPayload({ sub: 'admin-uuid-123', role: 'admin' })
         .build();
 
-      userService.deleteUser.mockResolvedValue(undefined);
+      userService.deleteUser.mockResolvedValue(scenario.targetUser!);
 
       // Act
       await controller.deleteUser(scenario.jwtPayload!, 'user-uuid-123');

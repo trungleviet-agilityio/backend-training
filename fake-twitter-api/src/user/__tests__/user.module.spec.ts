@@ -7,7 +7,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserModule } from '../user.module';
 import { UserService } from '../services/user.service';
 import { UserController } from '../user.controller';
-import { UserMapperService } from '../services/user-mapper.service';
 import { UserOperationFactory } from '../factories/user-operation.factory';
 import { User } from '../../database/entities/user.entity';
 import { Post } from '../../database/entities/post.entity';
@@ -42,11 +41,6 @@ describe('UserModule', () => {
   it('should provide UserController', () => {
     const userController = module.get<UserController>(UserController);
     expect(userController).toBeDefined();
-  });
-
-  it('should provide UserMapperService', () => {
-    const userMapperService = module.get<UserMapperService>(UserMapperService);
-    expect(userMapperService).toBeDefined();
   });
 
   it('should provide UserOperationFactory', () => {

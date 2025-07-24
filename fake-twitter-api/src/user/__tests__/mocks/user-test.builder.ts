@@ -6,25 +6,30 @@
 import { User } from '../../../database/entities/user.entity';
 import { Post } from '../../../database/entities/post.entity';
 import { Comment } from '../../../database/entities/comment.entity';
-import { UpdateUserPayloadDto } from '../../dto/update-user.dto';
-import { UserProfileDto } from '../../dto/user.dto';
+import { UserUpdatePayloadDto } from '../../dto/update-user.dto';
 import {
-  UserStats,
-  PaginatedPosts,
-  PaginatedComments,
-} from '../../interfaces/user.interface';
+  UserCommentDto,
+  UserPostDto,
+  UserProfileDto,
+  UserStatsDto,
+} from '../../dto/user.dto';
 import { IJwtPayload } from '../../../auth/interfaces/jwt-payload.interface';
 import { TestDataFactory } from '../../../common/__tests__/test-utils';
 import { Role } from '../../../database/entities/role.entity';
+import {
+  UserCommentsResponseDto,
+  UserPostsResponseDto,
+} from 'src/user/dto/user-response.dto';
+import { PaginationMeta } from 'src/common/dto/api-response.dto';
 
 export interface IUserTestScenario {
   currentUser?: User;
   targetUser?: User;
   userProfile?: UserProfileDto;
-  userStats?: UserStats;
-  updateDto?: UpdateUserPayloadDto;
-  paginatedPosts?: PaginatedPosts;
-  paginatedComments?: PaginatedComments;
+  userStats?: UserStatsDto;
+  updateDto?: UserUpdatePayloadDto;
+  paginatedPosts?: UserPostsResponseDto;
+  paginatedComments?: UserCommentsResponseDto;
   jwtPayload?: IJwtPayload;
   error?: Error;
 }
@@ -78,7 +83,7 @@ export class UserTestBuilder {
     return this;
   }
 
-  withUserStats(stats: UserStats | Partial<UserStats>): this {
+  withUserStats(stats: UserStatsDto | Partial<UserStatsDto>): this {
     this.scenario.userStats = {
       postsCount: 0,
       commentsCount: 0,
@@ -90,7 +95,7 @@ export class UserTestBuilder {
   }
 
   withUpdateDto(
-    updateDto: UpdateUserPayloadDto | Partial<UpdateUserPayloadDto>,
+    updateDto: UserUpdatePayloadDto | Partial<UserUpdatePayloadDto>,
   ): this {
     this.scenario.updateDto = {
       firstName: 'Updated First',
@@ -107,15 +112,6 @@ export class UserTestBuilder {
     limit = 10,
     total?: number,
   ): this {
-    this.scenario.paginatedPosts = {
-      data: posts,
-      meta: {
-        page,
-        limit,
-        total: total ?? posts.length,
-        totalPages: Math.ceil((total ?? posts.length) / limit),
-      },
-    };
     return this;
   }
 
@@ -125,15 +121,6 @@ export class UserTestBuilder {
     limit = 10,
     total?: number,
   ): this {
-    this.scenario.paginatedComments = {
-      data: comments,
-      meta: {
-        page,
-        limit,
-        total: total ?? comments.length,
-        totalPages: Math.ceil((total ?? comments.length) / limit),
-      },
-    };
     return this;
   }
 
@@ -178,7 +165,6 @@ export class UserTestBuilder {
       lastName: 'User',
       bio: 'Test bio',
       avatarUrl: 'https://example.com/avatar.jpg',
-      createdAt: '2024-01-01',
       role: {
         name: 'user',
       },
