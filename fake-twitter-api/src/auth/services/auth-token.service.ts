@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { User } from '../../database/entities/user.entity';
 import { AuthSession } from '../../database/entities/auth-session.entity';
 import { AuthTokensWithUserDto, AuthRefreshTokenDto } from '../dto';
@@ -32,7 +33,7 @@ export class AuthTokenService {
       sessionId = session.uuid;
     }
 
-    // Generate tokens with correct sessionId
+    // Generate tokens with correct sessionId and unique timestamp
     const payload: IJwtPayload = {
       sub: user.uuid,
       email: user.email,
@@ -40,6 +41,8 @@ export class AuthTokenService {
       role: user.role?.name || DEFAULT_ROLE,
       permissions: user.role?.permissions || {},
       sessionId,
+      iat: Math.floor(Date.now() / 1000), // Add issued at timestamp for uniqueness
+      jti: randomUUID(), // Add unique token ID for additional uniqueness
     };
 
     const accessToken = this.jwtService.sign(payload, {

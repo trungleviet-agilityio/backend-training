@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 
 import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 import { User } from 'src/database/entities/user.entity';
+import { AuthSession } from 'src/database/entities/auth-session.entity';
 import { UserInfoDto } from '../dto';
 
 @Injectable()
@@ -16,11 +17,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
    *
    * @param configService - Config service
    * @param userRepository - User repository
+   * @param sessionRepository - Session repository
    */
   constructor(
     configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(AuthSession)
+    private readonly sessionRepository: Repository<AuthSession>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -46,6 +50,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Invalid token');
+    }
+
+    // Validate session is still active
+    if (payload.sessionId) {
+      const session = await this.sessionRepository.findOne({
+        where: { uuid: payload.sessionId, isActive: true },
+      });
+
+      if (!session || session.expiresAt < new Date()) {
+        throw new UnauthorizedException('Session expired');
+      }
     }
 
     // Return user object with JWT payload

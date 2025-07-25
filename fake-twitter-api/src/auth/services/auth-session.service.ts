@@ -15,9 +15,16 @@ export class AuthSessionService {
   ) {}
 
   async invalidateSession(sessionId: string): Promise<void> {
-    await this.sessionRepository.update(sessionId, {
-      isActive: false,
+    // Check if session exists and is active before invalidating
+    const session = await this.sessionRepository.findOne({
+      where: { uuid: sessionId },
     });
+
+    if (session && session.isActive) {
+      await this.sessionRepository.update(sessionId, {
+        isActive: false,
+      });
+    }
   }
 
   async invalidateAllUserSessions(userUuid: string): Promise<void> {

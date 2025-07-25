@@ -124,6 +124,7 @@ export class AuthController {
 
   @Post('refresh')
   @Public()
+  @HttpCode(HttpStatus.CREATED)
   @ResponseMessage('Token refreshed successfully')
   @ApiOperation({
     summary: 'Refresh access token',
@@ -135,7 +136,7 @@ export class AuthController {
     description: 'Refresh token payload',
   })
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: HttpStatus.CREATED,
     type: RefreshTokenResponseDto,
     description: 'Token refreshed successfully',
   })
@@ -182,6 +183,7 @@ export class AuthController {
 
   @Post('forgot-password')
   @Public()
+  @HttpCode(HttpStatus.CREATED)
   @ResponseMessage('Password reset email sent')
   @ApiOperation({
     summary: 'Request password reset',
@@ -193,7 +195,7 @@ export class AuthController {
     description: 'Email address for password reset',
   })
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: HttpStatus.CREATED,
     type: ForgotPasswordResponseDto,
     description: 'Password reset email sent (always returned for security)',
   })
