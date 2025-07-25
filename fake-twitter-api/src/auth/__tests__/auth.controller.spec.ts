@@ -3,15 +3,15 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../services';
 import { TestDataFactory } from '../../common/__tests__/test-utils';
 import { AuthTestBuilder } from './mocks/auth-test.builder';
 import { AuthMockProvider } from './mocks/auth-mock.provider';
 import {
-  RefreshTokenPayloadDto,
   ForgotPasswordPayloadDto,
+  RefreshTokenPayloadDto,
   ResetPasswordPayloadDto,
   UserInfoDto,
 } from '../dto';

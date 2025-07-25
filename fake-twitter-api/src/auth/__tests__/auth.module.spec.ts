@@ -10,13 +10,13 @@ import { PassportModule } from '@nestjs/passport';
 
 import { AuthController } from '../auth.controller';
 import {
-  AuthService,
-  AuthUserService,
-  AuthTokenService,
-  AuthPasswordService,
-  AuthSessionService,
   AuthErrorHandler,
   AuthPasswordResetService,
+  AuthPasswordService,
+  AuthService,
+  AuthSessionService,
+  AuthTokenService,
+  AuthUserService,
 } from '../services';
 import { JwtStrategy } from '../strategies';
 import { JwtAuthGuard, RolesGuard } from '../guards';

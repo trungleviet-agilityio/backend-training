@@ -6,9 +6,9 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
-  Matches,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AuthTokensWithUserDto } from './auth.dto';

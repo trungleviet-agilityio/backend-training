@@ -4,14 +4,14 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UserController } from '../user.controller';
 import { UserService } from '../services/user.service';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
 import {
-  UserProfileResponseDto,
   UserPostsResponseDto,
+  UserProfileResponseDto,
 } from '../dto/user-response.dto';
 import { UserProfileDto } from '../dto/user.dto';
 import { PaginationMeta } from '../../common/dto/api-response.dto';

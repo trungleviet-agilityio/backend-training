@@ -3,11 +3,11 @@
  */
 
 import {
-  ResponseInterceptor,
   RESPONSE_MESSAGE_METADATA,
+  ResponseInterceptor,
 } from '../../interceptors/response.interceptor';
 import { Reflector } from '@nestjs/core';
-import { ExecutionContext, CallHandler } from '@nestjs/common';
+import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { of } from 'rxjs';
 
 describe('ResponseInterceptor', () => {
@@ -69,7 +69,7 @@ describe('ResponseInterceptor', () => {
       (context.switchToHttp as any) = () => ({
         getRequest: () => ({ url: '/test-url' }),
         getResponse: () => ({
-          status: function () {
+          status() {
             return this;
           },
           statusCode: Number(status),

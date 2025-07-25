@@ -3,7 +3,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommentController } from '../comment.controller';
 import { CommentService } from '../services/comment.service';
 import { CommentMapperService } from '../services/comment-mapper.service';

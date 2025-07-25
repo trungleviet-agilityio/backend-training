@@ -12,24 +12,24 @@ import { AuthPasswordReset } from '../../../database/entities/auth-password-rese
 
 // Import all auth DTOs
 import {
-  LoginPayloadDto,
-  RegisterPayloadDto,
-  RefreshTokenPayloadDto,
   ForgotPasswordPayloadDto,
-  ResetPasswordPayloadDto,
-  LoginResponseDto,
-  RegisterResponseDto,
-  RefreshTokenResponseDto,
-  LogoutResponseDto,
   ForgotPasswordResponseDto,
+  LoginPayloadDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+  RefreshTokenPayloadDto,
+  RefreshTokenResponseDto,
+  RegisterPayloadDto,
+  RegisterResponseDto,
+  ResetPasswordPayloadDto,
   ResetPasswordResponseDto,
 } from '../../../auth/dto';
 
 import {
-  AuthTokensWithUserDto,
   AuthRefreshTokenDto,
-  UserInfoDto,
+  AuthTokensWithUserDto,
   TokenDto,
+  UserInfoDto,
 } from '../../../auth/dto/auth.dto';
 
 import { IJwtPayload } from '../../../auth/interfaces/jwt-payload.interface';

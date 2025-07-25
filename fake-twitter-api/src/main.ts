@@ -8,7 +8,7 @@ if (!global.crypto) global.crypto = { randomUUID } as any;
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 // Import the global interceptors and filters

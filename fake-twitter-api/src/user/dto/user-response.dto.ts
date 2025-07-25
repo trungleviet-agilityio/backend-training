@@ -28,7 +28,7 @@ export class UserProfileResponseDto extends SuccessResponse<UserProfileDto> {
   declare data: UserProfileDto;
 
   constructor(data: UserProfileDto) {
-    super(data as UserProfileDto);
+    super(data);
   }
 }
 

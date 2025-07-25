@@ -59,7 +59,7 @@ describe('User Comment (e2e)', () => {
       // expect(comments.length).toBeGreaterThan(0);
 
       // Check if meta is present
-      const meta = res.body.data.meta;
+      const { meta } = res.body.data;
       expect(meta).toBeDefined();
       expect(meta).toHaveProperty('page');
       expect(meta).toHaveProperty('limit');

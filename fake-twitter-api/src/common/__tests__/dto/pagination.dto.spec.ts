@@ -3,9 +3,9 @@
  */
 
 import {
+  PaginatedResponseDto,
   PaginationDto,
   PaginationMetaDto,
-  PaginatedResponseDto,
 } from '../../dto/pagination.dto';
 
 describe('Pagination DTOs', () => {

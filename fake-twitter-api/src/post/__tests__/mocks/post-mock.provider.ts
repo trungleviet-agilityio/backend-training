@@ -87,12 +87,12 @@ export class PostMockProvider {
    */
   static createPostStrategy(): IPostOperationStrategy {
     return {
-      canCreatePost: jest.fn().mockReturnValue(true) as jest.Mock,
-      canViewPost: jest.fn().mockReturnValue(true) as jest.Mock,
-      canUpdatePost: jest.fn().mockReturnValue(true) as jest.Mock,
-      canDeletePost: jest.fn().mockReturnValue(true) as jest.Mock,
-      validateCreateData: jest.fn().mockReturnValue(true) as jest.Mock,
-      validateUpdateData: jest.fn().mockReturnValue(true) as jest.Mock,
+      canCreatePost: jest.fn().mockReturnValue(true),
+      canViewPost: jest.fn().mockReturnValue(true),
+      canUpdatePost: jest.fn().mockReturnValue(true),
+      canDeletePost: jest.fn().mockReturnValue(true),
+      validateCreateData: jest.fn().mockReturnValue(true),
+      validateUpdateData: jest.fn().mockReturnValue(true),
     };
   }
 

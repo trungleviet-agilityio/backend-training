@@ -3,25 +3,25 @@
  */
 
 import {
-  ApiTags,
+  ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
-  ApiBody,
-  ApiBearerAuth,
+  ApiTags,
 } from '@nestjs/swagger';
 import {
-  Controller,
-  Get,
-  Patch,
-  Delete,
-  Param,
   Body,
-  HttpStatus,
-  UseGuards,
+  Controller,
   DefaultValuePipe,
-  ParseUUIDPipe,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
   ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -34,14 +34,14 @@ import {
   UserCommentsResponseDto,
   UserDeletedResponseDto,
   UserPostsResponseDto,
-  UserStatsResponseDto,
   UserProfileResponseDto,
+  UserStatsResponseDto,
 } from './dto/user-response.dto';
 import {
-  UserUnauthorizedErrorDto,
   UserForbiddenErrorDto,
-  UserNotFoundErrorDto,
   UserInternalServerErrorDto,
+  UserNotFoundErrorDto,
+  UserUnauthorizedErrorDto,
 } from './dto/user-error.dto';
 import { UserUpdatePayloadDto } from './dto/update-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';

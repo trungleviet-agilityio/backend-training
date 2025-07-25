@@ -7,9 +7,9 @@ import { SuccessResponse } from '../../common/dto';
 import {
   IsNotEmpty,
   IsString,
-  MinLength,
-  MaxLength,
   Matches,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export class ResetPasswordPayloadDto {

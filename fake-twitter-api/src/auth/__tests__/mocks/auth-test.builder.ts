@@ -9,22 +9,22 @@ import { AuthPasswordReset } from '../../../database/entities/auth-password-rese
 
 // Import all DTOs
 import {
-  LoginPayloadDto,
-  RegisterPayloadDto,
-  RefreshTokenPayloadDto,
   ForgotPasswordPayloadDto,
-  ResetPasswordPayloadDto,
-  LoginResponseDto,
-  RegisterResponseDto,
-  RefreshTokenResponseDto,
-  LogoutResponseDto,
   ForgotPasswordResponseDto,
+  LoginPayloadDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+  RefreshTokenPayloadDto,
+  RefreshTokenResponseDto,
+  RegisterPayloadDto,
+  RegisterResponseDto,
+  ResetPasswordPayloadDto,
   ResetPasswordResponseDto,
 } from '../../dto';
 
 import {
-  AuthTokensWithUserDto,
   AuthRefreshTokenDto,
+  AuthTokensWithUserDto,
   UserInfoDto,
 } from '../../dto/auth.dto';
 
@@ -299,7 +299,7 @@ export class AuthTestBuilder {
       this.withTokens({});
     }
     if (!this.scenario.loginResponseDto) {
-      this.withLoginResponse(this.scenario.tokens!);
+      this.withLoginResponse(this.scenario.tokens);
     }
 
     return {
@@ -325,7 +325,7 @@ export class AuthTestBuilder {
       this.withTokens({});
     }
     if (!this.scenario.registerResponseDto) {
-      this.withRegisterResponse(this.scenario.tokens!);
+      this.withRegisterResponse(this.scenario.tokens);
     }
 
     return {
@@ -351,7 +351,7 @@ export class AuthTestBuilder {
       this.withRefreshTokens({});
     }
     if (!this.scenario.refreshTokenResponseDto) {
-      this.withRefreshResponse(this.scenario.refreshTokens!);
+      this.withRefreshResponse(this.scenario.refreshTokens);
     }
 
     return {
