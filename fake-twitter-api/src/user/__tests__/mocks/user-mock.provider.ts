@@ -29,7 +29,7 @@ export class UserMockProvider {
 
   static createUserOperationFactory(): jest.Mocked<UserOperationFactory> {
     return {
-      createStrategy: jest.fn(),
+      createStrategy: jest.fn().mockReturnValue(this.createUserStrategy()),
     } as unknown as jest.Mocked<UserOperationFactory>;
   }
 
@@ -77,11 +77,11 @@ export class UserMockProvider {
   // Strategy Mock
   static createUserStrategy(): jest.Mocked<IUserOperationStrategy> {
     return {
-      canUpdateUser: jest.fn(),
-      canDeleteUser: jest.fn(),
-      canViewUser: jest.fn(),
-      validateUpdateData: jest.fn(),
-    } as unknown as jest.Mocked<IUserOperationStrategy>;
+      canUpdateUser: jest.fn().mockReturnValue(true),
+      canDeleteUser: jest.fn().mockReturnValue(true),
+      validateUpdateData: jest.fn().mockReturnValue(true),
+      canViewUser: jest.fn().mockReturnValue(true),
+    } as jest.Mocked<IUserOperationStrategy>;
   }
 
   // Test Data Helpers
@@ -98,17 +98,7 @@ export class UserMockProvider {
       isActive: true,
       emailVerified: true,
       roleUuid: 'user-role-uuid',
-      role: {
-        uuid: 'user-role-uuid',
-        name: 'user',
-        description: 'Regular user',
-        permissions: {},
-        users: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deleted: false,
-        updateUpdatedAt: jest.fn(),
-      },
+      role: { name: 'user' },
       authSessions: [],
       authPasswordResets: [],
       posts: [],

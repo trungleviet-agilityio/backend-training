@@ -10,9 +10,11 @@ import { UserService } from '../services/user.service';
 import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
 import {
-  UserBaseResponseDto,
   UserProfileResponseDto,
+  UserPostsResponseDto,
 } from '../dto/user-response.dto';
+import { UserProfileDto } from '../dto/user.dto';
+import { PaginationMeta } from '../../common/dto/api-response.dto';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -38,29 +40,45 @@ describe('UserController', () => {
     it('should get user profile successfully', async () => {
       // Arrange - Using Builder Pattern
       const scenario = new UserTestBuilder()
+        .withJwtPayload({ sub: 'user-uuid-123', role: 'admin' })
         .withUserProfile({ uuid: 'user-uuid-123', username: 'testuser' })
         .build();
 
-      userService.getUserProfile.mockResolvedValue(
-        new UserProfileResponseDto(scenario.userProfile!),
+      const expectedResponse = new UserProfileResponseDto(
+        new UserProfileDto(UserMockProvider.createMockUser()),
       );
+      userService.getUserProfile.mockResolvedValue(expectedResponse);
+
       // Act
-      const result = await controller.getUserProfile('user-uuid-123');
+      const result = await controller.getUserProfile(
+        scenario.jwtPayload!,
+        'user-uuid-123',
+      );
 
       // Assert
-      expect(userService.getUserProfile).toHaveBeenCalledWith('user-uuid-123');
-      expect(result).toEqual({ user: scenario.userProfile });
+      expect(userService.getUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          uuid: scenario.jwtPayload!.sub,
+          role: { name: scenario.jwtPayload!.role },
+        }),
+        'user-uuid-123',
+      );
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should handle user not found', async () => {
       // Arrange
+      const scenario = new UserTestBuilder()
+        .withJwtPayload({ sub: 'user-uuid-123', role: 'user' })
+        .build();
+
       userService.getUserProfile.mockRejectedValue(
         new NotFoundException('User not found'),
       );
 
       // Act & Assert
       await expect(
-        controller.getUserProfile('non-existent-uuid'),
+        controller.getUserProfile(scenario.jwtPayload!, 'non-existent-uuid'),
       ).rejects.toThrow('User not found');
     });
   });
@@ -74,9 +92,10 @@ describe('UserController', () => {
         .withUserProfile({ firstName: 'Updated First' })
         .build();
 
-      userService.updateUserProfile.mockResolvedValue(
-        new UserBaseResponseDto(scenario.targetUser!),
+      const expectedResponse = new UserProfileResponseDto(
+        new UserProfileDto(UserMockProvider.createMockUser()),
       );
+      userService.updateUserProfile.mockResolvedValue(expectedResponse);
 
       // Act
       const result = await controller.updateUserProfile(
@@ -94,7 +113,7 @@ describe('UserController', () => {
         'user-uuid-123',
         scenario.updateDto,
       );
-      expect(result).toEqual({ user: scenario.targetUser });
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should handle forbidden update attempts', async () => {
@@ -127,7 +146,12 @@ describe('UserController', () => {
       const scenario = new UserTestBuilder()
         .withPaginatedPosts(posts, 1, 10, 1)
         .build();
-      userService.getUserPosts.mockResolvedValue(scenario.paginatedPosts!);
+
+      const expectedResponse = new UserPostsResponseDto(
+        scenario.userPosts!.items,
+        new PaginationMeta(1, 10, 1),
+      );
+      userService.getUserPosts.mockResolvedValue(expectedResponse);
 
       // Act
       const result = await controller.getUserPosts('user-uuid-123', 1, 10);
@@ -137,7 +161,7 @@ describe('UserController', () => {
         1,
         10,
       );
-      expect(result.data).toEqual(scenario.paginatedPosts);
+      expect(result).toEqual(expectedResponse);
     });
   });
 

@@ -16,11 +16,7 @@ import {
 import { IJwtPayload } from '../../../auth/interfaces/jwt-payload.interface';
 import { TestDataFactory } from '../../../common/__tests__/test-utils';
 import { Role } from '../../../database/entities/role.entity';
-import {
-  UserCommentsResponseDto,
-  UserPostsResponseDto,
-} from 'src/user/dto/user-response.dto';
-import { PaginationMeta } from 'src/common/dto/api-response.dto';
+import { PaginatedData } from 'src/common/dto/api-response.dto';
 
 export interface IUserTestScenario {
   currentUser?: User;
@@ -28,8 +24,8 @@ export interface IUserTestScenario {
   userProfile?: UserProfileDto;
   userStats?: UserStatsDto;
   updateDto?: UserUpdatePayloadDto;
-  paginatedPosts?: UserPostsResponseDto;
-  paginatedComments?: UserCommentsResponseDto;
+  userPosts?: PaginatedData<UserPostDto>;
+  userComments?: PaginatedData<UserCommentDto>;
   jwtPayload?: IJwtPayload;
   error?: Error;
 }
@@ -112,6 +108,20 @@ export class UserTestBuilder {
     limit = 10,
     total?: number,
   ): this {
+    const totalItems = total || posts.length;
+    const meta = {
+      page,
+      limit,
+      total: totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      hasNext: page < Math.ceil(totalItems / limit),
+      hasPrev: page > 1,
+    };
+
+    this.scenario.userPosts = {
+      items: posts.map(post => new UserPostDto(post)),
+      meta,
+    } as PaginatedData<UserPostDto>;
     return this;
   }
 
@@ -121,6 +131,20 @@ export class UserTestBuilder {
     limit = 10,
     total?: number,
   ): this {
+    const totalItems = total || comments.length;
+    const meta = {
+      page,
+      limit,
+      total: totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      hasNext: page < Math.ceil(totalItems / limit),
+      hasPrev: page > 1,
+    };
+
+    this.scenario.userComments = {
+      items: comments.map(comment => new UserCommentDto(comment)),
+      meta,
+    } as PaginatedData<UserCommentDto>;
     return this;
   }
 
@@ -163,7 +187,7 @@ export class UserTestBuilder {
       username: 'testuser',
       firstName: 'Test',
       lastName: 'User',
-      bio: 'Test bio',
+      bio: 'Test user bio',
       avatarUrl: 'https://example.com/avatar.jpg',
       role: {
         name: 'user',
