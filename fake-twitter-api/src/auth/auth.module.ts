@@ -16,13 +16,13 @@ import { AuthPasswordReset } from '../database/entities/auth-password-reset.enti
 import { AuthController } from './auth.controller';
 
 import {
-  AuthService,
-  AuthUserService,
-  AuthTokenService,
-  AuthPasswordService,
-  AuthSessionService,
   AuthErrorHandler,
   AuthPasswordResetService,
+  AuthPasswordService,
+  AuthService,
+  AuthSessionService,
+  AuthTokenService,
+  AuthUserService,
 } from './services';
 
 import { JwtStrategy } from './strategies';

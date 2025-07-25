@@ -6,8 +6,8 @@
 import {
   HttpStatus,
   INestApplication,
-  ValidationPipe,
   UnprocessableEntityException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthTestHelper } from '../utils/auth-test.helper';
 import { AuthFixtures } from '../fixtures/auth.fixtures';

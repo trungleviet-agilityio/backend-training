@@ -6,19 +6,19 @@
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import {
-  IUserRegistrationData,
-  IUserLoginData,
-  ILoginTestResponse,
-  IRegisterTestResponse,
-  IRefreshTestResponse,
-  ILogoutTestResponse,
-  IForgotPasswordTestResponse,
-  IResetPasswordTestResponse,
-  ITestResponse,
   IApiResponse,
   IAuthResponse,
-  IErrorResponse,
   IAuthTestHelper,
+  IErrorResponse,
+  IForgotPasswordTestResponse,
+  ILoginTestResponse,
+  ILogoutTestResponse,
+  IRefreshTestResponse,
+  IRegisterTestResponse,
+  IResetPasswordTestResponse,
+  ITestResponse,
+  IUserLoginData,
+  IUserRegistrationData,
 } from '../interfaces/auth.interface';
 
 export class AuthTestHelper implements IAuthTestHelper {

@@ -6,10 +6,10 @@
 import {
   DataSource,
   DataSourceOptions,
+  EntityManager,
+  ObjectLiteral,
   Repository,
   SelectQueryBuilder,
-  ObjectLiteral,
-  EntityManager,
 } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';

@@ -6,9 +6,9 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import {
-  IUserRegistrationData,
   IUserLoginData,
   IUserProfile,
+  IUserRegistrationData,
 } from '../interfaces';
 
 export class UserTestHelper {

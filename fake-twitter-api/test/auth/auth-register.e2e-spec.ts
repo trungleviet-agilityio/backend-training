@@ -8,8 +8,8 @@ import { AuthTestHelper } from '../utils/auth-test.helper';
 import { AuthFixtures } from '../fixtures/auth.fixtures';
 
 import {
-  IUserRegistrationData,
   IRegisterTestResponse,
+  IUserRegistrationData,
 } from '../interfaces/auth.interface';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';

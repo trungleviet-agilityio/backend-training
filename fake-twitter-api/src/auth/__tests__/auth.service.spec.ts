@@ -4,12 +4,12 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  AuthService,
-  AuthUserService,
-  AuthTokenService,
-  AuthPasswordService,
-  AuthSessionService,
   AuthErrorHandler,
+  AuthPasswordService,
+  AuthService,
+  AuthSessionService,
+  AuthTokenService,
+  AuthUserService,
 } from '../services';
 import { TestDataFactory } from '../../common/__tests__/test-utils';
 

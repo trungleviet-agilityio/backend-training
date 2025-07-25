@@ -43,11 +43,11 @@ describe('PostMapperService', () => {
         createdAt: scenario.targetPost!.createdAt,
         updatedAt: scenario.targetPost!.updatedAt,
         author: {
-          uuid: scenario.targetPost!.author!.uuid,
-          username: scenario.targetPost!.author!.username,
-          firstName: scenario.targetPost!.author!.firstName || '',
-          lastName: scenario.targetPost!.author!.lastName || '',
-          avatarUrl: scenario.targetPost!.author!.avatarUrl,
+          uuid: scenario.targetPost!.author.uuid,
+          username: scenario.targetPost!.author.username,
+          firstName: scenario.targetPost!.author.firstName || '',
+          lastName: scenario.targetPost!.author.lastName || '',
+          avatarUrl: scenario.targetPost!.author.avatarUrl,
         },
         stats: {
           likesCount: scenario.targetPost!.likesCount,

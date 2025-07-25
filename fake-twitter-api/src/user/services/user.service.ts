@@ -17,7 +17,7 @@ import {
   UserProfileResponseDto,
   UserStatsResponseDto,
 } from '../dto/user-response.dto';
-import { UserProfileDto, UserPostDto, UserCommentDto } from '../dto/user.dto';
+import { UserCommentDto, UserPostDto, UserProfileDto } from '../dto/user.dto';
 import { PaginationMeta } from '../../common/dto/api-response.dto';
 
 @Injectable()

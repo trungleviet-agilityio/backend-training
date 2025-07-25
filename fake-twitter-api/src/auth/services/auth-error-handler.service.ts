@@ -3,17 +3,17 @@
  */
 
 import {
+  ConflictException,
   Injectable,
   UnauthorizedException,
-  ConflictException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   AuthInvalidCredentialsError,
-  AuthUserAlreadyExistsError,
   AuthInvalidTokenError,
-  AuthWeakPasswordError,
   AuthPasswordResetTokenExpiredError,
+  AuthUserAlreadyExistsError,
+  AuthWeakPasswordError,
   RegisterPayloadDto,
 } from '../dto';
 

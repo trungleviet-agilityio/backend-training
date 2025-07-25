@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { User } from '../../database/entities/user.entity';
 import { AuthSession } from '../../database/entities/auth-session.entity';
-import { AuthTokensWithUserDto, AuthRefreshTokenDto } from '../dto';
+import { AuthRefreshTokenDto, AuthTokensWithUserDto } from '../dto';
 import { IJwtPayload } from '../interfaces/jwt-payload.interface';
 import { DEFAULT_ROLE } from '../../common/constants/roles.constant';
 

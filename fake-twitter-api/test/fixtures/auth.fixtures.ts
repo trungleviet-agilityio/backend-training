@@ -4,8 +4,8 @@
  */
 
 import {
-  IUserRegistrationData,
   IUserLoginData,
+  IUserRegistrationData,
 } from '../interfaces/auth.interface';
 
 export const AuthFixtures = {

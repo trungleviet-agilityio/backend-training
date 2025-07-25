@@ -6,7 +6,7 @@ import { GlobalAuthGuard } from '../../guards/global-auth.guard';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UnauthorizedException, ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { AuthMockProvider } from '../../../auth/__tests__/mocks/auth-mock.provider';
 import { UserInfoDto } from '../../../auth/dto/auth.dto';
 
@@ -22,9 +22,8 @@ describe('GlobalAuthGuard', () => {
     reflector = {
       getAllAndOverride: jest.fn(),
     } as unknown as jest.Mocked<Reflector>;
-    jwtService = AuthMockProvider.createJwtService() as jest.Mocked<JwtService>;
-    configService =
-      AuthMockProvider.createConfigService() as jest.Mocked<ConfigService>;
+    jwtService = AuthMockProvider.createJwtService();
+    configService = AuthMockProvider.createConfigService();
     guard = new GlobalAuthGuard(reflector, jwtService, configService);
     request = { headers: {}, user: undefined };
     context = {
