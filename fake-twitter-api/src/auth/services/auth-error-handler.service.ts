@@ -55,6 +55,12 @@ export class AuthErrorHandler {
     if (error.message?.includes('Invalid or expired reset token')) {
       throw new UnauthorizedException(new AuthPasswordResetTokenExpiredError());
     }
+    if (
+      error.message?.includes('password') ||
+      error.message?.includes('Password')
+    ) {
+      throw new UnprocessableEntityException(new AuthWeakPasswordError());
+    }
     throw error;
   }
 }

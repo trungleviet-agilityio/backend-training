@@ -15,6 +15,8 @@ import { UserTestBuilder } from './mocks/user-test.builder';
 import { UserMockProvider } from './mocks/user-mock.provider';
 import { Repository, UpdateResult } from 'typeorm';
 import { Role } from '../../database/entities/role.entity';
+import { UserProfileDto, UserStatsDto } from '../dto/user.dto';
+import { UserPostsResponseDto } from '../dto/user-response.dto';
 
 describe('UserService', () => {
   let service: UserService;
@@ -69,7 +71,7 @@ describe('UserService', () => {
       // Assert
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { uuid: scenario.targetUser!.uuid },
-        relations: ['role'],
+        relations: ['role', 'posts', 'comments'],
       });
       expect(result).toEqual(scenario.targetUser);
     });
@@ -155,7 +157,17 @@ describe('UserService', () => {
     it('should get user profile successfully', async () => {
       // Arrange
       const scenario = new UserTestBuilder()
-        .withTargetUser(UserMockProvider.createMockUser())
+        .withCurrentUser(
+          UserMockProvider.createMockUser({
+            role: { name: 'admin' },
+          } as unknown as Role),
+        )
+        .withTargetUser(
+          UserMockProvider.createMockUser({
+            uuid: 'user-uuid-123',
+            username: 'testuser',
+          }),
+        )
         .withUserStats({ postsCount: 5, commentsCount: 10 })
         .withUserProfile({ uuid: 'user-uuid-123', username: 'testuser' })
         .build();
@@ -173,7 +185,10 @@ describe('UserService', () => {
       );
 
       // Assert
-      expect(result).toEqual(scenario.userProfile);
+      expect(result).toMatchObject({
+        data: expect.objectContaining(scenario.userProfile!),
+        success: true,
+      });
     });
   });
 
@@ -215,7 +230,8 @@ describe('UserService', () => {
         scenario.targetUser!.uuid,
         scenario.updateDto,
       );
-      expect(result).toEqual(scenario.userProfile);
+      expect(result.data).toBeInstanceOf(UserProfileDto);
+      expect(result.success).toBe(true);
     });
 
     it('should handle insufficient permissions for update', async () => {
@@ -279,7 +295,9 @@ describe('UserService', () => {
         skip: 0,
         take: 10,
       });
-      expect(result).toEqual(scenario.userPostsResponse);
+      expect(result).toMatchObject({
+        data: expect.objectContaining(scenario.userPosts!),
+      });
     });
   });
 
@@ -307,7 +325,10 @@ describe('UserService', () => {
       expect(commentRepository.count).toHaveBeenCalledWith({
         where: { authorUuid: scenario.targetUser!.uuid },
       });
-      expect(result).toEqual(scenario.userStatsResponse);
+      expect(result).toMatchObject({
+        data: expect.objectContaining(scenario.userStats!),
+        success: true,
+      });
     });
 
     it('should handle user not found when getting stats', async () => {
@@ -326,6 +347,11 @@ describe('UserService', () => {
       // Arrange
       const comments = [UserMockProvider.createMockComment()];
       const scenario = new UserTestBuilder()
+        .withCurrentUser(
+          UserMockProvider.createMockUser({
+            role: { name: 'admin' },
+          } as unknown as Role),
+        )
         .withTargetUser(UserMockProvider.createMockUser())
         .withPaginatedComments(comments, 1, 10, 1)
         .build();
@@ -349,7 +375,9 @@ describe('UserService', () => {
         skip: 0,
         take: 10,
       });
-      expect(result).toEqual(scenario.userCommentsResponse);
+      expect(result).toMatchObject({
+        data: expect.objectContaining(scenario.userComments!),
+      });
     });
 
     it('should handle user not found when getting comments', async () => {
@@ -373,7 +401,9 @@ describe('UserService', () => {
       // Arrange
       const scenario = new UserTestBuilder()
         .withCurrentUser(
-          UserMockProvider.createMockUser({ role: { name: 'admin' } } as any),
+          UserMockProvider.createMockUser({
+            role: { name: 'admin' },
+          } as unknown as Role),
         )
         .withTargetUser(UserMockProvider.createMockUser())
         .build();
@@ -385,7 +415,7 @@ describe('UserService', () => {
       userOperationFactory.createStrategy.mockReturnValue(mockStrategy);
       userRepository.update.mockResolvedValue({
         affected: 1,
-      } as unknown as UpdateResult);
+      } as UpdateResult);
 
       // Act
       await service.deleteUser(

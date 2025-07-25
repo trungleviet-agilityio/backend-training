@@ -107,16 +107,10 @@ export class UserService {
      * @returns The user's profile
      */
     const user = await this.findById(uuid);
-
     const strategy = this.userOperationFactory.createStrategy(user.role.name);
 
-    // Only admins and owners can view user profiles
+    // Allow users to view their own profile or admins to view any profile
     if (!strategy.canViewUser(currentUserObj, user)) {
-      throw new ForbiddenException('You cannot view this user profile');
-    }
-
-    // If the user is not the current user, return the user's profile
-    if (currentUserObj.role.name !== 'admin') {
       throw new ForbiddenException('You cannot view this user profile');
     }
 
@@ -141,21 +135,17 @@ export class UserService {
       currentUser.role.name,
     );
 
-    // Only admins and owners can update user profiles
     if (!strategy.canUpdateUser(currentUser, targetUser)) {
       throw new ForbiddenException('You cannot update this user');
     }
 
-    // Validate update data
     if (!strategy.validateUpdateData(currentUser, targetUser, updateData)) {
       throw new ForbiddenException('Invalid update data for your role');
     }
 
-    // Update user profile
     await this.userRepository.update(targetUuid, updateData);
-
-    // Return updated user profile
-    return new UserProfileResponseDto(new UserProfileDto(targetUser));
+    const updatedUser = await this.findById(targetUuid);
+    return new UserProfileResponseDto(new UserProfileDto(updatedUser));
   }
 
   async getUserStats(uuid: string): Promise<UserStatsResponseDto> {

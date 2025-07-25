@@ -44,6 +44,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             : [responseMessage as string]
           : [];
       }
+
+      // Preserve the original status code for validation errors
+      if (status === 422) {
+        status = 422; // Keep 422 for validation errors
+      }
     } else if (exception instanceof QueryFailedError) {
       // Handle database errors
       status = HttpStatus.BAD_REQUEST;

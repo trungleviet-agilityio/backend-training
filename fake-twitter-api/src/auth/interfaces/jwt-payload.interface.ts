@@ -11,4 +11,5 @@ export interface IJwtPayload {
   sessionId: string;
   iat?: number;
   exp?: number;
+  jti?: string;
 }

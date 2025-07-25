@@ -34,7 +34,7 @@ async function bootstrap() {
   // Global API prefix
   app.setGlobalPrefix('api/v1');
 
-  // Enable validation globally
+  // Enable validation globally (standard pipe)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
