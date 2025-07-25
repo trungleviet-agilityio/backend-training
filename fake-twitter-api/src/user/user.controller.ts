@@ -1,213 +1,290 @@
+/**
+ * User controller
+ */
+
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
   DefaultValuePipe,
   Delete,
   Get,
+  HttpStatus,
   Param,
-  ParseUUIDPipe,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IJwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { UserService } from './services/user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserProfileResponseDto } from './dto/user-response.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { PostMapperService } from '../post/services';
+import { UserService } from './services/user.service';
+import { User } from '../database/entities/user.entity';
+import { IJwtPayload } from '../auth/interfaces/jwt-payload.interface';
+
+import {
+  UserCommentsResponseDto,
+  UserDeletedResponseDto,
+  UserPostsResponseDto,
+  UserProfileResponseDto,
+  UserStatsResponseDto,
+} from './dto/user-response.dto';
+import {
+  UserForbiddenErrorDto,
+  UserInternalServerErrorDto,
+  UserNotFoundErrorDto,
+  UserUnauthorizedErrorDto,
+} from './dto/user-error.dto';
+import { UserUpdatePayloadDto } from './dto/update-user.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class UserController {
-  /**
-   * Constructor
-   * @param userService - The service for the user
-   */
-
-  constructor(
-    private readonly userService: UserService,
-    private readonly postMapper: PostMapperService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get(':uuid')
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
+    type: UserProfileResponseDto,
     description: 'User profile retrieved successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({
-    status: 403,
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    type: UserForbiddenErrorDto,
     description: 'Forbidden - insufficient permissions',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
   async getUserProfile(
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
   ): Promise<UserProfileResponseDto> {
-    /**
-     * Get a user's profile
-     * @param uuid - The UUID of the user
-     * @returns The user's profile
-     */
+    const currentUserObj = {
+      uuid: currentUser.sub,
+      role: { name: currentUser.role },
+    } as User;
 
-    const user = await this.userService.getUserProfile(uuid);
-    return { user };
+    const userProfile = await this.userService.getUserProfile(
+      currentUserObj,
+      uuid,
+    );
+    return userProfile;
   }
 
   @Patch(':uuid')
   @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiBody({ type: UserUpdatePayloadDto })
   @ApiResponse({
-    status: 403,
+    status: HttpStatus.OK,
+    type: UserProfileResponseDto,
+    description: 'Profile updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    type: UserForbiddenErrorDto,
     description: 'Forbidden - insufficient permissions',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
   async updateUserProfile(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
-    @Body() updateUserDto: UpdateUserDto,
+    @Body() updateUserDto: UserUpdatePayloadDto,
   ): Promise<UserProfileResponseDto> {
-    /**
-     * Update a user's profile
-     * @param currentUser - The current user
-     * @param uuid - The UUID of the target user
-     * @param updateUserDto - The data to update
-     * @returns The updated user
-     */
-
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
+    } as User;
 
     const updatedUser = await this.userService.updateUserProfile(
       currentUserObj,
       uuid,
       updateUserDto,
     );
-    const user = await this.userService.getUserProfile(uuid);
-    return { user };
+
+    return updatedUser;
   }
 
   @Get(':uuid/stats')
   @ApiOperation({ summary: 'Get user statistics' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
+    type: UserStatsResponseDto,
     description: 'User statistics retrieved successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
-  async getUserStats(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    /**
-     * Get a user's stats
-     * @param uuid - The UUID of the user
-     * @returns The user's stats
-     */
-
-    return this.userService.getUserStats(uuid);
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
+  async getUserStats(
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+  ): Promise<UserStatsResponseDto> {
+    const stats = await this.userService.getUserStats(uuid);
+    return stats;
   }
 
   @Get(':uuid/posts')
   @ApiOperation({ summary: 'Get user posts' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
+    type: UserPostsResponseDto,
     description: 'User posts retrieved successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
   async getUserPosts(
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    /**
-     * Get a user's posts
-     * @param uuid - The UUID of the user
-     * @param page - The page number
-     * @param limit - The number of posts per page
-     * @returns The user's posts
-     */
-
+  ): Promise<UserPostsResponseDto> {
     const result = await this.userService.getUserPosts(uuid, page, limit);
-
-    // Use the post mapper to filter sensitive data
-    return {
-      data: this.postMapper.toPostDtoList(result.data),
-      meta: result.meta,
-    };
+    return result;
   }
 
   @Get(':uuid/comments')
   @ApiOperation({ summary: 'Get user comments' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
+    type: UserCommentsResponseDto,
     description: 'User comments retrieved successfully',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
   async getUserComments(
+    @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    /**
-     * Get a user's comments
-     * @param uuid - The UUID of the user
-     * @param page - The page number
-     * @param limit - The number of comments per page
-     * @returns The user's comments
-     */
+  ): Promise<UserCommentsResponseDto> {
+    const currentUserObj = {
+      uuid: currentUser.sub,
+      role: { name: currentUser.role },
+    } as User;
 
-    return this.userService.getUserComments(uuid, page, limit);
+    const result = await this.userService.getUserComments(
+      currentUserObj,
+      uuid,
+      page,
+      limit,
+    );
+    return result;
   }
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Delete user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({
-    status: 403,
+    status: HttpStatus.OK,
+    type: UserDeletedResponseDto,
+    description: 'User deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: UserUnauthorizedErrorDto,
+    description: 'Unauthorized - Invalid credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    type: UserForbiddenErrorDto,
     description: 'Forbidden - Admin role required to delete users',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: UserNotFoundErrorDto,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    type: UserInternalServerErrorDto,
+    description: 'Internal server error',
+  })
   async deleteUser(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('uuid', ParseUUIDPipe) uuid: string,
-  ): Promise<void> {
-    /**
-     * Delete a user (Admin only)
-     * @param currentUser - The current user
-     * @param uuid - The UUID of the user to delete
-     * @returns void
-     */
-
+  ): Promise<UserDeletedResponseDto> {
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
+    } as User;
 
     await this.userService.deleteUser(currentUserObj, uuid);
+
+    return new UserDeletedResponseDto();
   }
 }

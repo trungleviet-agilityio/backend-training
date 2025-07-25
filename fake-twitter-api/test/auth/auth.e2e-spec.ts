@@ -1,23 +1,27 @@
 /**
- * Auth e2e tests
+ * Auth E2E Tests - Main Test Suite
+ * Orchestrates all auth-related e2e tests with proper types
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { AuthTestHelper } from '../utils/auth-test.helper';
 import { AppModule } from '../../src/app.module';
+import { ITestResponse } from '../interfaces/auth.interface';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  let authHelper: AuthTestHelper;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
 
-    // Apply the same global pipes as in main.ts
+    // Enable validation globally
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -26,61 +30,40 @@ describe('AuthController (e2e)', () => {
       }),
     );
 
-    app.setGlobalPrefix('api/v1');
     await app.init();
+    authHelper = new AuthTestHelper(app);
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 
-  it('should be defined', () => {
-    expect(app).toBeDefined();
-  });
-
-  describe('/api/v1/auth/register (POST)', () => {
-    it('should return 400 for invalid email', () => {
-      return request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({
-          email: 'invalid-email',
-          username: 'testuser',
-          password: 'password123',
-        })
-        .expect(400);
+  describe('Health Check', () => {
+    it('should be defined', () => {
+      expect(app).toBeDefined();
     });
 
-    it('should return 400 for missing required fields', () => {
-      return request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({
-          email: 'test@example.com',
-          // missing username and password
-        })
-        .expect(400);
-    });
-
-    it('should return 400 for short password', () => {
-      return request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send({
-          email: 'test@example.com',
-          username: 'testuser',
-          password: '123', // too short
-        })
-        .expect(400);
+    it('should have auth endpoints available', async () => {
+      const response: ITestResponse = await authHelper.testEndpointAvailability(
+        '/api/v1/auth/register',
+      );
+      expect(response.status).not.toBe(404);
     });
   });
 
-  describe('/api/v1/auth/login (POST)', () => {
-    it('should return 401 for non-existent user', () => {
-      return request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'password123',
-        })
-        .expect(401);
-    });
+  describe('Registration Tests', () => {
+    require('./auth-register.e2e-spec');
+  });
+
+  describe('Login Tests', () => {
+    require('./auth-login.e2e-spec');
+  });
+
+  describe('Token Management Tests', () => {
+    require('./auth-token.e2e-spec');
+  });
+
+  describe('Password Reset Tests', () => {
+    require('./auth-password.e2e-spec');
   });
 });

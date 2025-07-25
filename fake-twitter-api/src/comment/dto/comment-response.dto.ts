@@ -111,7 +111,7 @@ export class CommentsResponseDto {
     description: 'List of comments',
     type: [CommentDto],
   })
-  data: CommentDto[];
+  items: CommentDto[];
 
   @ApiProperty({
     description: 'Pagination metadata',

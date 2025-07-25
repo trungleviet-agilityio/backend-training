@@ -30,4 +30,9 @@ export class AuthSession extends AbstractEntity<AuthSession> {
   @ManyToOne(() => User, user => user.authSessions)
   @JoinColumn({ name: 'user_uuid' })
   user: User;
+
+  constructor(entity: Partial<AuthSession> = {}) {
+    super(entity);
+    Object.assign(this, entity);
+  }
 }

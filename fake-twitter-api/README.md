@@ -56,6 +56,8 @@ A comprehensive social media API built with NestJS, featuring authentication, po
 - **Containerization**: Docker + Docker Compose
 - **Code Quality**: ESLint + Prettier + Husky
 
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -73,6 +75,8 @@ npm install
 ```
 
 ### 2. Environment Setup
+
+> **Note:** Never commit your `.env` files or secrets to version control.
 
 ```bash
 # Create development environment
@@ -133,11 +137,8 @@ EOF
 ### 3. Start Development
 
 ```bash
-# Start development database
-npm run db:dev:up
-
-# Start the application
-npm run start:dev
+npm run db:dev:up      # Start development database
+npm run start:dev      # Start the application
 ```
 
 ### 4. Access the API
@@ -146,100 +147,113 @@ npm run start:dev
 - **Swagger Documentation**: `http://localhost:5555/api/v1/docs`
 - **Health Check**: `http://localhost:5555/api/v1/health`
 
+---
+
 ## 💻 Development Guide
 
-### Daily Development Workflow
+### Daily Workflow
 
 ```bash
-# 1. Start development environment
-npm run db:dev:up && npm run start:dev
-
-# 2. Run tests
-npm run test && npm run test:e2e
-
-# 3. Code quality checks
-npm run validate
+npm run db:dev:up && npm run start:dev   # Start dev environment
+npm run test && npm run test:e2e         # Run tests
+npm run validate                         # Code quality checks
 ```
 
 ### Available Scripts
+
+See `package.json` for the full list. Common scripts:
 
 #### 🚀 Application
 ```bash
 npm run start:dev          # Start in development mode
 npm run start:debug        # Start in debug mode
-npm run build             # Build the application
+npm run build              # Build the application
+npm run start:prod         # Start built app in production mode
 ```
 
 #### 🧪 Testing
 ```bash
-npm run test              # Run unit tests
-npm run test:watch        # Run tests in watch mode
-npm run test:e2e          # Run E2E tests
-npm run test:cov          # Run tests with coverage
-npm run test:all          # Run all tests (unit + e2e)
+npm run test               # Run unit tests
+npm run test:watch         # Run tests in watch mode
+npm run test:e2e           # Run E2E tests
+npm run test:e2e:watch     # Run E2E tests in watch mode
+npm run test:cov           # Run tests with coverage
+npm run test:all           # Run all tests (unit + e2e)
 ```
 
 #### ️ Database
 ```bash
-npm run db:dev:up         # Start development database
-npm run db:test:up        # Start test database
-npm run db:both:up        # Start both databases
-npm run migration:run     # Run migrations
-npm run seed              # Seed development database
+npm run db:dev:up          # Start development database
+npm run db:dev:rm          # Remove dev database container
+npm run db:dev:restart     # Restart dev database and run migrations
+npm run db:test:up         # Start test database
+npm run db:test:rm         # Remove test database container
+npm run db:test:restart    # Restart test database
+npm run db:test:setup      # Setup test database (restart, migrate, seed)
+npm run db:test:reset      # Reset test database
+npm run db:both:up         # Start both dev and test databases
+npm run db:both:down       # Stop both databases
+npm run db:both:logs       # View logs for both databases
+npm run db:only            # Start both databases (foreground)
+```
+
+#### 🗄️ Migrations & Seeding
+```bash
+npm run migration:generate         # Generate new migration
+npm run migration:create           # Create empty migration
+npm run migration:run              # Run migrations
+npm run migration:revert           # Revert last migration
+npm run migration:run:test         # Run migrations on test DB
+npm run migration:generate:test    # Generate migration for test DB
+npm run migration:revert:test      # Revert migration on test DB
+npm run seed                      # Seed development database
+npm run seed:test                 # Seed test database
 ```
 
 ####  Docker
 ```bash
-npm run docker:up         # Start everything in Docker
-npm run docker:down       # Stop all containers
-npm run docker:logs       # View logs
+npm run docker:up          # Start everything in Docker
+npm run docker:up:detached # Start Docker in detached mode
+npm run docker:down        # Stop all containers
+npm run docker:logs        # View logs
 ```
 
 #### 🔧 Code Quality
 ```bash
-npm run validate          # Run all checks (type, lint, format)
-npm run lint              # Lint code
-npm run format            # Format code
-npm run type-check        # Type checking
+npm run validate           # Run all checks (type, lint, format)
+npm run lint               # Lint code
+npm run lint:check         # Lint code (check only)
+npm run lint-fix           # Lint and fix
+npm run format             # Format code
+npm run format:check       # Check formatting
+npm run type-check         # Type checking
 ```
 
-##  Testing
+---
 
-### Local Testing
+## 📁 Project Structure
 
-```bash
-# 1. Start test database
-npm run db:test:up
-
-# 2. Run unit tests
-npm run test
-
-# 3. Run E2E tests
-npm run test:e2e
-
-# 4. Run all tests
-npm run test:all
+```
+fake-twitter-api/
+├── src/
+│   ├── auth/                 # Authentication module
+│   ├── user/                 # User module
+│   ├── post/                 # Post module
+│   ├── comment/              # Comment module
+│   ├── notifications/        # Notification module
+│   ├── database/             # Database configuration & seeds
+│   ├── migrations/           # Database migrations
+│   ├── common/               # Shared utilities
+│   └── main.ts               # Application entry point
+├── test/                     # E2E tests
+├── scripts/                  # Build and deployment scripts
+├── docs/                     # Documentation
+├── docker-compose.yaml       # Docker configuration
+├── package.json              # Project metadata and scripts
+└── README.md                 # Project documentation
 ```
 
-### Docker Testing
-
-```bash
-# Start test environment in Docker
-npm run docker:test:up
-
-# Run tests against Docker environment
-NODE_ENV=test npm run test:e2e
-```
-
-### Test Database Setup
-
-```bash
-# Complete test database setup
-npm run db:test:setup
-
-# Reset test database
-npm run db:test:reset
-```
+---
 
 ## 📚 API Documentation
 
@@ -354,97 +368,6 @@ npm run docker:logs
 Docker uses environment variables from `.env` files:
 - `.env` for development
 - `.env.test` for testing
-
-## 📁 Project Structure
-
-```
-fake-twitter-api/
-├── src/
-│   ├── auth/                 # Authentication module
-│   │   ├── controllers/      # Auth controllers
-│   │   ├── services/         # Auth services
-│   │   ├── strategies/       # Passport strategies
-│   │   ├── guards/           # Auth guards
-│   │   └── dto/              # Auth DTOs
-│   ├── user/                 # User module
-│   ├── post/                 # Post module
-│   ├── comment/              # Comment module
-│   ├── notifications/        # Notification module
-│   ├── database/             # Database configuration
-│   │   ├── entities/         # TypeORM entities
-│   │   └── seeds/            # Database seeds
-│   ├── migrations/           # Database migrations
-│   └── common/               # Shared utilities
-├── test/                     # E2E tests
-├── scripts/                  # Build and deployment scripts
-├── docs/                     # Documentation
-└── docker-compose.yaml       # Docker configuration
-```
-
-##  Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment | `development` |
-| `APP_PORT` | Application port | `5555` |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `5436` |
-| `DB_DATABASE` | Database name | `fake_twitter_db` |
-| `DB_USERNAME` | Database username | `fake_twitter_user` |
-| `DB_PASSWORD` | Database password | `fake_twitter_password` |
-| `JWT_SECRET` | JWT secret key | Required |
-| `EMAIL_PROVIDER` | Email provider | `console` |
-
-### Database Configuration
-
-- **Development**: Uses `fake_twitter_db` on port 5436
-- **Testing**: Uses `fake_twitter_test` on port 5437
-- **Synchronization**: Enabled for development, disabled for production
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### Permission Errors
-```bash
-sudo rm -rf dist/ node_modules/
-npm install
-```
-
-#### Database Connection Issues
-```bash
-npm run db:both:down
-npm run db:both:up
-```
-
-#### Port Conflicts
-```bash
-lsof -i :5555
-lsof -i :5436
-lsof -i :5437
-```
-
-#### Environment Issues
-```bash
-# Verify environment files
-ls -la .env*
-
-# Check environment variables
-echo $NODE_ENV
-```
-
-### Reset Everything
-
-```bash
-# Complete reset
-docker compose down -v
-sudo rm -rf dist/
-npm install
-npm run db:both:up
-npm run start:dev
-```
 
 ## 📝 Contributing
 

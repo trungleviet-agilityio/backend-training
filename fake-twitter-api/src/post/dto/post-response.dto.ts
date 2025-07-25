@@ -110,7 +110,7 @@ export class PostsResponseDto {
     description: 'List of posts',
     type: [PostDto],
   })
-  data: PostDto[];
+  items: PostDto[];
 
   @ApiProperty({
     description: 'Pagination metadata',

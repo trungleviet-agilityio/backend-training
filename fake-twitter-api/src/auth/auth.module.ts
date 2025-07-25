@@ -14,20 +14,25 @@ import { AuthSession } from '../database/entities/auth-session.entity';
 import { AuthPasswordReset } from '../database/entities/auth-password-reset.entity';
 
 import { AuthController } from './auth.controller';
+
 import {
-  AuthMapperService,
+  AuthErrorHandler,
   AuthPasswordResetService,
+  AuthPasswordService,
   AuthService,
+  AuthSessionService,
+  AuthTokenService,
+  AuthUserService,
 } from './services';
-import { AuthOperationFactory } from './factories';
-import { JwtAuthStrategy, JwtStrategy, LocalStrategy } from './strategies';
+
+import { JwtStrategy } from './strategies';
 import { JwtAuthGuard, RolesGuard } from './guards';
 import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Role, AuthSession, AuthPasswordReset]),
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow('JWT_SECRET'),
@@ -43,23 +48,16 @@ import { NotificationModule } from '../notifications/notification.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthUserService,
+    AuthTokenService,
+    AuthPasswordService,
+    AuthSessionService,
+    AuthErrorHandler,
     AuthPasswordResetService,
-    AuthMapperService,
-    AuthOperationFactory,
-    JwtAuthStrategy,
     JwtStrategy,
-    LocalStrategy,
     JwtAuthGuard,
     RolesGuard,
-    {
-      provide: 'JWT_AUTH_STRATEGY',
-      useExisting: JwtAuthStrategy,
-    },
-    {
-      provide: 'AUTH_MAPPER_SERVICE',
-      useExisting: AuthMapperService,
-    },
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

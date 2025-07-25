@@ -13,7 +13,6 @@ import { UserOperationFactory } from './factories/user-operation.factory';
 import { AdminUserStrategy } from './strategies/user-admin.strategy';
 import { ModeratorUserStrategy } from './strategies/user-moderator.strategy';
 import { RegularUserStrategy } from './strategies/user-regular.strategy';
-import { UserMapperService } from './services/user-mapper.service';
 import { PostMapperService } from '../post/services';
 
 @Module({
@@ -21,7 +20,6 @@ import { PostMapperService } from '../post/services';
   controllers: [UserController],
   providers: [
     UserService,
-    UserMapperService,
     UserOperationFactory,
     AdminUserStrategy,
     ModeratorUserStrategy,

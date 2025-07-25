@@ -36,7 +36,7 @@ import {
 @ApiTags('Posts')
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class PostController {
   /**
    * Constructor
@@ -67,7 +67,7 @@ export class PostController {
 
     const result = await this.postService.getAllPosts(page, limit);
     return {
-      data: this.postMapper.toPostDtoList(result.data),
+      items: this.postMapper.toPostDtoList(result.data),
       meta: result.meta,
     };
   }
@@ -92,16 +92,10 @@ export class PostController {
      * @returns The created post
      */
 
-    console.log('currentUser from decorator:', currentUser);
-    console.log('currentUser.sub:', currentUser?.sub);
-    console.log('currentUser.role:', currentUser?.role);
-
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
-
-    console.log('currentUserObj:', currentUserObj);
+    };
 
     const post = await this.postService.createPost(
       currentUserObj,
@@ -134,7 +128,7 @@ export class PostController {
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
+    };
 
     const post = await this.postService.findById(uuid, currentUserObj);
     return { post: this.postMapper.toPostDto(post) };
@@ -166,7 +160,7 @@ export class PostController {
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
+    };
 
     const post = await this.postService.updatePost(
       currentUserObj,
@@ -200,7 +194,7 @@ export class PostController {
     const currentUserObj = {
       uuid: currentUser.sub,
       role: { name: currentUser.role },
-    } as any;
+    };
 
     await this.postService.deletePost(currentUserObj, uuid);
     return { message: 'Post deleted successfully' };

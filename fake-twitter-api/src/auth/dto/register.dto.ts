@@ -6,17 +6,19 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { AuthTokensWithUserDto } from './auth.dto';
+import { CreatedResponse } from '../../common/dto';
 
-export class RegisterDto {
+export class RegisterPayloadDto {
   @ApiProperty({
     description: 'User email address (must be unique)',
     example: 'john.doe@example.com',
     format: 'email',
-    type: 'string',
     uniqueItems: true,
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -25,7 +27,6 @@ export class RegisterDto {
   @ApiProperty({
     description: 'Unique username for the account',
     example: 'johndoe',
-    type: 'string',
     minLength: 3,
     maxLength: 20,
     pattern: '^[a-zA-Z0-9_]+$',
@@ -34,12 +35,14 @@ export class RegisterDto {
   @IsString({ message: 'Username must be a string' })
   @MinLength(3, { message: 'Username must be at least 3 characters long' })
   @MaxLength(20, { message: 'Username must not exceed 20 characters' })
+  @Matches(/^[a-zA-Z0-9_]+$/, {
+    message: 'Username can only contain letters, numbers, and underscores',
+  })
   username: string;
 
   @ApiProperty({
     description: 'Strong password for account security',
     example: 'SecurePass123!',
-    type: 'string',
     format: 'password',
     minLength: 8,
     maxLength: 128,
@@ -48,12 +51,16 @@ export class RegisterDto {
   })
   @IsString({ message: 'Password must be a string' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(128, { message: 'Password must not exceed 128 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
+  })
   password: string;
 
   @ApiProperty({
     description: 'User first name (optional)',
     example: 'John',
-    type: 'string',
     required: false,
     minLength: 1,
     maxLength: 50,
@@ -66,7 +73,6 @@ export class RegisterDto {
   @ApiProperty({
     description: 'User last name (optional)',
     example: 'Doe',
-    type: 'string',
     required: false,
     minLength: 1,
     maxLength: 50,
@@ -75,4 +81,38 @@ export class RegisterDto {
   @IsOptional()
   @MaxLength(50, { message: 'Last name must not exceed 50 characters' })
   lastName?: string;
+}
+
+export class RegisterResponseDto extends CreatedResponse<AuthTokensWithUserDto> {
+  @ApiProperty({
+    description: 'Indicates if the request was successful',
+    example: true,
+    type: 'boolean',
+  })
+  declare success: boolean;
+
+  @ApiProperty({
+    description: 'Response message',
+    example: 'User registered successfully',
+    type: 'string',
+  })
+  declare message: string;
+
+  @ApiProperty({
+    description:
+      'Registration response data containing tokens and user information',
+    type: () => AuthTokensWithUserDto,
+  })
+  declare data: AuthTokensWithUserDto;
+
+  @ApiProperty({
+    description: 'Response timestamp',
+    example: '2024-01-15T10:30:00.000Z',
+    type: 'string',
+  })
+  declare timestamp: string;
+
+  constructor(data: AuthTokensWithUserDto) {
+    super(data, 'User registered successfully');
+  }
 }
