@@ -9,10 +9,12 @@ export interface IUserRegistrationData {
   password: string;
   firstName?: string;
   lastName?: string;
+  bio?: string;
 }
 
 export interface IUserLoginData {
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
 }
 
